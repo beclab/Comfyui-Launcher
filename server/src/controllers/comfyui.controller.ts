@@ -6,7 +6,11 @@ import * as http from 'http';
 import httpProxy from 'http-proxy';
 import * as fs from 'fs';
 import * as net from 'net';
+import * as util from 'util';
 import { logger } from '../utils/logger';
+
+// 将exec转换为Promise
+const execPromise = util.promisify(exec);
 
 export class ComfyUIController {
   private comfyProcess: ChildProcess | null = null;
@@ -321,21 +325,33 @@ export class ComfyUIController {
   
   // 使用通用方法终止ComfyUI
   private async killComfyUIGeneric(): Promise<void> {
-    return new Promise<void>((resolve) => {
-      // 尝试更通用的方法终止ComfyUI
-      const cmd = process.platform === 'win32'
-        ? 'taskkill /F /IM python.exe /T'
-        : 'pkill -9 -f "python.*comfyui"';
+    try {
+      // 首先找出大型Python进程（可能是ComfyUI）
+      const { stdout } = await execPromise("ps aux | grep python | grep -v grep | awk '{if($6>100000) print $2}'");
+      const pids = stdout.trim().split('\n').filter((pid: string) => pid);
+      
+      if (pids.length > 0) {
+        logger.info(`[API] 找到可能的ComfyUI进程: ${pids.join(', ')}`);
         
-      exec(cmd, (error) => {
-        if (error) {
-          logger.error(`[API] 通用终止ComfyUI失败: ${error.message}`);
-        } else {
-          logger.info('[API] 通用终止命令执行成功');
+        // 逐个终止找到的进程
+        for (const pid of pids) {
+          try {
+            await execPromise(`kill -9 ${pid}`);
+            logger.info(`[API] 已终止进程 ${pid}`);
+          } catch (e: unknown) {
+            logger.warn(`[API] 终止进程 ${pid} 失败: ${e}`);
+          }
         }
-        resolve();
-      });
-    });
+        return;
+      }
+    } catch (e: unknown) {
+      logger.error(`[API] 查找ComfyUI进程失败: ${e}`);
+    }
+    
+    // 后备方案：使用通用命令
+    const cmd = 'pkill -9 -f "python"';
+    logger.info(`[API] 使用后备终止命令: ${cmd}`);
+    await execPromise(cmd).catch((e: unknown) => logger.warn(`[API] 后备终止失败: ${e}`));
   }
   
   // 获取运行时间
