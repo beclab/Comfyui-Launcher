@@ -33,9 +33,25 @@ RUN npm install && \
 # 复制应用代码
 COPY . .
 
-# 构建前端和后端
-RUN cd /app && npx quasar build && \
-    cd server && npm run build && cd ..
+# 创建构建脚本
+RUN echo '#!/bin/bash\n\
+cd /app\n\
+echo "构建前端应用..."\n\
+if [ -f ./node_modules/.bin/quasar ]; then\n\
+  ./node_modules/.bin/quasar build\n\
+else\n\
+  echo "找不到本地quasar，尝试使用package.json中的build脚本"\n\
+  npm run build\n\
+fi\n\
+\n\
+echo "构建后端应用..."\n\
+cd server\n\
+npm run build\n\
+cd ..' > /app/build.sh && \
+    chmod +x /app/build.sh
+
+# 执行构建
+RUN /app/build.sh
 
 # 创建启动脚本
 RUN echo '#!/bin/bash\n\
