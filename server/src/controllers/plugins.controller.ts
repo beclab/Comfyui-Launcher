@@ -215,7 +215,7 @@ export class PluginsController {
   // 获取已安装的插件列表
   private getInstalledPlugins(): any[] {
     try {
-      const installedPlugins = [];
+      const installedPlugins: any[] = [];
       
       // 确保目录存在
       if (!fs.existsSync(CUSTOM_NODES_PATH)) {

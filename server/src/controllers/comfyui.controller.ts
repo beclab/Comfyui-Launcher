@@ -1,63 +1,91 @@
 import { Context } from 'koa';
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, ChildProcess, exec } from 'child_process';
 import { config } from '../config';
 import path from 'path';
 import * as http from 'http';
 import httpProxy from 'http-proxy';
 import * as fs from 'fs';
 import * as net from 'net';
-import { exec } from 'child_process';
 import { logger } from '../utils/logger';
 
 export class ComfyUIController {
   private comfyProcess: ChildProcess | null = null;
   private startTime: Date | null = null;
+  // 追踪实际的ComfyUI进程ID
+  private comfyPid: number | null = null;
 
   constructor() {
     // 绑定方法到实例
     this.getStatus = this.getStatus.bind(this);
     this.startComfyUI = this.startComfyUI.bind(this);
     this.stopComfyUI = this.stopComfyUI.bind(this);
+    
+    // 初始化时检查ComfyUI是否已经运行
+    this.checkIfComfyUIRunning();
+  }
+
+  // 初始化时检查ComfyUI是否已经运行
+  private async checkIfComfyUIRunning(): Promise<void> {
+    try {
+      const running = await isComfyUIRunning();
+      if (running) {
+        // 如果ComfyUI已经在运行，找出它的进程ID
+        exec("ps aux | grep '[p]ython.*comfyui' | awk '{print $2}'", (error, stdout) => {
+          if (!error && stdout.trim()) {
+            const pid = parseInt(stdout.trim(), 10);
+            if (!isNaN(pid)) {
+              this.comfyPid = pid;
+              this.startTime = new Date(); // 假设刚刚启动
+              logger.info(`[API] 检测到ComfyUI已在运行，PID: ${pid}`);
+            }
+          }
+        });
+      }
+    } catch (error) {
+      logger.error(`[API] 检查ComfyUI状态时出错: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   // 获取ComfyUI状态
   async getStatus(ctx: Context): Promise<void> {
-    console.log('[API] 获取ComfyUI状态请求');
+    logger.info('[API] 获取ComfyUI状态请求');
     
-    const running = this.comfyProcess !== null && this.comfyProcess.exitCode === null;
+    // 通过网络端口检查是否运行
+    const running = await isComfyUIRunning();
     const uptime = this.startTime ? this.getUptime() : null;
     
-    console.log(`[API] ComfyUI当前状态: ${running ? '运行中' : '已停止'}`);
+    logger.info(`[API] ComfyUI当前状态: ${running ? '运行中' : '已停止'}`);
     if (running) {
-      console.log(`[API] 已运行时间: ${uptime}`);
+      logger.info(`[API] 已运行时间: ${uptime}`);
     }
     
     ctx.body = {
       running,
-      pid: running && this.comfyProcess ? this.comfyProcess.pid : null,
+      pid: this.comfyPid,
       uptime
     };
   }
 
   // 启动ComfyUI
   async startComfyUI(ctx: Context): Promise<void> {
-    console.log('[API] 收到启动ComfyUI请求');
+    logger.info('[API] 收到启动ComfyUI请求');
     
-    // 检查是否已经在运行
-    if (this.comfyProcess !== null && this.comfyProcess.exitCode === null) {
-      console.log('[API] ComfyUI已经在运行中');
+    // 首先检查是否已经在运行
+    const running = await isComfyUIRunning();
+    if (running) {
+      logger.info('[API] ComfyUI已经在运行中');
       ctx.body = {
         success: false,
         message: 'ComfyUI已经在运行中',
-        pid: this.comfyProcess.pid
+        pid: this.comfyPid
       };
       return;
     }
     
     try {
       // 启动ComfyUI进程
-      console.log('[API] 尝试启动ComfyUI进程...');
-      console.log(`[API] 执行命令: bash ${path.resolve('/runner-scripts/entrypoint.sh')}`);
+      logger.info('[API] 尝试启动ComfyUI进程...');
+      logger.info(`[API] 执行命令: bash ${path.resolve('/runner-scripts/entrypoint.sh')}`);
       
       this.comfyProcess = spawn('bash', ['/runner-scripts/entrypoint.sh'], {
         detached: false, // 进程不分离，随主进程退出而退出
@@ -69,54 +97,99 @@ export class ComfyUIController {
       // 捕获输出
       if (this.comfyProcess.stdout) {
         this.comfyProcess.stdout.on('data', (data) => {
-          console.log(`[ComfyUI] ${data.toString().trim()}`);
+          const output = data.toString().trim();
+          logger.info(`[ComfyUI] ${output}`);
+          
+          // 尝试从输出中捕获实际的ComfyUI进程ID
+          const match = output.match(/ComfyUI.*启动.*pid[:\s]+(\d+)/i);
+          if (match && match[1]) {
+            this.comfyPid = parseInt(match[1], 10);
+            logger.info(`[API] 捕获到ComfyUI真实PID: ${this.comfyPid}`);
+          }
         });
       }
       
       if (this.comfyProcess.stderr) {
         this.comfyProcess.stderr.on('data', (data) => {
-          console.error(`[ComfyUI-Error] ${data.toString().trim()}`);
+          logger.error(`[ComfyUI-Error] ${data.toString().trim()}`);
         });
       }
       
       // 监听进程退出
       this.comfyProcess.on('exit', (code, signal) => {
-        console.log(`[API] ComfyUI进程已退出，退出码: ${code}, 信号: ${signal}`);
+        logger.info(`[API] 启动脚本进程已退出，退出码: ${code}, 信号: ${signal}`);
         this.comfyProcess = null;
-        this.startTime = null;
+        
+        // 检查ComfyUI是否仍在运行
+        this.checkIfComfyUIRunning().then(async () => {
+          const stillRunning = await isComfyUIRunning();
+          if (!stillRunning) {
+            this.comfyPid = null;
+            this.startTime = null;
+          }
+        });
       });
       
       // 监听错误
       this.comfyProcess.on('error', (err) => {
-        console.error('[API] ComfyUI进程启动错误:', err);
+        logger.error('[API] 启动脚本进程错误:', err);
         this.comfyProcess = null;
-        this.startTime = null;
       });
       
       // 等待一段时间确保进程启动成功
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      let retries = 0;
+      const maxRetries = 10;
+      let comfyStarted = false;
       
-      if (this.comfyProcess && this.comfyProcess.exitCode === null) {
-        console.log('[API] ComfyUI启动成功');
+      while (retries < maxRetries && !comfyStarted) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        comfyStarted = await isComfyUIRunning();
+        
+        if (comfyStarted) {
+          // 获取真正的ComfyUI进程ID
+          if (!this.comfyPid) {
+            exec("ps aux | grep '[p]ython.*comfyui' | awk '{print $2}'", (error, stdout) => {
+              if (!error && stdout.trim()) {
+                this.comfyPid = parseInt(stdout.trim(), 10);
+                logger.info(`[API] 找到ComfyUI PID: ${this.comfyPid}`);
+              }
+            });
+          }
+          break;
+        }
+        
+        retries++;
+      }
+      
+      if (comfyStarted) {
+        logger.info('[API] ComfyUI启动成功');
         ctx.body = {
           success: true,
           message: 'ComfyUI已启动',
-          pid: this.comfyProcess.pid
+          pid: this.comfyPid
         };
       } else {
-        console.error('[API] ComfyUI启动失败');
+        logger.error('[API] ComfyUI启动失败或超时');
         ctx.status = 500;
         ctx.body = {
           success: false,
-          message: 'ComfyUI启动失败'
+          message: 'ComfyUI启动失败或超时'
         };
+        
+        // 尝试清理启动脚本进程
+        if (this.comfyProcess && this.comfyProcess.kill) {
+          this.comfyProcess.kill();
+          this.comfyProcess = null;
+        }
+        this.startTime = null;
       }
     } catch (error) {
-      console.error('[API] ComfyUI启动失败:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('[API] ComfyUI启动失败:', errorMessage);
       ctx.status = 500;
       ctx.body = {
         success: false,
-        message: `启动失败: ${error instanceof Error ? error.message : '未知错误'}`
+        message: `启动失败: ${errorMessage}`
       };
     }
   }
@@ -126,7 +199,9 @@ export class ComfyUIController {
     try {
       logger.info('[API] 收到停止ComfyUI请求');
       
-      if (!this.comfyProcess) {
+      // 首先检查ComfyUI是否在运行
+      const running = await isComfyUIRunning();
+      if (!running) {
         logger.info('[API] ComfyUI未运行');
         ctx.body = { success: true, message: 'ComfyUI未运行' };
         return;
@@ -134,62 +209,133 @@ export class ComfyUIController {
       
       logger.info('[API] 尝试停止ComfyUI进程...');
       
-      // 获取ComfyUI的进程组ID
-      const pgid = process.platform === 'win32' 
-        ? null 
-        : this.comfyProcess && this.comfyProcess.pid ? -this.comfyProcess.pid : null;  // 添加空值检查
+      // 使用找到的实际ComfyUI PID或通过查询获取
+      if (!this.comfyPid) {
+        await new Promise<void>((resolve) => {
+          exec("ps aux | grep '[p]ython.*comfyui' | awk '{print $2}'", (error, stdout) => {
+            if (!error && stdout.trim()) {
+              this.comfyPid = parseInt(stdout.trim(), 10);
+              logger.info(`[API] 找到ComfyUI PID: ${this.comfyPid}`);
+            }
+            resolve();
+          });
+        });
+      }
       
-      // 首先尝试使用SIGTERM信号
+      if (!this.comfyPid) {
+        logger.warn('[API] 无法确定ComfyUI进程ID，将尝试通用方法停止');
+        // 使用通用方法终止
+        await this.killComfyUIGeneric();
+        
+        // 验证是否已停止
+        const stillRunning = await isComfyUIRunning();
+        if (!stillRunning) {
+          logger.info('[API] ComfyUI已成功停止');
+          this.comfyPid = null;
+          this.startTime = null;
+          ctx.body = { success: true, message: 'ComfyUI停止成功' };
+        } else {
+          logger.error('[API] 无法停止ComfyUI');
+          ctx.status = 500;
+          ctx.body = { success: false, error: '无法停止ComfyUI' };
+        }
+        return;
+      }
+      
+      // 使用确定的PID停止进程
+      logger.info(`[API] 停止ComfyUI进程，PID: ${this.comfyPid}`);
+      
+      // 在Unix系统上终止进程及其子进程
       if (process.platform === 'win32') {
-        // Windows平台使用taskkill命令强制终止进程树
-        exec(`taskkill /pid ${this.comfyProcess.pid} /T /F`, (error) => {
+        // Windows平台
+        exec(`taskkill /pid ${this.comfyPid} /T /F`, (error) => {
           if (error) {
             logger.error(`[API] 停止ComfyUI失败: ${error.message}`);
           }
         });
       } else {
-        // Unix平台终止整个进程组
+        // Unix平台
         try {
-          if (pgid !== null) {  // 添加非空检查
-            process.kill(pgid, 'SIGTERM');
-          }
+          // 先发送SIGTERM
+          process.kill(this.comfyPid, 'SIGTERM');
+          
+          // 等待一段时间，如果进程还在运行则发送SIGKILL
+          setTimeout(async () => {
+            try {
+              // 检查进程是否仍在运行
+              process.kill(this.comfyPid as number, 0);  // 信号0用于检查进程是否存在
+              logger.warn('[API] ComfyUI未能通过SIGTERM优雅退出，尝试SIGKILL');
+              process.kill(this.comfyPid as number, 'SIGKILL');
+            } catch (e) {
+              // 如果这里抛出异常，可能是因为进程已经不存在了，这是我们想要的结果
+              logger.info('[API] ComfyUI进程已经终止');
+            }
+          }, 5000);
         } catch (e) {
           const errorMessage = e instanceof Error ? e.message : String(e);
-          logger.error(`[API] SIGTERM信号发送失败: ${errorMessage}`);
+          logger.error(`[API] 发送信号失败: ${errorMessage}`);
+          // 尝试使用其他方法
+          await this.killComfyUIGeneric();
         }
       }
       
-      // 设置超时，如果进程没有在5秒内退出，则使用SIGKILL强制终止
-      const killTimeout = setTimeout(() => {
-        logger.warn('[API] ComfyUI未能在超时时间内优雅退出，强制终止');
-        if (process.platform !== 'win32' && pgid !== null) {
-          try {
-            process.kill(pgid, 'SIGKILL');
-          } catch (e) {
-            const errorMessage = e instanceof Error ? e.message : String(e);
-            logger.error(`[API] SIGKILL信号发送失败: ${errorMessage}`);
-          }
+      // 等待确认进程已终止
+      let retries = 0;
+      const maxRetries = 10;
+      while (retries < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const stillRunning = await isComfyUIRunning();
+        if (!stillRunning) {
+          logger.info('[API] ComfyUI已成功停止');
+          this.comfyPid = null;
+          this.startTime = null;
+          ctx.body = { success: true, message: 'ComfyUI停止成功' };
+          return;
         }
-      }, 5000);
+        retries++;
+      }
       
-      // 监听进程退出事件
-      this.comfyProcess.once('exit', (code, signal) => {
-        clearTimeout(killTimeout);
-        logger.info(`[API] ComfyUI进程已退出，退出码: ${code}, 信号: ${signal}`);
-        this.comfyProcess = null;
+      // 如果仍然在运行，尝试强制终止
+      logger.warn('[API] ComfyUI未能在超时时间内停止，尝试强制终止');
+      await this.killComfyUIGeneric();
+      
+      // 最后检查
+      const finalCheck = await isComfyUIRunning();
+      if (!finalCheck) {
+        logger.info('[API] ComfyUI已成功停止');
+        this.comfyPid = null;
         this.startTime = null;
-        
-        // 验证进程确实已结束
-        this.verifyProcessStopped();
-        
         ctx.body = { success: true, message: 'ComfyUI停止成功' };
-      });
+      } else {
+        logger.error('[API] 无法停止ComfyUI，即使在强制终止后');
+        ctx.status = 500;
+        ctx.body = { success: false, error: '无法停止ComfyUI' };
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`[API] 停止ComfyUI时发生错误: ${errorMessage}`);
       ctx.status = 500;
       ctx.body = { success: false, error: '停止ComfyUI时发生错误' };
     }
+  }
+  
+  // 使用通用方法终止ComfyUI
+  private async killComfyUIGeneric(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      // 尝试更通用的方法终止ComfyUI
+      const cmd = process.platform === 'win32'
+        ? 'taskkill /F /IM python.exe /T'
+        : 'pkill -9 -f "python.*comfyui"';
+        
+      exec(cmd, (error) => {
+        if (error) {
+          logger.error(`[API] 通用终止ComfyUI失败: ${error.message}`);
+        } else {
+          logger.info('[API] 通用终止命令执行成功');
+        }
+        resolve();
+      });
+    });
   }
   
   // 获取运行时间
@@ -211,42 +357,6 @@ export class ComfyUIController {
       const mins = Math.floor((diffSecs % 3600) / 60);
       return `${hours}小时${mins}分钟`;
     }
-  }
-
-  // 添加新的验证方法确保进程真正停止
-  private verifyProcessStopped(): void {
-    // 检查是否还有ComfyUI相关进程在运行
-    const cmd = process.platform === 'win32'
-      ? 'tasklist | findstr "python"'
-      : 'ps aux | grep "[p]ython.*comfyui" || true';
-      
-    exec(cmd, (error, stdout) => {
-      if (error) {
-        logger.error(`[API] 验证进程停止时出错: ${error.message}`);
-        return;
-      }
-      
-      if (stdout.trim()) {
-        logger.warn('[API] 检测到ComfyUI相关进程可能仍在运行:');
-        logger.warn(stdout);
-        logger.warn('[API] 尝试强制终止所有相关进程...');
-        
-        // 尝试更强力的终止方法
-        const killCmd = process.platform === 'win32'
-          ? 'taskkill /F /IM python.exe /T'
-          : 'pkill -9 -f "python.*comfyui"';
-          
-        exec(killCmd, (killError) => {
-          if (killError) {
-            logger.error(`[API] 强制终止进程失败: ${killError.message}`);
-          } else {
-            logger.info('[API] 已强制终止所有相关进程');
-          }
-        });
-      } else {
-        logger.info('[API] 已确认没有ComfyUI相关进程在运行');
-      }
-    });
   }
 }
 

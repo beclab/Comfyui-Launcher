@@ -2,21 +2,21 @@
  * 简单的日志记录工具
  */
 export const logger = {
-  info: (message: string): void => {
-    console.log(message);
+  info: (...args: any[]): void => {
+    console.log(...args);
   },
   
-  warn: (message: string): void => {
-    console.warn(message);
+  warn: (...args: any[]): void => {
+    console.warn(...args);
   },
   
-  error: (message: string): void => {
-    console.error(message);
+  error: (...args: any[]): void => {
+    console.error(...args);
   },
   
-  debug: (message: string): void => {
+  debug: (...args: any[]): void => {
     if (process.env.DEBUG) {
-      console.debug(message);
+      console.debug(...args);
     }
   }
 }; 
