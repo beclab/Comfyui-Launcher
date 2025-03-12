@@ -4,6 +4,12 @@
 echo "生成前端配置..."
 bash /app/docker/generate-config.sh
 
+# 确保配置文件被index.html引用
+if ! grep -q "config.js" /app/dist/spa/index.html; then
+  echo "修改index.html，添加config.js引用..."
+  sed -i 's/<head>/<head>\n    <script src="config.js"><\/script>/' /app/dist/spa/index.html
+fi
+
 # 检查dist目录 (可选，因为Dockerfile已经检查过)
 if [ ! -d "/app/dist" ] || [ -z "$(ls -A /app/dist 2>/dev/null)" ]; then
   echo "警告: 容器启动时发现dist目录不存在或为空，这表明构建阶段可能失败"

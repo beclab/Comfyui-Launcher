@@ -84,6 +84,10 @@ COPY --from=builder /app/server/dist /app/server/dist
 COPY --from=builder /app/server/package.json /app/server/
 COPY --from=builder /app/server/package-lock.json /app/server/
 
+# 复制配置脚本
+COPY --from=builder /app/docker/generate-config.sh /app/docker/
+RUN chmod +x /app/docker/generate-config.sh
+
 # 在运行环境中安装生产依赖，确保所有需要的模块都存在
 WORKDIR /app/server
 RUN npm install --production
