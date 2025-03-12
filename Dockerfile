@@ -1,26 +1,8 @@
-# 基于openSUSE Tumbleweed的前后端应用
-FROM docker.io/opensuse/tumbleweed:latest
-
-# FROM kldtks/comfyui:v0.3.22-b1
+# 第一阶段：构建
+FROM node:22 AS builder
 
 # 设置工作目录
 WORKDIR /app
-
-# 安装系统依赖
-RUN zypper --non-interactive refresh && \
-    zypper --non-interactive install \
-    nodejs \
-    npm \
-    git \
-    bash \
-    curl \
-    && zypper clean -a
-
-# 安装全局工具
-RUN npm install -g serve @quasar/cli
-
-# 设置Node环境变量
-ENV NODE_ENV=production
 
 # 复制package.json文件
 COPY package.json ./
@@ -30,15 +12,12 @@ COPY server/package.json ./server/
 RUN npm install && \
     cd server && npm install && cd ..
 
-# 复制应用代码
+# 复制所有源代码
 COPY . .
-
-# 创建日志目录并赋予权限
-RUN mkdir -p /app/logs && \
-    chmod 777 /app/logs
 
 # 创建构建脚本
 RUN echo '#!/bin/bash' > /app/build.sh && \
+    echo 'set -e  # 任何命令失败时立即退出脚本' >> /app/build.sh && \
     echo 'cd /app' >> /app/build.sh && \
     echo 'echo "构建前端应用..."' >> /app/build.sh && \
     echo 'if [ -f ./node_modules/.bin/quasar ]; then' >> /app/build.sh && \
@@ -48,22 +27,64 @@ RUN echo '#!/bin/bash' > /app/build.sh && \
     echo '  npm run build' >> /app/build.sh && \
     echo 'fi' >> /app/build.sh && \
     echo '' >> /app/build.sh && \
+    echo '# 检查前端构建结果' >> /app/build.sh && \
+    echo 'if [ ! -d "/app/dist" ] || [ -z "$(ls -A /app/dist 2>/dev/null)" ]; then' >> /app/build.sh && \
+    echo '  echo "错误: 前端构建失败 - dist目录不存在或为空"' >> /app/build.sh && \
+    echo '  exit 1' >> /app/build.sh && \
+    echo 'fi' >> /app/build.sh && \
+    echo '' >> /app/build.sh && \
     echo 'echo "构建后端应用..."' >> /app/build.sh && \
     echo 'cd server' >> /app/build.sh && \
     echo 'npm run build' >> /app/build.sh && \
+    echo '' >> /app/build.sh && \
+    echo '# 检查后端构建结果' >> /app/build.sh && \
+    echo 'if [ ! -d "dist" ] || [ -z "$(ls -A dist 2>/dev/null)" ]; then' >> /app/build.sh && \
+    echo '  echo "错误: 后端构建失败 - dist目录不存在或为空"' >> /app/build.sh && \
+    echo '  exit 1' >> /app/build.sh && \
+    echo 'fi' >> /app/build.sh && \
     echo 'cd ..' >> /app/build.sh && \
-    chmod +x /app/build.sh && \
-    cat /app/build.sh  # 显示脚本内容以便调试
+    echo 'echo "构建成功完成！"' >> /app/build.sh && \
+    chmod +x /app/build.sh
 
-# 执行构建前先检查必要目录和文件
-RUN /app/build.sh && \
-    if [ ! -d "/app/dist" ] || [ -z "$(ls -A /app/dist 2>/dev/null)" ]; then \
-      echo "警告: dist目录不存在或为空，前端构建可能失败" && \
-      mkdir -p /app/dist && \
-      echo "<html><body><h1>前端构建失败</h1><p>请检查构建日志</p></body></html>" > /app/dist/index.html; \
-    fi
+# 执行构建
+RUN /app/build.sh
 
-# 创建启动脚本
+# 第二阶段：运行
+FROM docker.io/opensuse/tumbleweed:latest
+
+# 设置工作目录
+WORKDIR /app
+
+# 安装运行时依赖
+RUN zypper --non-interactive refresh && \
+    zypper --non-interactive install \
+    nodejs \
+    npm \
+    git \
+    bash \
+    curl \
+    && zypper clean -a
+
+# 安装全局工具 - 仅保留运行时需要的工具
+RUN npm install -g serve
+
+# 设置Node环境变量
+ENV NODE_ENV=production
+
+# 创建日志目录并赋予权限
+RUN mkdir -p /app/logs && \
+    chmod 777 /app/logs
+
+# 从构建阶段复制构建产物
+COPY --from=builder /app/dist /app/dist
+COPY --from=builder /app/server/dist /app/server/dist
+
+# 复制运行所需的package.json和依赖
+COPY --from=builder /app/server/package.json /app/server/
+COPY --from=builder /app/server/package-lock.json /app/server/
+COPY --from=builder /app/server/node_modules /app/server/node_modules
+
+# 复制启动脚本
 COPY docker/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
