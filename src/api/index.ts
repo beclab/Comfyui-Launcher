@@ -40,11 +40,16 @@ const adaptResponse = async (request: superagent.Request) => {
 const api = {
   // 通用HTTP方法
   get: (url: string) => {
-    return adaptResponse(superagent.get(`${API_BASE_URL}${url}`).use(debug));
+    // 确保URL格式正确（不要包含前导斜杠），因为已经在 API_BASE_URL 中添加了
+    const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    console.log(`发送GET请求到: ${API_BASE_URL}/${cleanUrl}`);
+    return adaptResponse(superagent.get(`${API_BASE_URL}/${cleanUrl}`).use(debug));
   },
   
   post: (url: string, data?: ApiData) => {
-    const req = superagent.post(`${API_BASE_URL}${url}`).use(debug);
+    const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    console.log(`发送POST请求到: ${API_BASE_URL}/${cleanUrl}`);
+    const req = superagent.post(`${API_BASE_URL}/${cleanUrl}`).use(debug);
     if (data) {
       req.send(data);
     }

@@ -64,14 +64,10 @@ export default defineComponent({
     const fetchStatus = async () => {
       console.log('尝试获取ComfyUI状态...');
       try {
-        // 使用相对路径（配合Vite代理）
-        const response = await fetch('/api/status');
-        if (!response.ok) {
-          throw new Error(`HTTP错误! 状态码: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log('ComfyUI状态更新:', data);
-        status.value = data;
+        // 路径必须与后端路由匹配 - 这里是 '/status'，不是 '/comfyui/status'
+        const response = await api.get('status'); // 注意：可以不带前导斜杠
+        console.log('ComfyUI状态更新:', response.data);
+        status.value = response.data;
       } catch (error) {
         console.error('获取状态失败:', error);
       }
@@ -85,7 +81,7 @@ export default defineComponent({
     const startComfyUI = async () => {
       starting.value = true;
       try {
-        await api.post('/start');
+        await api.post('start'); // 匹配后端路由
         await fetchStatus();
       } catch (error) {
         console.error('启动ComfyUI失败:', error);
@@ -97,7 +93,7 @@ export default defineComponent({
     const stopComfyUI = async () => {
       stopping.value = true;
       try {
-        await api.post('/stop');
+        await api.post('stop'); // 匹配后端路由
         await fetchStatus();
       } catch (error) {
         console.error('停止ComfyUI失败:', error);
