@@ -1,5 +1,10 @@
 import superagent from 'superagent';
 
+// 定义数据对象类型，替代 any
+interface ApiData {
+  [key: string]: unknown;
+}
+
 // 从配置中获取API地址
 const getApiBaseUrl = () => {
   // 使用动态配置或回退到默认值
@@ -21,8 +26,32 @@ superagent.Request.prototype.use = function(fn) {
 // 在每个请求前添加调试
 const debug = (req: superagent.Request) => console.log(`[前端] 发送请求: ${req.method} ${req.url}`);
 
-export default {
-  // ComfyUI状态
+// 封装SuperAgent响应为类似Axios的格式
+const adaptResponse = async (request: superagent.Request) => {
+  const response = await request;
+  return {
+    data: response.body,
+    status: response.status,
+    headers: response.headers
+  };
+};
+
+// 统一API接口
+const api = {
+  // 通用HTTP方法
+  get: (url: string) => {
+    return adaptResponse(superagent.get(`${API_BASE_URL}${url}`).use(debug));
+  },
+  
+  post: (url: string, data?: ApiData) => {
+    const req = superagent.post(`${API_BASE_URL}${url}`).use(debug);
+    if (data) {
+      req.send(data);
+    }
+    return adaptResponse(req);
+  },
+  
+  // 原有API方法
   getStatus: () => 
     superagent.get(`${API_BASE_URL}/status`).use(debug),
   
@@ -67,4 +96,6 @@ export default {
   
   restartApp: () => 
     superagent.post(`${API_BASE_URL}/restart`)
-}; 
+};
+
+export default api;  // 只有一个默认导出 
