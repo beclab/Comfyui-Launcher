@@ -9,8 +9,8 @@ WORKDIR /app
 # 安装系统依赖
 RUN zypper --non-interactive refresh && \
     zypper --non-interactive install \
-    nodejs20 \
-    nodejs20-npm \
+    nodejs \
+    npm \
     git \
     bash \
     curl \
