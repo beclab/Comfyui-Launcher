@@ -17,7 +17,7 @@ RUN zypper --non-interactive refresh && \
     && zypper clean -a
 
 # 安装全局工具
-RUN npm install -g serve
+RUN npm install -g serve @quasar/cli
 
 # 设置Node环境变量
 ENV NODE_ENV=production
@@ -55,8 +55,13 @@ RUN echo '#!/bin/bash' > /app/build.sh && \
     chmod +x /app/build.sh && \
     cat /app/build.sh  # 显示脚本内容以便调试
 
-# 执行构建
-RUN /app/build.sh
+# 执行构建前先检查必要目录和文件
+RUN /app/build.sh && \
+    if [ ! -d "/app/dist" ] || [ -z "$(ls -A /app/dist 2>/dev/null)" ]; then \
+      echo "警告: dist目录不存在或为空，前端构建可能失败" && \
+      mkdir -p /app/dist && \
+      echo "<html><body><h1>前端构建失败</h1><p>请检查构建日志</p></body></html>" > /app/dist/index.html; \
+    fi
 
 # 创建启动脚本
 COPY docker/start.sh /app/start.sh
