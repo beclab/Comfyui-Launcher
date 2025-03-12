@@ -1,142 +1,120 @@
 <template>
-  <q-page class="flex flex-center column q-pa-md">
-    <div class="text-center q-mb-lg">
-      <img src="~assets/comfyui-logo.png" style="width: 150px; height: auto" alt="ComfyUI Logo">
-      <h4 class="q-mt-md q-mb-xs">ComfyUI 管理器</h4>
+  <q-page class="q-pa-md">
+    <!-- 顶部标题区域 -->
+    <div class="text-center q-mb-md">
+      <img src="~assets/comfyui-logo.png" style="width: 120px; height: auto" alt="ComfyUI Logo">
+      <h4 class="q-mt-sm q-mb-none">ComfyUI 管理器</h4>
+      <p class="text-grey-7">轻松管理您的 AI 图像生成工作流</p>
     </div>
     
-    <div class="status-indicator q-mb-lg">
-      <q-circular-progress
-        :value="100"
-        size="150px"
-        :thickness="0.2"
-        :color="comfyStatus ? 'positive' : 'negative'"
-        track-color="grey-3"
-        class="q-mb-md"
-      >
-        <div class="text-center">
-          <q-icon :name="comfyStatus ? 'check_circle' : 'cancel'" size="50px" :color="comfyStatus ? 'positive' : 'negative'" />
-        </div>
-      </q-circular-progress>
-      <div class="text-h6 text-center">
-        {{ comfyStatus ? 'ComfyUI 已启动' : 'ComfyUI 未启动' }}
-      </div>
+    <!-- 状态控制区域 -->
+    <div class="q-mb-lg">
+      <ComfyUIStatus />
     </div>
     
-    <div class="q-gutter-md">
-      <q-btn v-if="!comfyStatus" color="primary" label="启动 ComfyUI" icon="play_arrow" size="lg" @click="startComfyUI" :loading="loading" />
-      <q-btn v-else color="negative" label="停止 ComfyUI" icon="stop" size="lg" @click="stopComfyUI" :loading="loading" />
-    </div>
-    
-    <div class="q-mt-xl feature-buttons">
-      <div class="text-h6 q-mb-md text-center">快速导航</div>
-      <div class="row q-col-gutter-md justify-center">
-        <div class="col-xs-12 col-sm-6 col-md-3">
-          <q-card class="feature-card" clickable @click="$router.push('/models')">
-            <q-card-section class="text-center">
+    <!-- 快速启动区域 -->
+    <div class="dashboard-container q-mt-lg">
+      <h5 class="text-center q-mb-md">管理中心</h5>
+      
+      <div class="row q-col-gutter-md">
+        <!-- 模型管理 -->
+        <div class="col-xs-12 col-sm-6 col-md-4">
+          <q-card class="dashboard-card" clickable @click="$router.push('/models')">
+            <q-card-section class="column items-center">
               <q-icon name="storage" size="3rem" color="primary" />
               <div class="text-h6 q-mt-sm">模型管理</div>
+              <p class="text-center q-mb-none text-grey-7">下载和管理SD模型、LoRA和VAE</p>
             </q-card-section>
           </q-card>
         </div>
-        <div class="col-xs-12 col-sm-6 col-md-3">
-          <q-card class="feature-card" clickable @click="$router.push('/plugins')">
-            <q-card-section class="text-center">
-              <q-icon name="extension" size="3rem" color="primary" />
+        
+        <!-- 插件管理 -->
+        <div class="col-xs-12 col-sm-6 col-md-4">
+          <q-card class="dashboard-card" clickable @click="$router.push('/plugins')">
+            <q-card-section class="column items-center">
+              <q-icon name="extension" size="3rem" color="deep-purple-5" />
               <div class="text-h6 q-mt-sm">插件管理</div>
+              <p class="text-center q-mb-none text-grey-7">安装和管理ComfyUI扩展节点</p>
             </q-card-section>
           </q-card>
         </div>
-        <div class="col-xs-12 col-sm-6 col-md-3">
-          <q-card class="feature-card" clickable @click="$router.push('/reset')">
-            <q-card-section class="text-center">
-              <q-icon name="restore" size="3rem" color="primary" />
-              <div class="text-h6 q-mt-sm">还原初始状态</div>
+        
+        <!-- 系统管理 -->
+        <div class="col-xs-12 col-sm-6 col-md-4">
+          <q-card class="dashboard-card" clickable @click="$router.push('/reset')">
+            <q-card-section class="column items-center">
+              <q-icon name="restore" size="3rem" color="amber-8" />
+              <div class="text-h6 q-mt-sm">系统重置</div>
+              <p class="text-center q-mb-none text-grey-7">还原初始状态和清理磁盘空间</p>
             </q-card-section>
           </q-card>
         </div>
       </div>
+    </div>
+    
+    <!-- 使用指南 -->
+    <div class="q-mt-xl">
+      <q-card flat bordered>
+        <q-card-section>
+          <div class="text-h6"><q-icon name="help_outline" class="q-mr-sm" />快速指南</div>
+        </q-card-section>
+        
+        <q-separator />
+        
+        <q-card-section>
+          <div class="row q-col-gutter-md">
+            <div class="col-12 col-md-6">
+              <p class="text-body1 q-mb-sm"><strong>1. 启动 ComfyUI</strong></p>
+              <p class="q-mb-md">使用顶部的控制面板启动ComfyUI服务，等待启动完成。</p>
+              
+              <p class="text-body1 q-mb-sm"><strong>2. 管理模型</strong></p>
+              <p>从模型库中下载SD模型、LoRA和控制网络等资源。</p>
+            </div>
+            
+            <div class="col-12 col-md-6">
+              <p class="text-body1 q-mb-sm"><strong>3. 扩展功能</strong></p>
+              <p class="q-mb-md">安装插件以获取更多节点和功能，提升工作流能力。</p>
+              
+              <p class="text-body1 q-mb-sm"><strong>4. 创建图像</strong></p>
+              <p>一切准备就绪后，使用ComfyUI界面开始创建令人惊叹的AI图像。</p>
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
     </div>
   </q-page>
 </template>
 
-<script>
-import { ref } from 'vue'
-import api from '../api' // 引入 API 客户端
+<script lang="ts">
+import { defineComponent } from 'vue';
+import ComfyUIStatus from '../components/ComfyUIStatus.vue';
 
-export default {
+export default defineComponent({
   name: 'IndexPage',
-  setup() {
-    const comfyStatus = ref(false)
-    const loading = ref(false)
-    
-    // 检查ComfyUI状态
-    const checkStatus = async () => {
-      try {
-        const response = await api.getStatus()
-        comfyStatus.value = response.body.running
-        console.log('获取状态成功:', response.body)
-      } catch (error) {
-        console.error('获取状态失败:', error)
-      }
-    }
-    
-    // 启动ComfyUI
-    const startComfyUI = async () => {
-      loading.value = true
-      try {
-        const response = await api.startComfyUI()
-        if (response.body.success) {
-          comfyStatus.value = true
-          console.log('启动成功:', response.body)
-        }
-        loading.value = false
-      } catch (error) {
-        console.error('启动失败:', error)
-        loading.value = false
-      }
-    }
-    
-    // 停止ComfyUI
-    const stopComfyUI = async () => {
-      loading.value = true
-      try {
-        const response = await api.stopComfyUI()
-        if (response.body.success) {
-          comfyStatus.value = false
-          console.log('停止成功:', response.body)
-        }
-        loading.value = false
-      } catch (error) {
-        console.error('停止失败:', error)
-        loading.value = false
-      }
-    }
-    
-    // 页面加载时检查状态
-    checkStatus()
-    
-    return {
-      comfyStatus,
-      loading,
-      startComfyUI,
-      stopComfyUI
-    }
+  components: {
+    ComfyUIStatus
   }
-}
+});
 </script>
 
 <style scoped>
-.feature-card {
-  transition: transform 0.3s;
-  cursor: pointer;
+.dashboard-card {
+  transition: all 0.3s ease;
+  height: 100%;
+  border-radius: 10px;
 }
-.feature-card:hover {
+
+.dashboard-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
-.status-indicator {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+
+.dashboard-container {
+  margin-top: 30px;
+}
+
+h5 {
+  font-weight: 500;
+  color: #555;
 }
 </style>

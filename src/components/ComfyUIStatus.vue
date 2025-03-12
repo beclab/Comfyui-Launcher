@@ -59,21 +59,33 @@ export default defineComponent({
     const status = ref({ running: false, uptime: '', pid: null });
     const starting = ref(false);
     const stopping = ref(false);
-    let pollingInterval: number | null = null;
+    const isPolling = ref(true); // 标志控制轮询
     
     const fetchStatus = async () => {
+      console.log('尝试获取ComfyUI状态...');
       try {
-        const response = await api.get('/comfyui/status');
-        status.value = response.data;
+        // 使用相对路径（配合Vite代理）
+        const response = await fetch('/api/status');
+        if (!response.ok) {
+          throw new Error(`HTTP错误! 状态码: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('ComfyUI状态更新:', data);
+        status.value = data;
       } catch (error) {
-        console.error('获取ComfyUI状态失败:', error);
+        console.error('获取状态失败:', error);
+      }
+      
+      // 递归调用，实现轮询
+      if (isPolling.value) {
+        setTimeout(fetchStatus, 5000);
       }
     };
     
     const startComfyUI = async () => {
       starting.value = true;
       try {
-        await api.post('/comfyui/start');
+        await api.post('/start');
         await fetchStatus();
       } catch (error) {
         console.error('启动ComfyUI失败:', error);
@@ -85,7 +97,7 @@ export default defineComponent({
     const stopComfyUI = async () => {
       stopping.value = true;
       try {
-        await api.post('/comfyui/stop');
+        await api.post('/stop');
         await fetchStatus();
       } catch (error) {
         console.error('停止ComfyUI失败:', error);
@@ -95,18 +107,15 @@ export default defineComponent({
     };
     
     onMounted(() => {
-      // 立即获取初始状态
+      console.log('ComfyUIStatus组件已挂载，启动首次状态获取');
+      // 启动轮询
       fetchStatus();
-      
-      // 设置定期轮询 (每5秒刷新一次)
-      pollingInterval = window.setInterval(fetchStatus, 5000);
     });
     
     onUnmounted(() => {
-      // 清除轮询定时器
-      if (pollingInterval !== null) {
-        clearInterval(pollingInterval);
-      }
+      console.log('ComfyUIStatus组件卸载，停止轮询');
+      // 设置标志以停止轮询
+      isPolling.value = false;
     });
     
     return {

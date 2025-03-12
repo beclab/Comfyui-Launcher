@@ -52,6 +52,8 @@ export class ComfyUIController {
 
   // 获取ComfyUI状态
   async getStatus(ctx: Context): Promise<void> {
+    logger.info('[API] 接收到状态请求，时间:' + new Date().toISOString());
+    
     logger.info('[API] 获取ComfyUI状态请求');
     
     // 通过网络端口检查是否运行
@@ -200,110 +202,28 @@ export class ComfyUIController {
 
   // 停止ComfyUI
   async stopComfyUI(ctx: Context): Promise<void> {
+    logger.info('[API] 收到停止ComfyUI请求');
+    
     try {
-      logger.info('[API] 收到停止ComfyUI请求');
-      
-      // 首先检查ComfyUI是否在运行
+      // 首先检查是否真的在运行
       const running = await isComfyUIRunning();
       if (!running) {
-        logger.info('[API] ComfyUI未运行');
-        ctx.body = { success: true, message: 'ComfyUI未运行' };
+        logger.info('[API] ComfyUI已经停止，无需操作');
+        this.comfyPid = null;
+        this.startTime = null;
+        ctx.body = { success: true, message: 'ComfyUI已经停止' };
         return;
       }
       
       logger.info('[API] 尝试停止ComfyUI进程...');
       
-      // 使用找到的实际ComfyUI PID或通过查询获取
-      if (!this.comfyPid) {
-        await new Promise<void>((resolve) => {
-          exec("ps aux | grep '[p]ython.*comfyui' | awk '{print $2}'", (error, stdout) => {
-            if (!error && stdout.trim()) {
-              this.comfyPid = parseInt(stdout.trim(), 10);
-              logger.info(`[API] 找到ComfyUI PID: ${this.comfyPid}`);
-            }
-            resolve();
-          });
-        });
-      }
-      
-      if (!this.comfyPid) {
-        logger.warn('[API] 无法确定ComfyUI进程ID，将尝试通用方法停止');
-        // 使用通用方法终止
-        await this.killComfyUIGeneric();
-        
-        // 验证是否已停止
-        const stillRunning = await isComfyUIRunning();
-        if (!stillRunning) {
-          logger.info('[API] ComfyUI已成功停止');
-          this.comfyPid = null;
-          this.startTime = null;
-          ctx.body = { success: true, message: 'ComfyUI停止成功' };
-        } else {
-          logger.error('[API] 无法停止ComfyUI');
-          ctx.status = 500;
-          ctx.body = { success: false, error: '无法停止ComfyUI' };
-        }
-        return;
-      }
-      
-      // 使用确定的PID停止进程
-      logger.info(`[API] 停止ComfyUI进程，PID: ${this.comfyPid}`);
-      
-      // 在Unix系统上终止进程及其子进程
-      if (process.platform === 'win32') {
-        // Windows平台
-        exec(`taskkill /pid ${this.comfyPid} /T /F`, (error) => {
-          if (error) {
-            logger.error(`[API] 停止ComfyUI失败: ${error.message}`);
-          }
-        });
-      } else {
-        // Unix平台
-        try {
-          // 先发送SIGTERM
-          process.kill(this.comfyPid, 'SIGTERM');
-          
-          // 等待一段时间，如果进程还在运行则发送SIGKILL
-          setTimeout(async () => {
-            try {
-              // 检查进程是否仍在运行
-              process.kill(this.comfyPid as number, 0);  // 信号0用于检查进程是否存在
-              logger.warn('[API] ComfyUI未能通过SIGTERM优雅退出，尝试SIGKILL');
-              process.kill(this.comfyPid as number, 'SIGKILL');
-            } catch (e) {
-              // 如果这里抛出异常，可能是因为进程已经不存在了，这是我们想要的结果
-              logger.info('[API] ComfyUI进程已经终止');
-            }
-          }, 5000);
-        } catch (e) {
-          const errorMessage = e instanceof Error ? e.message : String(e);
-          logger.error(`[API] 发送信号失败: ${errorMessage}`);
-          // 尝试使用其他方法
-          await this.killComfyUIGeneric();
-        }
-      }
-      
-      // 等待确认进程已终止
-      let retries = 0;
-      const maxRetries = 10;
-      while (retries < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const stillRunning = await isComfyUIRunning();
-        if (!stillRunning) {
-          logger.info('[API] ComfyUI已成功停止');
-          this.comfyPid = null;
-          this.startTime = null;
-          ctx.body = { success: true, message: 'ComfyUI停止成功' };
-          return;
-        }
-        retries++;
-      }
-      
-      // 如果仍然在运行，尝试强制终止
-      logger.warn('[API] ComfyUI未能在超时时间内停止，尝试强制终止');
+      // 优先使用通用方法终止
       await this.killComfyUIGeneric();
       
-      // 最后检查
+      // 等待足够时间让进程完全终止
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // 最终检查
       const finalCheck = await isComfyUIRunning();
       if (!finalCheck) {
         logger.info('[API] ComfyUI已成功停止');
@@ -311,9 +231,22 @@ export class ComfyUIController {
         this.startTime = null;
         ctx.body = { success: true, message: 'ComfyUI停止成功' };
       } else {
-        logger.error('[API] 无法停止ComfyUI，即使在强制终止后');
-        ctx.status = 500;
-        ctx.body = { success: false, error: '无法停止ComfyUI' };
+        // 如果第一次尝试没有成功，再次尝试更强力的方法
+        logger.warn('[API] 首次尝试未能完全停止ComfyUI，使用强制终止');
+        await execPromise('pkill -9 -f python').catch(() => {});
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const lastCheck = await isComfyUIRunning();
+        if (!lastCheck) {
+          logger.info('[API] ComfyUI在强制终止后已停止');
+          this.comfyPid = null;
+          this.startTime = null;
+          ctx.body = { success: true, message: 'ComfyUI停止成功（强制）' };
+        } else {
+          logger.error('[API] 无法停止ComfyUI，即使在强制终止后');
+          ctx.status = 500;
+          ctx.body = { success: false, error: '无法停止ComfyUI' };
+        }
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
