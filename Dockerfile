@@ -1,7 +1,7 @@
 # 基于openSUSE Tumbleweed的前后端应用
-# FROM docker.io/opensuse/tumbleweed:latest
+FROM docker.io/opensuse/tumbleweed:latest
 
-FROM kldtks/comfyui:v0.3.22-b1
+# FROM kldtks/comfyui:v0.3.22-b1
 
 # 设置工作目录
 WORKDIR /app
@@ -17,7 +17,7 @@ RUN zypper --non-interactive refresh && \
     && zypper clean -a
 
 # 安装全局工具
-RUN npm install -g serve @quasar/cli
+RUN npm install -g serve
 
 # 设置Node环境变量
 ENV NODE_ENV=production
@@ -34,7 +34,7 @@ RUN npm install && \
 COPY . .
 
 # 构建前端和后端
-RUN npm run build && \
+RUN cd /app && npx quasar build && \
     cd server && npm run build && cd ..
 
 # 创建启动脚本
