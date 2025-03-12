@@ -88,9 +88,13 @@ COPY --from=builder /app/server/package-lock.json /app/server/
 COPY --from=builder /app/docker/generate-config.sh /app/docker/
 RUN chmod +x /app/docker/generate-config.sh
 
-# 在运行环境中安装生产依赖，确保所有需要的模块都存在
+# 设置前端目录权限，确保start.sh可以写入配置文件和修改index.html
+RUN chmod -R 777 /app/dist
+
+# 在运行环境中安装所有依赖，包括开发依赖，确保superagent可用
 WORKDIR /app/server
-RUN npm install --production
+RUN npm install && \
+    npm install superagent --save
 
 # 回到应用根目录
 WORKDIR /app
