@@ -33,6 +33,10 @@ RUN npm install && \
 # 复制应用代码
 COPY . .
 
+# 创建日志目录并赋予权限
+RUN mkdir -p /app/logs && \
+    chmod 777 /app/logs
+
 # 创建构建脚本
 RUN echo '#!/bin/bash' > /app/build.sh && \
     echo 'cd /app' >> /app/build.sh && \
