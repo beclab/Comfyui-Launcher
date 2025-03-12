@@ -34,21 +34,22 @@ RUN npm install && \
 COPY . .
 
 # 创建构建脚本
-RUN echo '#!/bin/bash\n\
-cd /app\n\
-echo "构建前端应用..."\n\
-if [ -f ./node_modules/.bin/quasar ]; then\n\
-  ./node_modules/.bin/quasar build\n\
-else\n\
-  echo "找不到本地quasar，尝试使用package.json中的build脚本"\n\
-  npm run build\n\
-fi\n\
-\n\
-echo "构建后端应用..."\n\
-cd server\n\
-npm run build\n\
-cd ..' > /app/build.sh && \
-    chmod +x /app/build.sh
+RUN echo '#!/bin/bash' > /app/build.sh && \
+    echo 'cd /app' >> /app/build.sh && \
+    echo 'echo "构建前端应用..."' >> /app/build.sh && \
+    echo 'if [ -f ./node_modules/.bin/quasar ]; then' >> /app/build.sh && \
+    echo '  ./node_modules/.bin/quasar build' >> /app/build.sh && \
+    echo 'else' >> /app/build.sh && \
+    echo '  echo "找不到本地quasar，尝试使用package.json中的build脚本"' >> /app/build.sh && \
+    echo '  npm run build' >> /app/build.sh && \
+    echo 'fi' >> /app/build.sh && \
+    echo '' >> /app/build.sh && \
+    echo 'echo "构建后端应用..."' >> /app/build.sh && \
+    echo 'cd server' >> /app/build.sh && \
+    echo 'npm run build' >> /app/build.sh && \
+    echo 'cd ..' >> /app/build.sh && \
+    chmod +x /app/build.sh && \
+    cat /app/build.sh  # 显示脚本内容以便调试
 
 # 执行构建
 RUN /app/build.sh
