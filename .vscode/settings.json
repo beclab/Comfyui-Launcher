@@ -12,5 +12,17 @@
     "typescript",
     "vue"
   ],
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "eslint.workingDirectories": [
+    { "directory": "src", "changeProcessCWD": true }
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "files.exclude": {
+    "**/node_modules": true,
+    "server/**/*.js": true
+  },
+  "typescript.validate.enable": true,
+  "typescript.disableAutomaticTypeAcquisition": false,
+  "typescript.validate.extraFileExtensions": [
+    ".vue"
+  ]
 }

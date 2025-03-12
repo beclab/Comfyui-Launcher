@@ -2,10 +2,11 @@ import Koa from 'koa';
 import Router from '@koa/router';
 import bodyParser from 'koa-bodyparser';
 import cors from '@koa/cors';
-import { ComfyUIController } from './controllers/comfyui.controller';
+import { ComfyUIController, createComfyUIProxy } from './controllers/comfyui.controller';
 import { ModelsController } from './controllers/models.controller';
 import { PluginsController } from './controllers/plugins.controller';
 import { SystemController } from './controllers/system.controller';
+import { config } from './config';
 
 const app = new Koa();
 const router = new Router();
@@ -32,10 +33,10 @@ router.post('/api/models/download-all', modelsController.downloadAllModels);
 router.get('/api/models/progress/:taskId', modelsController.getModelProgress);
 
 // 插件管理路由
-router.get('/api/plugins', pluginsController.getAllPlugins);
-router.post('/api/plugins/install', pluginsController.installPlugin);
-router.post('/api/plugins/uninstall', pluginsController.uninstallPlugin);
-router.get('/api/plugins/progress/:taskId', pluginsController.getPluginProgress);
+router.get('/api/plugins', (ctx) => pluginsController.getAllPlugins(ctx));
+router.post('/api/plugins/install', (ctx) => pluginsController.installPlugin(ctx));
+router.post('/api/plugins/uninstall', (ctx) => pluginsController.uninstallPlugin(ctx));
+router.get('/api/plugins/progress/:taskId', (ctx) => pluginsController.getPluginProgress(ctx));
 
 // 系统管理路由
 router.post('/api/reset', systemController.resetSystem);
@@ -55,4 +56,10 @@ app.listen(PORT, () => {
   console.log(`ComfyUI管理器服务器已启动，监听端口 ${PORT}`);
   console.log('==================================');
   console.log('\n');
+});
+
+// 在适当的位置添加以下代码，例如在主应用程序启动后
+const comfyUIProxyServer = createComfyUIProxy();
+comfyUIProxyServer.listen(config.comfyui.proxyPort, () => {
+  console.log(`ComfyUI代理服务器运行在端口 ${config.comfyui.proxyPort}`);
 }); 

@@ -4,12 +4,19 @@
     "baseUrl": ".",
     "esModuleInterop": true
   },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue"
+  ],
   "exclude": [
     "./dist",
     "./.quasar",
     "./node_modules",
     "./src-capacitor",
     "./src-cordova",
-    "./quasar.config.*.temporary.compiled*"
+    "./quasar.config.*.temporary.compiled*",
+    "server/**/*"
   ]
 }

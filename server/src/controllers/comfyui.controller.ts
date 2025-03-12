@@ -1,7 +1,11 @@
 import { Context } from 'koa';
 import { spawn, ChildProcess } from 'child_process';
-// import { config } from '../config';
+import { config } from '../config';
 import path from 'path';
+import * as http from 'http';
+import httpProxy from 'http-proxy';
+import * as fs from 'fs';
+import * as net from 'net';
 
 export class ComfyUIController {
   private comfyProcess: ChildProcess | null = null;
@@ -207,4 +211,129 @@ export class ComfyUIController {
       return `${hours}小时${mins}分钟`;
     }
   }
-} 
+}
+
+// 检查ComfyUI是否运行
+export const isComfyUIRunning = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    const timeout = 1000;
+    
+    socket.setTimeout(timeout);
+    socket.on('connect', () => {
+      socket.destroy();
+      resolve(true);
+    });
+    
+    socket.on('timeout', () => {
+      socket.destroy();
+      resolve(false);
+    });
+    
+    socket.on('error', () => {
+      socket.destroy();
+      resolve(false);
+    });
+    
+    socket.connect(config.comfyui.port, 'localhost');
+  });
+};
+
+// 创建未启动状态页面的HTML
+const getNotRunningHtml = () => {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>ComfyUI 未启动</title>
+    <meta charset="utf-8">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f5f5f5;
+      }
+      .container {
+        text-align: center;
+        padding: 2rem;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #e74c3c;
+      }
+      p {
+        margin: 1rem 0;
+      }
+      .retry-btn {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 1rem;
+      }
+      .retry-btn:hover {
+        background-color: #2980b9;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>ComfyUI 未启动</h1>
+      <p>ComfyUI 服务目前未运行或无法访问。</p>
+      <p>请确保 ComfyUI 服务已启动并正在监听端口 ${config.comfyui.port}。</p>
+      <button class="retry-btn" onclick="window.location.reload()">重试</button>
+    </div>
+  </body>
+  </html>
+  `;
+};
+
+// 创建代理服务器
+export const createComfyUIProxy = () => {
+  const proxy = httpProxy.createProxyServer({
+    target: `http://localhost:${config.comfyui.port}`,
+    ws: true,
+  });
+  
+  // 添加错误处理
+  proxy.on('error', (err, req, res) => {
+    console.error('代理请求出错:', err);
+    if (res && 'writeHead' in res) {
+      res.writeHead(502, { 'Content-Type': 'text/plain' });
+      res.end('代理请求出错');
+    }
+  });
+  
+  const server = http.createServer(async (req, res) => {
+    const comfyRunning = await isComfyUIRunning();
+    
+    if (comfyRunning) {
+      proxy.web(req, res);
+    } else {
+      res.writeHead(503, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(getNotRunningHtml());
+    }
+  });
+  
+  // 处理WebSocket连接
+  server.on('upgrade', async (req, socket, head) => {
+    const comfyRunning = await isComfyUIRunning();
+    
+    if (comfyRunning) {
+      proxy.ws(req, socket, head);
+    } else {
+      socket.end('HTTP/1.1 503 Service Unavailable\r\n\r\n');
+    }
+  });
+  
+  return server;
+}; 

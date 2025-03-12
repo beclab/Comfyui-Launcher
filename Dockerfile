@@ -55,27 +55,8 @@ RUN echo '#!/bin/bash' > /app/build.sh && \
 RUN /app/build.sh
 
 # 创建启动脚本
-RUN echo '#!/bin/bash\n\
-# 启动后端服务\n\
-node /app/server/dist/index.js > /app/server.log 2>&1 &\n\
-BACKEND_PID=$!\n\
-echo "后端服务已启动，PID: $BACKEND_PID"\n\
-\n\
-# 启动前端静态文件服务\n\
-serve -s /app/dist -l 8080 > /app/frontend.log 2>&1 &\n\
-FRONTEND_PID=$!\n\
-echo "前端服务已启动，PID: $FRONTEND_PID"\n\
-\n\
-# 监控日志\n\
-echo "监控日志输出（CTRL+C 退出监控但不会停止服务）:"\n\
-tail -f /app/server.log /app/frontend.log\n\
-\n\
-# 捕获SIGTERM信号\n\
-trap "kill $BACKEND_PID $FRONTEND_PID; exit" SIGTERM\n\
-\n\
-# 等待子进程\n\
-wait' > /app/start.sh && \
-    chmod +x /app/start.sh
+COPY docker/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 # 暴露前端和后端端口
 EXPOSE 8080 3000
