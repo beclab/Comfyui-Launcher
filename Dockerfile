@@ -50,7 +50,8 @@ RUN echo '#!/bin/bash' > /app/build.sh && \
 RUN /app/build.sh
 
 # 第二阶段：运行
-FROM docker.io/opensuse/tumbleweed:latest
+# FROM docker.io/opensuse/tumbleweed:latest
+FROM kldtks/comfyui:v0.3.22-b1
 
 # 设置工作目录
 WORKDIR /app
@@ -79,10 +80,16 @@ RUN mkdir -p /app/logs && \
 COPY --from=builder /app/dist /app/dist
 COPY --from=builder /app/server/dist /app/server/dist
 
-# 复制运行所需的package.json和依赖
+# 复制运行所需的所有package和依赖文件
 COPY --from=builder /app/server/package.json /app/server/
 COPY --from=builder /app/server/package-lock.json /app/server/
-COPY --from=builder /app/server/node_modules /app/server/node_modules
+
+# 在运行环境中安装生产依赖，确保所有需要的模块都存在
+WORKDIR /app/server
+RUN npm install --production
+
+# 回到应用根目录
+WORKDIR /app
 
 # 复制启动脚本
 COPY docker/start.sh /app/start.sh
