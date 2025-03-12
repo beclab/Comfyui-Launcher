@@ -17,7 +17,7 @@ RUN zypper --non-interactive refresh && \
     && zypper clean -a
 
 # 安装全局工具
-RUN npm install -g serve
+RUN npm install -g serve @quasar/cli
 
 # 设置Node环境变量
 ENV NODE_ENV=production
