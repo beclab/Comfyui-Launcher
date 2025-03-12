@@ -1,6 +1,16 @@
 import superagent from 'superagent';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+// 从配置中获取API地址
+const getApiBaseUrl = () => {
+  // 使用动态配置或回退到默认值
+  if (window.APP_CONFIG && window.APP_CONFIG.apiBaseUrl) {
+    return `${window.APP_CONFIG.apiBaseUrl}/api`;
+  }
+  // 开发环境回退
+  return 'http://localhost:3000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // 添加请求拦截器
 superagent.Request.prototype.use = function(fn) {

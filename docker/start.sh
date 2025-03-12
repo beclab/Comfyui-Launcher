@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# 生成前端配置
+echo "生成前端配置..."
+bash /app/docker/generate-config.sh
+
 # 启动后端服务
 node /app/server/dist/index.js > /app/logs/server.log 2>&1 &
 BACKEND_PID=$!
