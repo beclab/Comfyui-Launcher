@@ -44,7 +44,10 @@
         <!-- 下载进度展示面板 -->
         <div v-if="downloadTaskId" class="download-progress-panel">
           <div class="progress-header">
-            <h3>{{ currentModel ? currentModel.name : '正在下载模型' }}</h3>
+            <span class="model-count-indicator">
+              模型 {{ downloadProgress.currentModelIndex + 1 }}/{{ essentialModels?.length || 0 }}
+            </span>
+            <span class="model-name">{{ currentModel ? currentModel.name : '加载中...' }}</span>
             <q-btn flat type="negative" label="取消下载" @click="cancelDownload" />
           </div>
           
@@ -66,7 +69,7 @@
             
             <div class="progress-stats">
               <span>总体进度: {{ downloadProgress.overallProgress.toFixed(1) }}%</span>
-              <span>已完成: {{ downloadProgress.currentModelIndex + 1 }}/{{ essentialModels.length }}</span>
+              <span>已完成: {{ downloadProgress.currentModelIndex + 1 }}/{{ essentialModels?.length || 0 }}</span>
             </div>
             
             <div class="download-stats">
@@ -397,7 +400,7 @@ export default defineComponent({
     const selectedModel = ref<Model | null>(null);
     
     // 下载源选项
-    const downloadSource = ref('mirror');
+    const downloadSource = ref('HuggingFace中国镜像站');
     const downloadSourceOptions = [
       { label: 'HuggingFace中国镜像站', value: 'mirror' },
       { label: 'HuggingFace官方站点', value: 'hf' }
@@ -427,52 +430,22 @@ export default defineComponent({
     // 明确声明为DownloadLog数组
     const downloadLogs = ref<Array<DownloadLog>>([]);
     
-    // 必要模型列表
-    const essentialModels: EssentialModel[] = [
-      {
-        id: 'flux1-schnell-fp8',
-        name: 'Flux1 Schnell FP8 (大模型Checkpoint)',
-        type: 'checkpoint',
-        essential: true,
-        url: {
-          mirror: 'https://hf-mirror.com/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors',
-          hf: 'https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors'
-        },
-        dir: 'checkpoints',
-        out: 'flux1-schnell-fp8.safetensors',
-        description: '适用于多种图像生成任务的基础SD模型',
-        size: '3.87 GB'
-      },
-      {
-        id: 'vae-ft-mse-original',
-        name: 'VAE-FT-MSE (变分自编码器)',
-        type: 'vae',
-        essential: true,
-        url: {
-          mirror: 'https://hf-mirror.com/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors',
-          hf: 'https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors'
-        },
-        dir: 'vae',
-        out: 'vae-ft-mse-840000-ema-pruned.safetensors',
-        description: '用于图像解码的标准VAE模型',
-        size: '335 MB'
-      },
-      {
-        id: 'taesd_decoder',
-        name: 'TAESD 解码器 (快速预览)',
-        type: 'vae_approx',
-        essential: true,
-        url: {
-          mirror: 'https://ghp.ci/https://raw.githubusercontent.com/madebyollin/taesd/main/taesd_decoder.pth',
-          hf: 'https://raw.githubusercontent.com/madebyollin/taesd/main/taesd_decoder.pth'
-        },
-        dir: 'vae_approx',
-        out: 'taesd_decoder.pth',
-        description: '用于实时预览生成结果的轻量模型',
-        size: '18 MB'
-      },
-      // ... 添加其他必要模型 ...
-    ];
+    // 声明必要模型列表
+    const essentialModels = ref<EssentialModel[]>([]);
+    
+    // 获取必要模型列表
+    const fetchEssentialModels = async () => {
+      try {
+        const response = await api.getEssentialModels();
+        if (response && response.body && response.body.models) {
+          essentialModels.value = response.body.models;
+          addLog('信息', `已加载${essentialModels.value.length}个必要模型信息`);
+        }
+      } catch (error) {
+        console.error('获取必要模型列表失败:', error);
+        addLog('错误', '获取必要模型列表失败');
+      }
+    };
     
     // 使用正确类型定义表格列
     const modelColumns = [
@@ -494,27 +467,36 @@ export default defineComponent({
       isDownloading.value = true;
       
       try {
-        // 使用正确的API调用方法，并使用.body而不是.data访问响应数据
-        const response = await api.downloadEssentialModels();
-        
-        // 从body中提取taskId
-        downloadTaskId.value = response?.body?.taskId || null;
-        
-        // 检查是否有任务ID
-        if (!downloadTaskId.value) {
-          throw new Error('服务器未返回有效的任务ID');
+        // 先尝试获取模型列表
+        if (essentialModels.value.length === 0) {
+          try {
+            await fetchEssentialModels();
+          } catch (err) {
+            console.error('获取模型列表失败，使用默认列表', err);
+            // 失败后继续，不终止下载流程
+          }
         }
         
-        // 添加日志
-        addLog('开始', '开始下载必要模型');
+        // 使用正确的下载源发起请求
+        const source = downloadSource.value === 'HuggingFace中国镜像站' ? 'mirror' : 'hf';
+        const response = await api.downloadEssentialModels(source);
         
-        // 开始轮询进度
-        pollDownloadProgress();
+        // 从响应中提取任务ID
+        if (response?.body?.taskId) {
+          downloadTaskId.value = response.body.taskId;
+          addLog('开始', '开始下载必要模型');
+          // 开始轮询进度
+          pollDownloadProgress();
+        } else {
+          throw new Error('服务器未返回有效的任务ID');
+        }
       } catch (error) {
         console.error('下载请求失败:', error);
         addLog('错误', `下载请求失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      } finally {
         essentialLoading.value = false;
-        isDownloading.value = false;
+        // 不在这里将isDownloading设为false，因为下载可能是异步长期运行的
+        // 在下载完成或失败时再设置
       }
     };
     
@@ -712,7 +694,9 @@ export default defineComponent({
       }
     };
     
+    // 在组件加载时获取模型列表
     onMounted(() => {
+      fetchEssentialModels();
       refreshModels();
     });
     

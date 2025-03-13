@@ -939,4 +939,11 @@ export class ModelsController {
     
     throw new Error('下载失败，达到最大重试次数');
   }
+
+  // 添加一个新的API端点获取必要模型列表
+  async getEssentialModels(ctx: Context): Promise<void> {
+    ctx.body = {
+      models: essentialModels
+    };
+  }
 } 

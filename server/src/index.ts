@@ -34,6 +34,9 @@ router.get('/api/models/progress/:taskId', modelsController.getModelProgress.bin
 router.post('/api/models/cancel-download', modelsController.cancelDownload.bind(modelsController));
 router.post('/api/models/download-essential', modelsController.downloadEssentialModels.bind(modelsController));
 
+// 添加新的API路由
+router.get('/api/models/essential', modelsController.getEssentialModels.bind(modelsController));
+
 // 插件管理路由
 router.get('/api/plugins', (ctx) => pluginsController.getAllPlugins(ctx));
 router.post('/api/plugins/install', (ctx) => pluginsController.installPlugin(ctx));

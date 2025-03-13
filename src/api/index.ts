@@ -110,7 +110,11 @@ const api = {
     superagent.post(`${API_BASE_URL}/models/download-essential`).send({ source }),
   
   cancelDownload: (taskId: string) => 
-    superagent.post(`${API_BASE_URL}/models/cancel-download`).send({ taskId })
+    superagent.post(`${API_BASE_URL}/models/cancel-download`).send({ taskId }),
+
+  // 添加获取必要模型列表的API
+  getEssentialModels: () => 
+    superagent.get(`${API_BASE_URL}/models/essential`),
 };
 
 export default api;  // 只有一个默认导出 
