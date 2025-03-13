@@ -1,233 +1,856 @@
 <template>
   <q-page padding>
-    <h4 class="text-center q-mb-lg">模型管理</h4>
+    <div class="text-h5 q-mb-md text-primary">模型管理中心</div>
     
-    <div class="row q-col-gutter-md">
-      <!-- 下载所有模型区域 -->
-      <div class="col-xs-12 col-md-6">
-        <q-card class="full-height">
-          <q-card-section>
-            <div class="text-h6">下载所有模型</div>
-            <div class="text-subtitle2 q-mt-sm">一键下载所有必要的模型</div>
-          </q-card-section>
-          
-          <q-card-section>
-            <q-btn 
-              color="primary" 
-              label="下载所有模型" 
-              :loading="downloadingAll"
-              @click="downloadAllModels"
-              class="full-width q-mb-md"
-            />
-            
-            <div v-if="downloadingAll">
-              <q-linear-progress :value="allProgress / 100" color="primary" class="q-mb-xs" />
-              <div class="row justify-between q-mb-md">
-                <div>{{ allProgress }}%</div>
-                <div>剩余时间: {{ allRemainingTime }}</div>
-              </div>
-              <div class="row justify-between text-caption">
-                <div>下载速度: {{ allDownloadSpeed }}</div>
-                <div>已下载: {{ allDownloadedSize }}</div>
-              </div>
-            </div>
-          </q-card-section>
-        </q-card>
-      </div>
-      
-      <!-- 单独下载模型区域 -->
-      <div class="col-xs-12 col-md-6">
-        <q-card class="full-height">
-          <q-card-section>
-            <div class="text-h6">单独下载模型</div>
-            <div class="text-subtitle2 q-mt-sm">选择并下载单个模型</div>
-          </q-card-section>
-          
-          <q-card-section>
-            <q-select
-              v-model="selectedModel"
-              :options="modelOptions"
-              label="选择模型"
-              class="q-mb-md"
-            />
-            
-            <q-btn 
-              color="primary" 
-              label="下载选中模型" 
-              :loading="downloadingSingle"
-              @click="downloadSingleModel"
-              :disable="!selectedModel"
-              class="full-width q-mb-md"
-            />
-            
-            <div v-if="downloadingSingle">
-              <q-linear-progress :value="singleProgress / 100" color="primary" class="q-mb-xs" />
-              <div class="row justify-between q-mb-md">
-                <div>{{ singleProgress }}%</div>
-                <div>剩余时间: {{ singleRemainingTime }}</div>
-              </div>
-              <div class="row justify-between text-caption">
-                <div>下载速度: {{ singleDownloadSpeed }}</div>
-                <div>已下载: {{ singleDownloadedSize }}</div>
-              </div>
-            </div>
-          </q-card-section>
-        </q-card>
-      </div>
-    </div>
-    
-    <!-- 已下载模型列表 -->
-    <q-card class="q-mt-lg">
-      <q-card-section>
-        <div class="text-h6">已下载模型</div>
+    <!-- 1. 基础模型安装区域 -->
+    <q-card class="q-mb-lg essential-models">
+      <q-card-section class="bg-primary text-white">
+        <div class="text-h6">
+          <q-icon name="verified" class="q-mr-sm" />
+          必要基础模型
+        </div>
+        <div class="text-caption">这些模型对于ComfyUI的正常运行是必需的</div>
       </q-card-section>
       
       <q-separator />
       
       <q-card-section>
-        <q-list separator>
-          <q-item v-for="model in downloadedModels" :key="model.id">
-            <q-item-section>
-              <q-item-label>{{ model.name }}</q-item-label>
-              <q-item-label caption>大小: {{ model.size }}</q-item-label>
-            </q-item-section>
-            <q-item-section side>
-              <q-badge color="positive">已下载</q-badge>
-            </q-item-section>
-          </q-item>
+        <div class="row items-center q-mb-md">
+          <div class="col-grow">
+            <div class="text-subtitle1">基础模型包</div>
+            <div class="text-caption">包含基本的SD模型、VAE和ControlNet模型</div>
+          </div>
+          <div class="col-auto">
+            <q-select
+              v-model="downloadSource"
+              :options="downloadSourceOptions"
+              label="下载源"
+              dense
+              outlined
+              style="min-width: 180px"
+              class="q-mr-md"
+            />
+            <q-btn 
+              color="primary" 
+              icon="download" 
+              label="安装基础模型" 
+              @click="downloadEssentialModels"
+              :loading="essentialLoading"
+              :disable="isDownloading"
+            />
+          </div>
+        </div>
+        
+        <!-- 下载进度展示面板 -->
+        <div v-if="downloadTaskId" class="download-progress-panel">
+          <div class="progress-header">
+            <h3>{{ currentModel ? currentModel.name : '正在下载模型' }}</h3>
+            <q-btn flat type="negative" label="取消下载" @click="cancelDownload" />
+          </div>
           
-          <q-item v-if="downloadedModels.length === 0">
-            <q-item-section>
-              <q-item-label class="text-center">暂无已下载模型</q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
+          <div class="progress-details">
+            <q-linear-progress
+              :value="downloadProgress.currentModelProgress / 100"
+              size="20px"
+              color="primary"
+            >
+              <div class="absolute-full flex flex-center">
+                <q-badge color="white" text-color="primary" :label="`${formatPercentage(downloadProgress.currentModelProgress)}%`" />
+              </div>
+            </q-linear-progress>
+            
+            <div v-if="currentModel" class="model-info">
+              <span>当前模型: {{ currentModel.name }}</span>
+              <span>类型: {{ getModelTypeName(currentModel.type) }}</span>
+            </div>
+            
+            <div class="progress-stats">
+              <span>总体进度: {{ downloadProgress.overallProgress.toFixed(1) }}%</span>
+              <span>已完成: {{ downloadProgress.currentModelIndex + 1 }}/{{ essentialModels.length }}</span>
+            </div>
+            
+            <div class="download-stats">
+              <div class="stat-item">
+                <q-icon name="save" size="sm" />
+                <span>文件大小: {{ formatFileSize(downloadProgress.totalBytes) }}</span>
+              </div>
+              <div class="stat-item">
+                <q-icon name="cloud_download" size="sm" />
+                <span>已下载: {{ formatFileSize(downloadProgress.downloadedBytes) }}</span>
+              </div>
+              <div class="stat-item">
+                <q-icon name="speed" size="sm" />
+                <span>下载速度: {{ formatSpeed(downloadProgress.speed) }}</span>
+              </div>
+              <div class="stat-item">
+                <q-icon name="timer" size="sm" />
+                <span>预计剩余: {{ formatEstimatedTime(
+                  downloadProgress.totalBytes,
+                  downloadProgress.downloadedBytes, 
+                  downloadProgress.speed
+                ) }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 下载历史 -->
+          <div class="download-history">
+            <h4>下载历史</h4>
+            <div v-for="(log, index) in downloadLogs" :key="index" class="log-item">
+              <q-badge
+                :color="getLogBadgeColor(log.status)"
+                :label="log.status"
+              />
+              <span>{{ log.message }}</span>
+              <span class="log-time">{{ log.time }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <q-banner v-if="essentialInstalled" class="bg-positive text-white">
+          <template v-slot:avatar>
+            <q-icon name="check_circle" />
+          </template>
+          基础模型已全部安装完成，您可以开始使用ComfyUI了。
+        </q-banner>
       </q-card-section>
     </q-card>
+    
+    <!-- 2. 可选模型库 -->
+    <q-card class="q-mb-lg">
+      <q-card-section class="bg-secondary text-white">
+        <div class="text-h6">
+          <q-icon name="collections" class="q-mr-sm" />
+          可选模型库
+        </div>
+        <div class="text-caption">按需下载各类模型增强您的AI创作能力</div>
+      </q-card-section>
+      
+      <q-tabs
+        v-model="activeTab"
+        dense
+        class="text-grey-7"
+        active-color="secondary"
+        indicator-color="secondary"
+        align="justify"
+      >
+        <q-tab name="sd" label="SD模型" icon="image" />
+        <q-tab name="lora" label="LoRA" icon="tune" />
+        <q-tab name="controlnet" label="ControlNet" icon="explore" />
+        <q-tab name="vae" label="VAE" icon="auto_fix_high" />
+        <q-tab name="upscaler" label="超分辨率" icon="hd" />
+      </q-tabs>
+      
+      <q-separator />
+      
+      <q-tab-panels v-model="activeTab" animated>
+        <!-- SD模型面板 -->
+        <q-tab-panel name="sd">
+          <div class="text-subtitle1 q-mb-md">Stable Diffusion 模型</div>
+          
+          <q-list bordered separator>
+            <q-item v-for="model in sdModels" :key="model.id" class="q-py-md">
+              <q-item-section>
+                <q-item-label>{{ model.name }}</q-item-label>
+                <q-item-label caption>{{ model.description }}</q-item-label>
+                <q-item-label caption>大小: {{ model.size }}</q-item-label>
+              </q-item-section>
+              
+              <q-item-section side>
+                <q-btn 
+                  :color="model.installed ? 'positive' : 'primary'" 
+                  :icon="model.installed ? 'check' : 'download'" 
+                  :label="model.installed ? '已安装' : '下载'"
+                  @click="downloadModel(model.id)"
+                  :disable="model.installed"
+                  :loading="model.downloading"
+                />
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-tab-panel>
+        
+        <!-- 其他标签页按类似结构实现 -->
+        <q-tab-panel name="lora">
+          <div class="text-subtitle1 q-mb-md">LoRA 微调模型</div>
+          <!-- LoRA 模型列表 -->
+        </q-tab-panel>
+        
+        <q-tab-panel name="controlnet">
+          <div class="text-subtitle1 q-mb-md">ControlNet 控制模型</div>
+          <!-- ControlNet 模型列表 -->
+        </q-tab-panel>
+        
+        <q-tab-panel name="vae">
+          <div class="text-subtitle1 q-mb-md">VAE 编解码器</div>
+          <!-- VAE 模型列表 -->
+        </q-tab-panel>
+        
+        <q-tab-panel name="upscaler">
+          <div class="text-subtitle1 q-mb-md">超分辨率模型</div>
+          <!-- 超分辨率模型列表 -->
+        </q-tab-panel>
+      </q-tab-panels>
+    </q-card>
+    
+    <!-- 3. 已安装模型管理 -->
+    <q-card>
+      <q-card-section class="bg-dark text-white">
+        <div class="text-h6">
+          <q-icon name="folder" class="q-mr-sm" />
+          已安装模型管理
+        </div>
+        <div class="text-caption">查看和管理您已下载的模型</div>
+      </q-card-section>
+      
+      <q-separator />
+      
+      <q-card-section>
+        <div class="row items-center q-mb-md">
+          <div class="col">
+            <div class="text-subtitle1">已安装模型总数: {{ installedModelsCount }}</div>
+            <div class="text-caption">占用存储空间: {{ totalStorageUsed }}</div>
+          </div>
+          <div class="col-auto">
+            <q-btn color="secondary" icon="refresh" label="刷新列表" @click="refreshModels" />
+          </div>
+        </div>
+        
+        <q-table
+          :rows="installedModels"
+          :columns="modelColumns"
+          row-key="id"
+          :pagination="{ rowsPerPage: 10 }"
+          class="installed-models-table"
+        >
+          <template v-slot:body-cell-actions="props">
+            <q-td :props="props">
+              <q-btn size="sm" flat round color="red" icon="delete" @click="confirmDelete(props.row)" />
+              <q-btn size="sm" flat round color="info" icon="info" @click="showModelInfo(props.row)" />
+            </q-td>
+          </template>
+        </q-table>
+      </q-card-section>
+    </q-card>
+    
+    <!-- 4. 确认对话框 -->
+    <q-dialog v-model="deleteConfirmDialog">
+      <q-card>
+        <q-card-section class="row items-center">
+          <q-avatar icon="warning" color="negative" text-color="white" />
+          <span class="q-ml-sm">确认删除模型</span>
+        </q-card-section>
+        
+        <q-card-section>
+          您确定要删除模型 <strong>{{ selectedModel?.name }}</strong> 吗？此操作不可撤销。
+        </q-card-section>
+        
+        <q-card-actions align="right">
+          <q-btn flat label="取消" color="primary" v-close-popup />
+          <q-btn flat label="删除" color="negative" @click="deleteModel" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+    
+    <!-- 5. 模型详情对话框 -->
+    <q-dialog v-model="modelInfoDialog">
+      <q-card style="min-width: 350px">
+        <q-card-section>
+          <div class="text-h6">模型详情</div>
+        </q-card-section>
+        
+        <q-card-section v-if="selectedModel">
+          <q-list>
+            <q-item>
+              <q-item-section>
+                <q-item-label overline>名称</q-item-label>
+                <q-item-label>{{ selectedModel.name }}</q-item-label>
+              </q-item-section>
+            </q-item>
+            
+            <q-item>
+              <q-item-section>
+                <q-item-label overline>类型</q-item-label>
+                <q-item-label>{{ selectedModel.type }}</q-item-label>
+              </q-item-section>
+            </q-item>
+            
+            <q-item>
+              <q-item-section>
+                <q-item-label overline>大小</q-item-label>
+                <q-item-label>{{ selectedModel.size }}</q-item-label>
+              </q-item-section>
+            </q-item>
+            
+            <q-item>
+              <q-item-section>
+                <q-item-label overline>安装日期</q-item-label>
+                <q-item-label>{{ selectedModel.installedDate }}</q-item-label>
+              </q-item-section>
+            </q-item>
+            
+            <q-item>
+              <q-item-section>
+                <q-item-label overline>路径</q-item-label>
+                <q-item-label>{{ selectedModel.path }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+        
+        <q-card-actions align="right">
+          <q-btn flat label="关闭" color="primary" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
-<script>
-import { ref } from 'vue'
+<script lang="ts">
+import { defineComponent, ref, onMounted, computed } from 'vue';
+import api from '../api';
 
-export default {
+// 必要模型定义接口
+interface EssentialModel {
+  id: string;
+  name: string;
+  type: string;
+  url: {
+    mirror: string;
+    hf: string;
+  };
+  dir: string;
+  out: string;
+  description: string;
+  size?: string;
+  essential?: boolean;
+}
+
+// 使用 Quasar QTable 的列类型定义
+interface TableColumn<T = Model> {
+  name: string;
+  label: string;
+  field: string | ((row: T) => unknown);
+  required?: boolean;
+  align?: 'left' | 'right' | 'center';
+  sortable?: boolean;
+  sort?: (a: unknown, b: unknown, rowA: T, rowB: T) => number;
+  sortOrder?: 'ad' | 'da';
+  format?: (val: unknown, row: T) => unknown;
+  style?: string | ((row: T) => string);
+  classes?: string | ((row: T) => string);
+  headerStyle?: string;
+  headerClasses?: string;
+}
+
+// 定义模型接口
+interface Model {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  size: string;
+  path?: string;
+  installed: boolean;
+  downloading?: boolean;
+  installedDate?: string;
+  essential?: boolean;
+}
+
+// 下载日志类型
+interface DownloadLog {
+  status: string;
+  message: string;
+  time: string;
+}
+
+// 下载进度接口
+interface DownloadProgress {
+  overallProgress: number;
+  currentModelIndex: number;
+  currentModelProgress: number;
+  currentModel: EssentialModel | null;
+  completed: boolean;
+  error: string | null;
+  totalBytes: number;
+  downloadedBytes: number;
+  speed: number;
+}
+
+export default defineComponent({
   name: 'ModelsPage',
   setup() {
-    const downloadingAll = ref(false)
-    const downloadingSingle = ref(false)
-    const allProgress = ref(0)
-    const singleProgress = ref(0)
-    const allRemainingTime = ref('计算中...')
-    const singleRemainingTime = ref('计算中...')
-    const allDownloadSpeed = ref('0 KB/s')
-    const singleDownloadSpeed = ref('0 KB/s')
-    const allDownloadedSize = ref('0 MB / 0 MB')
-    const singleDownloadedSize = ref('0 MB / 0 MB')
+    // 状态变量
+    const essentialLoading = ref(false);
+    const essentialProgress = ref(0);
+    const essentialInstalled = ref(false);
     
-    const selectedModel = ref(null)
-    const modelOptions = ref([
-      { label: 'SD 1.5 基础模型', value: 'sd_1.5' },
-      { label: 'SD 2.1 基础模型', value: 'sd_2.1' },
-      { label: 'SDXL 基础模型', value: 'sdxl' },
-      { label: 'ControlNet', value: 'controlnet' },
-      { label: 'LoRA 模型集合', value: 'lora' },
-    ])
+    const activeTab = ref('sd');
+    const sdModels = ref<Model[]>([]); 
     
-    const downloadedModels = ref([
-      // 模拟数据
-      // { id: 1, name: 'SD 1.5 基础模型', size: '4.2 GB' }
-    ])
+    const installedModels = ref<Model[]>([]);
+    const installedModelsCount = ref(0);
+    const totalStorageUsed = ref('0 MB');
     
-    // 下载所有模型
-    const downloadAllModels = () => {
-      downloadingAll.value = true
-      allProgress.value = 0
+    const deleteConfirmDialog = ref(false);
+    const modelInfoDialog = ref(false);
+    const selectedModel = ref<Model | null>(null);
+    
+    // 下载源选项
+    const downloadSource = ref('mirror');
+    const downloadSourceOptions = [
+      { label: 'HuggingFace中国镜像站', value: 'mirror' },
+      { label: 'HuggingFace官方站点', value: 'hf' }
+    ];
+    
+    // 下载状态
+    const isDownloading = ref(false);
+    const downloadTaskId = ref<string | null>(null);
+    const currentModelIndex = ref(-1);
+    const currentModelProgress = ref(0);
+    const overallProgress = ref(0);
+    const currentDownloadingModel = ref<EssentialModel | null>(null);
+    
+    // 新增变量 - 显式声明类型
+    const downloadProgress = ref<DownloadProgress>({
+      overallProgress: 0,
+      currentModelIndex: 0,
+      currentModelProgress: 0,
+      currentModel: null,
+      completed: false,
+      error: null,
+      totalBytes: 0,
+      downloadedBytes: 0,
+      speed: 0
+    });
+    
+    // 明确声明为DownloadLog数组
+    const downloadLogs = ref<Array<DownloadLog>>([]);
+    
+    // 必要模型列表
+    const essentialModels: EssentialModel[] = [
+      {
+        id: 'flux1-schnell-fp8',
+        name: 'Flux1 Schnell FP8 (大模型Checkpoint)',
+        type: 'checkpoint',
+        essential: true,
+        url: {
+          mirror: 'https://hf-mirror.com/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors',
+          hf: 'https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors'
+        },
+        dir: 'checkpoints',
+        out: 'flux1-schnell-fp8.safetensors',
+        description: '适用于多种图像生成任务的基础SD模型',
+        size: '3.87 GB'
+      },
+      {
+        id: 'vae-ft-mse-original',
+        name: 'VAE-FT-MSE (变分自编码器)',
+        type: 'vae',
+        essential: true,
+        url: {
+          mirror: 'https://hf-mirror.com/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors',
+          hf: 'https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors'
+        },
+        dir: 'vae',
+        out: 'vae-ft-mse-840000-ema-pruned.safetensors',
+        description: '用于图像解码的标准VAE模型',
+        size: '335 MB'
+      },
+      {
+        id: 'taesd_decoder',
+        name: 'TAESD 解码器 (快速预览)',
+        type: 'vae_approx',
+        essential: true,
+        url: {
+          mirror: 'https://ghp.ci/https://raw.githubusercontent.com/madebyollin/taesd/main/taesd_decoder.pth',
+          hf: 'https://raw.githubusercontent.com/madebyollin/taesd/main/taesd_decoder.pth'
+        },
+        dir: 'vae_approx',
+        out: 'taesd_decoder.pth',
+        description: '用于实时预览生成结果的轻量模型',
+        size: '18 MB'
+      },
+      // ... 添加其他必要模型 ...
+    ];
+    
+    // 使用正确类型定义表格列
+    const modelColumns = [
+      { name: 'name', label: '名称', field: 'name', sortable: true },
+      { name: 'type', label: '类型', field: 'type', sortable: true },
+      { name: 'size', label: '大小', field: 'size', sortable: true },
+      { name: 'installedDate', label: '安装日期', field: 'installedDate', sortable: true },
+      { name: 'actions', label: '操作', field: 'actions', align: 'right' as const }
+    ] as TableColumn<Model>[];
+    
+    // 计算属性 - 当前正在下载的模型
+    const currentModel = computed<EssentialModel | null>(() => downloadProgress.value.currentModel);
+    
+    // 下载所有必要模型
+    const downloadEssentialModels = async () => {
+      if (isDownloading.value) return;
       
-      // 模拟下载进度
-      const interval = setInterval(() => {
-        allProgress.value += 1
-        updateDownloadStats('all')
+      essentialLoading.value = true;
+      isDownloading.value = true;
+      
+      try {
+        // 使用正确的API调用方法，并使用.body而不是.data访问响应数据
+        const response = await api.downloadEssentialModels();
         
-        if (allProgress.value >= 100) {
-          clearInterval(interval)
-          downloadingAll.value = false
-          // 模拟添加下载完成的模型
-          modelOptions.value.forEach(model => {
-            if (!downloadedModels.value.some(m => m.value === model.value)) {
-              downloadedModels.value.push({
-                id: Date.now() + Math.random(),
-                name: model.label,
-                size: `${(Math.random() * 5 + 1).toFixed(1)} GB`
-              })
-            }
-          })
+        // 从body中提取taskId
+        downloadTaskId.value = response?.body?.taskId || null;
+        
+        // 检查是否有任务ID
+        if (!downloadTaskId.value) {
+          throw new Error('服务器未返回有效的任务ID');
         }
-      }, 100)
-    }
+        
+        // 添加日志
+        addLog('开始', '开始下载必要模型');
+        
+        // 开始轮询进度
+        pollDownloadProgress();
+      } catch (error) {
+        console.error('下载请求失败:', error);
+        addLog('错误', `下载请求失败: ${error instanceof Error ? error.message : '未知错误'}`);
+        essentialLoading.value = false;
+        isDownloading.value = false;
+      }
+    };
+    
+    // 轮询下载进度
+    const pollDownloadProgress = async () => {
+      if (!downloadTaskId.value) return;
+      
+      const interval = setInterval(async () => {
+        try {
+          const taskId = downloadTaskId.value!;
+          const response = await api.getModelProgress(taskId);
+          
+          if (!response || !response.body) {
+            console.error('获取进度失败: 没有有效响应');
+            return;
+          }
+          
+          const responseData = response.body;
+          
+          // 确保数据格式正确并包含新字段
+          const newProgress = {
+            overallProgress: responseData.progress || 0,
+            currentModelIndex: responseData.currentIndex || 0,
+            currentModelProgress: responseData.currentProgress || 0,
+            currentModel: responseData.currentModel || null,
+            completed: responseData.completed || false,
+            error: responseData.error || null,
+            totalBytes: responseData.totalBytes || 0,
+            downloadedBytes: responseData.downloadedBytes || 0,
+            speed: responseData.speed || 0
+          } as DownloadProgress;
+          
+          // 检查当前模型是否发生变化
+          if (newProgress.currentModel && 
+              (!downloadProgress.value.currentModel || 
+               newProgress.currentModel.id !== downloadProgress.value.currentModel?.id)) {
+            addLog('进行中', `开始下载: ${newProgress.currentModel.name}`);
+          }
+          
+          // 使用类型断言确保类型安全
+          downloadProgress.value = { ...newProgress } as DownloadProgress;
+          
+          // 如果下载完成或出错，停止轮询
+          if (newProgress.completed) {
+            clearInterval(interval);
+            
+            if (newProgress.error) {
+              addLog('错误', `下载出错: ${newProgress.error}`);
+            } else {
+              addLog('完成', '所有模型下载完成!');
+              essentialInstalled.value = true;
+            }
+            
+            isDownloading.value = false;
+            essentialLoading.value = false;
+            downloadTaskId.value = null;
+          }
+        } catch (error) {
+          console.error('获取下载进度失败:', error);
+          addLog('错误', `获取进度失败: ${error instanceof Error ? error.message : '未知错误'}`);
+        }
+      }, 1000); // 更新频率提高到每秒一次以获得更流畅的速度显示
+    };
+    
+    // 取消下载
+    const cancelDownload = async () => {
+      if (!downloadTaskId.value) return;
+      
+      try {
+        await api.cancelDownload(downloadTaskId.value);
+        addLog('取消', '下载任务已取消');
+        isDownloading.value = false;
+        essentialLoading.value = false;
+        // 不要立即清除任务ID，让用户能看到最终状态
+        setTimeout(() => {
+          downloadTaskId.value = null;
+        }, 3000);
+      } catch (error) {
+        console.error('取消下载失败:', error);
+        addLog('错误', `取消下载失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      }
+    };
+    
+    // 添加日志 - 修复类型错误
+    const addLog = (status: string, message: string) => {
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+      
+      // 使用spread操作符创建新数组
+      const newLog: DownloadLog = {
+        status,
+        message,
+        time: timeStr
+      };
+      
+      downloadLogs.value = [newLog, ...downloadLogs.value];
+      
+      // 保留最新的20条日志
+      if (downloadLogs.value.length > 20) {
+        downloadLogs.value = downloadLogs.value.slice(0, 20);
+      }
+    };
+    
+    // 格式化百分比
+    const formatPercentage = (percentage: number) => {
+      return percentage.toFixed(0);
+    };
+    
+    // 获取日志徽章颜色
+    const getLogBadgeColor = (status: string): string => {
+      switch (status) {
+        case '完成': return 'positive';
+        case '错误': return 'negative';
+        case '取消': return 'warning';
+        case '开始': return 'primary';
+        default: return 'info';
+      }
+    };
+    
+    // 获取模型类型名称
+    const getModelTypeName = (type: string): string => {
+      const typeMap: Record<string, string> = {
+        'checkpoint': '模型底座',
+        'vae': 'VAE模型',
+        'vae_approx': '预览解码器',
+        'upscaler': '放大模型',
+        'embedding': '提示词嵌入',
+        'detector': '检测器',
+        'segmentation': '分割模型',
+        'facerestore': '人脸修复',
+        'faceswap': '人脸替换',
+        'config': '配置文件'
+      };
+      
+      return typeMap[type] || type;
+    };
     
     // 下载单个模型
-    const downloadSingleModel = () => {
-      if (!selectedModel.value) return
-      
-      downloadingSingle.value = true
-      singleProgress.value = 0
-      
-      // 模拟下载进度
-      const interval = setInterval(() => {
-        singleProgress.value += 2
-        updateDownloadStats('single')
-        
-        if (singleProgress.value >= 100) {
-          clearInterval(interval)
-          downloadingSingle.value = false
-          
-          // 添加到已下载列表
-          if (!downloadedModels.value.some(m => m.value === selectedModel.value.value)) {
-            downloadedModels.value.push({
-              id: Date.now(),
-              name: selectedModel.value.label,
-              size: `${(Math.random() * 5 + 1).toFixed(1)} GB`
-            })
-          }
-        }
-      }, 100)
-    }
+    const downloadModel = async (modelId: string) => {
+      // 实现...
+    };
     
-    // 更新下载统计信息
-    const updateDownloadStats = (type) => {
-      const isAll = type === 'all'
-      const progress = isAll ? allProgress.value : singleProgress.value
+    // 确认删除模型
+    const confirmDelete = (model: Model) => {
+      // 实现...
+    };
+    
+    // 删除模型
+    const deleteModel = async () => {
+      // 实现...
+    };
+    
+    // 显示模型信息
+    const showModelInfo = (model: Model) => {
+      // 实现...
+    };
+    
+    // 刷新模型列表
+    const refreshModels = async () => {
+      // 实现...
+    };
+    
+    // 添加格式化函数
+    const formatFileSize = (bytes: number): string => {
+      if (bytes === 0) return '0 B';
       
-      // 计算剩余时间
-      const remainingTime = Math.floor((100 - progress) / 5) // 模拟计算
-      if (isAll) {
-        allRemainingTime.value = `${remainingTime} 秒`
-        allDownloadSpeed.value = `${Math.floor(Math.random() * 10 + 5)} MB/s`
-        allDownloadedSize.value = `${(progress / 100 * 15).toFixed(1)} GB / 15 GB`
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(1024));
+      return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${units[i]}`;
+    };
+    
+    const formatSpeed = (bytesPerSecond: number): string => {
+      if (bytesPerSecond === 0) return '0 B/s';
+      
+      const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+      const i = Math.floor(Math.log(bytesPerSecond) / Math.log(1024));
+      return `${(bytesPerSecond / Math.pow(1024, i)).toFixed(2)} ${units[i]}`;
+    };
+    
+    // 添加预估剩余时间格式化函数
+    const formatEstimatedTime = (totalBytes: number, downloadedBytes: number, speed: number): string => {
+      if (speed <= 0 || totalBytes <= downloadedBytes) return '计算中...';
+      
+      const remainingBytes = totalBytes - downloadedBytes;
+      const remainingSeconds = remainingBytes / speed;
+      
+      if (remainingSeconds < 60) {
+        return `${Math.ceil(remainingSeconds)}秒`;
+      } else if (remainingSeconds < 3600) {
+        return `${Math.ceil(remainingSeconds / 60)}分钟`;
       } else {
-        singleRemainingTime.value = `${remainingTime} 秒`
-        singleDownloadSpeed.value = `${Math.floor(Math.random() * 10 + 5)} MB/s`
-        singleDownloadedSize.value = `${(progress / 100 * 4).toFixed(1)} GB / 4 GB`
+        const hours = Math.floor(remainingSeconds / 3600);
+        const minutes = Math.ceil((remainingSeconds % 3600) / 60);
+        return `${hours}小时${minutes}分钟`;
       }
-    }
+    };
+    
+    onMounted(() => {
+      refreshModels();
+    });
     
     return {
-      downloadingAll,
-      downloadingSingle,
-      allProgress,
-      singleProgress,
-      allRemainingTime,
-      singleRemainingTime,
-      allDownloadSpeed,
-      singleDownloadSpeed,
-      allDownloadedSize,
-      singleDownloadedSize,
+      // 状态
+      essentialLoading,
+      essentialProgress,
+      essentialInstalled,
+      activeTab,
+      sdModels,
+      installedModels,
+      installedModelsCount,
+      totalStorageUsed,
+      deleteConfirmDialog,
+      modelInfoDialog,
       selectedModel,
-      modelOptions,
-      downloadedModels,
-      downloadAllModels,
-      downloadSingleModel
-    }
+      modelColumns,
+      
+      // 下载相关
+      downloadSource,
+      downloadSourceOptions,
+      isDownloading,
+      currentModelIndex,
+      currentModelProgress,
+      overallProgress,
+      essentialModels,
+      currentDownloadingModel,
+      
+      // 新增变量
+      downloadTaskId,
+      downloadProgress,
+      downloadLogs,
+      currentModel,
+      
+      // 新增方法
+      formatPercentage,
+      getLogBadgeColor,
+      getModelTypeName,
+      addLog,
+      
+      // 已有方法
+      downloadEssentialModels,
+      cancelDownload,
+      downloadModel,
+      confirmDelete,
+      deleteModel,
+      showModelInfo,
+      refreshModels,
+      
+      // 新增方法
+      formatFileSize,
+      formatSpeed,
+      formatEstimatedTime
+    };
   }
+});
+</script>
+
+<style scoped>
+.essential-models {
+  border-left: 5px solid var(--q-primary);
 }
-</script> 
+
+.installed-models-table {
+  height: 400px;
+}
+
+.download-progress-panel {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.progress-details {
+  margin-bottom: 20px;
+}
+
+.model-info {
+  margin-top: 10px;
+  display: flex;
+  gap: 20px;
+}
+
+.progress-stats {
+  margin-top: 15px;
+  display: flex;
+  gap: 20px;
+}
+
+.download-history {
+  margin-top: 20px;
+  max-height: 300px;
+  overflow-y: auto;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+
+.log-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 5px;
+  border-bottom: 1px dashed #eee;
+}
+
+.log-time {
+  color: #999;
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.download-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 15px;
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.stat-item .q-icon {
+  color: var(--q-primary);
+}
+</style> 

@@ -100,7 +100,17 @@ const api = {
     superagent.get(`${API_BASE_URL}/reset/progress/${taskId}`),
   
   restartApp: () => 
-    superagent.post(`${API_BASE_URL}/restart`)
+    superagent.post(`${API_BASE_URL}/restart`),
+
+  // 更新API调用，统一使用 /api 前缀
+  getAllModels: () => 
+    superagent.get(`${API_BASE_URL}/models`),
+  
+  downloadEssentialModels: (source = 'mirror') => 
+    superagent.post(`${API_BASE_URL}/models/download-essential`).send({ source }),
+  
+  cancelDownload: (taskId: string) => 
+    superagent.post(`${API_BASE_URL}/models/cancel-download`).send({ taskId })
 };
 
 export default api;  // 只有一个默认导出 

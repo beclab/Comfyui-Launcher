@@ -26,11 +26,13 @@ router.get('/api/status', (ctx) => comfyuiController.getStatus(ctx));
 router.post('/api/start', (ctx) => comfyuiController.startComfyUI(ctx));
 router.post('/api/stop', (ctx) => comfyuiController.stopComfyUI(ctx));
 
-// 模型管理路由
-router.get('/api/models', modelsController.getAllModels);
-router.post('/api/models/download', modelsController.downloadModel);
-router.post('/api/models/download-all', modelsController.downloadAllModels);
-router.get('/api/models/progress/:taskId', modelsController.getModelProgress);
+// 模型管理路由 - 统一使用 /api 前缀
+router.get('/api/models', modelsController.getAllModels.bind(modelsController));
+router.post('/api/models/download', modelsController.downloadModel.bind(modelsController));
+router.post('/api/models/download-all', modelsController.downloadAllModels.bind(modelsController));
+router.get('/api/models/progress/:taskId', modelsController.getModelProgress.bind(modelsController));
+router.post('/api/models/cancel-download', modelsController.cancelDownload.bind(modelsController));
+router.post('/api/models/download-essential', modelsController.downloadEssentialModels.bind(modelsController));
 
 // 插件管理路由
 router.get('/api/plugins', (ctx) => pluginsController.getAllPlugins(ctx));
