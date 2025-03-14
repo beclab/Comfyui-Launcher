@@ -52,7 +52,7 @@ interface ModelInfo {
   sha256?: string;
   installed?: boolean;
   url?: string;  // 添加 url 属性
-  fileStatus?: 'complete' | 'incomplete' | 'corrupted';
+  fileStatus?: 'complete' | 'incomplete' | 'corrupted' | 'unknown';
   fileSize?: number;
   size?: string;  // 模型列表中提供的大小信息（字符串格式）
 }
@@ -191,7 +191,7 @@ export class ModelsController extends DownloadController {
         // 保存到本地缓存
         this.ensureCacheDirectory();
         await fs.writeFile(this.LOCAL_CACHE_PATH, JSON.stringify({
-          models: this.modelCache,
+          models,
           timestamp: this.cacheTimestamp
         }));
         
@@ -807,10 +807,14 @@ export class ModelsController extends DownloadController {
       // 扫描已安装的模型
       const installedModels = await this.scanInstalledModels();
       
+      // 跟踪已处理的模型文件，避免重复添加
+      const processedFiles = new Set<string>();
+      
       // 更新每个模型的安装状态和文件状态
-      return await Promise.all(models.map(async model => {
+      const updatedModels = await Promise.all(models.map(async model => {
         // 检查模型文件名是否在已安装列表中
         if (model.filename && installedModels.has(model.filename)) {
+          processedFiles.add(model.filename); // 标记此文件已处理
           const fileInfo = installedModels.get(model.filename);
           model.installed = true;
           model.fileStatus = fileInfo.status;
@@ -821,7 +825,6 @@ export class ModelsController extends DownloadController {
           if (model.size) {
             const expectedSize = this.parseSizeString(model.size);
             if (expectedSize && Math.abs(fileInfo.size - expectedSize) / expectedSize > 0.1) {
-              // 如果文件大小与预期相差超过10%，标记为不完整
               model.fileStatus = 'incomplete';
               logger.warn(`模型 ${model.filename} 大小不匹配：预期 ${model.size}，实际 ${this.formatFileSize(fileInfo.size)}`);
             }
@@ -833,7 +836,7 @@ export class ModelsController extends DownloadController {
           );
           
           if (possibleMatches.length > 0) {
-            // 找到可能的匹配
+            processedFiles.add(possibleMatches[0]); // 标记此文件已处理
             const fileInfo = installedModels.get(possibleMatches[0]);
             model.installed = true;
             model.filename = possibleMatches[0];
@@ -857,6 +860,38 @@ export class ModelsController extends DownloadController {
         
         return model;
       }));
+      
+      // 添加已安装但未在列表中的模型文件
+      const unknownModels: ModelInfo[] = [];
+      
+      for (const [filename, fileInfo] of installedModels.entries()) {
+        if (!processedFiles.has(filename)) {
+          logger.info(`发现本地未知模型: ${filename}, 路径: ${fileInfo.path}`);
+          
+          // 创建新的模型信息对象
+          const newModel: ModelInfo = {
+            name: filename, // 使用文件名作为模型名
+            type: fileInfo.type || this.inferModelTypeFromPath(fileInfo.path),
+            base_url: '',
+            save_path: fileInfo.path,
+            description: '本地发现的模型，未在官方列表中',
+            filename: filename,
+            installed: true,
+            fileStatus: 'unknown', // 特殊状态表示"未知模型,无法确认完整性"
+            fileSize: fileInfo.size
+          };
+          
+          unknownModels.push(newModel);
+        }
+      }
+      
+      // 如果有未知模型，添加到结果列表中
+      if (unknownModels.length > 0) {
+        logger.info(`添加了 ${unknownModels.length} 个本地未知模型到列表中`);
+        return [...updatedModels, ...unknownModels];
+      }
+      
+      return updatedModels;
     } catch (error) {
       logger.error(`刷新模型安装状态时出错: ${error instanceof Error ? error.message : String(error)}`);
       return [];
@@ -894,6 +929,17 @@ export class ModelsController extends DownloadController {
         success: false,
         message: `扫描模型失败: ${error instanceof Error ? error.message : String(error)}`
       };
+    }
+  }
+
+  // 添加对未知模型状态的处理
+  private getStatusLabel(status?: string): string {
+    switch (status) {
+      case 'complete': return '完整';
+      case 'incomplete': return '不完整';
+      case 'corrupted': return '已损坏';
+      case 'unknown': return '未知模型,无法确认完整性';
+      default: return '未知';
     }
   }
 } 

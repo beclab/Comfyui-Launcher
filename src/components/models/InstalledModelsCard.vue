@@ -490,6 +490,7 @@ export default defineComponent({
         case 'complete': return 'positive';
         case 'incomplete': return 'warning';
         case 'corrupted': return 'negative';
+        case 'unknown': return 'blue-grey';
         default: return 'grey';
       }
     };
@@ -499,6 +500,7 @@ export default defineComponent({
         case 'complete': return '完整';
         case 'incomplete': return '不完整';
         case 'corrupted': return '已损坏';
+        case 'unknown': return '未知模型,无法确认完整性';
         default: return '未知';
       }
     };
