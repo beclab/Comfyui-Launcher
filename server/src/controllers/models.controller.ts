@@ -283,8 +283,13 @@ export class ModelsController extends DownloadController {
       let downloadUrl;
       if (modelInfo.url) {
         if (typeof modelInfo.url === 'string') {
-          // 如果URL是字符串，则直接使用
+          // 如果URL是字符串，也需要根据source参数决定使用哬镜像站
           downloadUrl = modelInfo.url;
+          // 如果用户选择使用镜像站而不是HuggingFace
+          if (source !== 'hf' && downloadUrl.includes('huggingface.co')) {
+            // 将huggingface.co替换为hf-mirror.com
+            downloadUrl = downloadUrl.replace('huggingface.co', 'hf-mirror.com');
+          }
         } else if (modelInfo.url.hf && modelInfo.url.mirror) {
           // 如果URL是包含hf和mirror的对象，则根据source选择
           downloadUrl = source === 'hf' ? modelInfo.url.hf : modelInfo.url.mirror;

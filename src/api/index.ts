@@ -111,22 +111,23 @@ export const modelsApi = {
   }
 };
 
-// 更新ApiResponse接口定义，更准确地描述API响应
-export interface ApiResponse<T = any> {
+// 更新ApiResponse接口定义，使用unknown代替any
+export interface ApiResponse<T = unknown> {
   data?: T;
   body?: T | ReadableStream<Uint8Array>;  // body可能是ReadableStream
   status?: number;
   headers?: { [key: string]: string };
 }
 
-// 添加一个工具函数，安全地处理API响应
-export const isApiResponse = (response: any): response is ApiResponse => {
-  return response && typeof response === 'object' && 
-    ('data' in response || 'body' in response || 'status' in response);
+// 使用正确的类型判断方式
+export const isApiResponse = (response: unknown): response is ApiResponse => {
+  if (!response || typeof response !== 'object') return false;
+  return ('data' in response || 'body' in response || 'status' in response);
 };
 
-// 修改get函数，确保有返回值
-const get = async <T>(url: string): Promise<ApiResponse<T> | Response> => {
+// 解决未使用的get函数 - 两种方案:
+// 方案1: 如果需要使用，确保导出它
+export const get = async <T>(url: string): Promise<ApiResponse<T> | Response> => {
   try {
     // 直接实现和使用现有的api.get方法相同的逻辑
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;

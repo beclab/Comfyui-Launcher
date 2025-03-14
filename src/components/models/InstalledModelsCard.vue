@@ -115,6 +115,34 @@ import { defineComponent, ref, computed, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import api from '../../api';
 
+// 定义API响应类型
+interface ApiResponse {
+  data?: unknown;
+  body?: unknown;
+}
+
+// 提取API响应数据函数
+const extractResponseData = async <T>(response: ApiResponse | Response | undefined): Promise<T | null> => {
+  if (!response) return null;
+  
+  if (typeof response === 'object') {
+    if ('data' in response && response.data !== undefined) return response.data as T;
+    if ('body' in response && response.body !== undefined) {
+      return response.body as T;
+    }
+    
+    if (response instanceof Response) {
+      try {
+        return await response.json() as T;
+      } catch (error) {
+        console.error('解析响应JSON失败:', error);
+      }
+    }
+  }
+  
+  return null;
+};
+
 // 模型接口
 interface Model {
   id: string;
@@ -136,28 +164,6 @@ interface TableColumn {
   sortable?: boolean;
   align?: 'left' | 'right' | 'center';
 }
-
-// 工具函数：提取API响应数据
-const extractResponseData = async <T>(response: any): Promise<T | null> => {
-  if (!response) return null;
-  
-  if (typeof response === 'object') {
-    if ('data' in response && response.data !== undefined) return response.data as T;
-    if ('body' in response && response.body !== undefined) {
-      return response.body as T;
-    }
-    
-    if (response instanceof Response) {
-      try {
-        return await response.json() as T;
-      } catch (error) {
-        console.error('解析响应JSON失败:', error);
-      }
-    }
-  }
-  
-  return null;
-};
 
 export default defineComponent({
   name: 'InstalledModelsCard',
@@ -391,6 +397,12 @@ export default defineComponent({
       fetchInstalledModels();
     });
     
+    const confirmDelete = () => {
+      // 在这里实现删除逻辑
+      console.log('确认删除');
+      // 例如，调用 API 删除模型
+    };
+    
     return {
       // 状态
       installedModels,
@@ -416,7 +428,8 @@ export default defineComponent({
       
       // 辅助功能
       getModelTypeLabel,
-      getModelTypeColor
+      getModelTypeColor,
+      confirmDelete
     };
   }
 });

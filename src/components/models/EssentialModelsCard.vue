@@ -133,7 +133,11 @@ import { useQuasar } from 'quasar';
 import api from '../../api';
 import type { EssentialModel, DownloadProgress } from '../../types/models';
 
-// 定义下载日志类型
+// 使用 eslint-disable 注释来禁用未使用变量的警告
+/* 
+ * 暂未使用，保留以备后续扩展
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface DownloadLog {
   status: string;
   message: string;
@@ -167,8 +171,14 @@ interface DownloadLogItem {
   status: string;
 }
 
-// 工具函数：提取API响应数据
-const extractResponseData = async <T>(response: any): Promise<T | null> => {
+// 定义API响应类型
+interface ApiResponse {
+  data?: unknown;
+  body?: unknown;
+}
+
+// 提取API响应数据函数
+const extractResponseData = async <T>(response: ApiResponse | Response | undefined): Promise<T | null> => {
   if (!response) return null;
   
   if (typeof response === 'object') {
@@ -189,6 +199,16 @@ const extractResponseData = async <T>(response: any): Promise<T | null> => {
   return null;
 };
 
+// 使用具体类型替代any[]
+interface InstalledModel {
+  name: string;
+  type: string;
+  installed: boolean;
+  path?: string;
+  size?: string | number;
+  [key: string]: unknown;
+}
+
 export default defineComponent({
   name: 'EssentialModelsCard',
   setup() {
@@ -197,7 +217,7 @@ export default defineComponent({
     // 本地状态
     const essentialModels = ref<EssentialModel[]>([]);
     const isLoading = ref(false);
-    const installedModels = ref<any[]>([]);
+    const installedModels = ref<InstalledModel[]>([]);
     const isDownloading = ref(false);
     const downloadTaskId = ref<string | null>(null);
     const downloadProgress = ref<ModelDownloadProgress>({});
@@ -263,7 +283,7 @@ export default defineComponent({
     const fetchInstalledModels = async () => {
       try {
         const response = await api.get('models');
-        const data = await extractResponseData<any[]>(response);
+        const data = await extractResponseData<InstalledModel[]>(response);
         
         if (data && Array.isArray(data)) {
           installedModels.value = data.filter(model => model.installed);

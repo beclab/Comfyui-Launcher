@@ -21,6 +21,18 @@
           label="数据源"
           @update:model-value="onDatabaseModeChange"
         />
+        
+        <!-- 添加下载源选择 -->
+        <q-select
+          v-model="downloadSource"
+          :options="downloadSourceOptions"
+          dense
+          outlined
+          class="bg-white text-black q-mr-md"
+          style="width: 180px"
+          label="下载源"
+        />
+        
         <q-btn 
           color="white" 
           text-color="secondary" 
@@ -247,6 +259,33 @@ interface Model {
   essential?: boolean;
 }
 
+// 定义更具体的API响应类型
+interface ApiResponse {
+  data?: unknown; // 替换any为unknown
+  body?: unknown; // 替换any为unknown
+}
+
+// 为索引签名使用更具体的类型
+interface EssentialModel {
+  name: string;
+  dir: string;
+  filename: string;
+  description?: string;
+  size?: number;
+  url?: string | {
+    hf?: string;
+    mirror?: string;
+    [key: string]: string | undefined;
+  };
+  [key: string]: unknown; // 替换any为unknown
+}
+
+// ModelFetchModeOption 类型，用于数据库模式选项
+interface ModelFetchModeOption {
+  label: string;
+  value: ModelFetchMode;
+}
+
 // 下载进度映射类型
 interface ModelDownloadProgress {
   [key: string]: {
@@ -255,7 +294,7 @@ interface ModelDownloadProgress {
     speed: number;
     status: string;
     currentModelProgress: number;
-    currentModel: any;
+    currentModel: EssentialModel | null; // 使用明确的类型
     currentModelIndex: number;
     error: string | null;
   };
@@ -264,8 +303,32 @@ interface ModelDownloadProgress {
 // 定义 ModelFetchMode 类型
 type ModelFetchMode = 'cache' | 'local' | 'remote';
 
+// 定义 ProgressData 类型
+interface ProgressData {
+  downloadedBytes: number;
+  totalBytes: number;
+  speed: number;
+  status: string;
+  currentModelProgress: number;
+  currentModel: EssentialModel | null; // 使用明确的类型
+  currentModelIndex: number;
+  error: string | null;
+  completed?: boolean; // 使用可选属性
+  overallProgress: number;
+}
+
+// 添加类型守卫函数
+const isCompletedProgress = (data: ProgressData): data is ProgressData & { completed: boolean } => {
+  return 'completed' in data && typeof data.completed === 'boolean';
+};
+
+// 添加类型守卫函数
+function hasModelFetchModeValue(obj: unknown): obj is { value: ModelFetchMode } {
+  return typeof obj === 'object' && obj !== null && 'value' in obj;
+}
+
 // 工具函数：提取API响应数据
-const extractResponseData = async <T>(response: any): Promise<T | null> => {
+const extractResponseData = async <T>(response: ApiResponse | Response | undefined): Promise<T | null> => {
   if (!response) return null;
   
   if (typeof response === 'object') {
@@ -315,16 +378,19 @@ export default defineComponent({
     const confirmDialogVisible = ref(false);
     const modelToInstall = ref('');
     
+    // 添加下载源选择
+    const downloadSource = ref('HuggingFace中国镜像站');
+    const downloadSourceOptions = ['HuggingFace中国镜像站', 'HuggingFace官方'];
+    
     // 获取模型列表
     const fetchModels = async () => {
       try {
         isLoading.value = true;
         
-        // 修复类型问题：确保传递正确的模式值
+        // 在获取模式值时使用类型安全的方法
         const modeValue = ((mode) => {
-          if (typeof mode === 'object' && mode !== null) {
-            // 如果是对象，尝试提取它的值
-            return (mode as any).value as ModelFetchMode || 'cache';
+          if (hasModelFetchModeValue(mode)) {
+            return mode.value || 'cache';
           }
           // 确保值是ModelFetchMode类型之一
           return ['cache', 'local', 'remote'].includes(String(mode)) 
@@ -406,7 +472,7 @@ export default defineComponent({
     };
     
     // 改进数据库模式切换处理
-    const onDatabaseModeChange = (newMode: any) => {
+    const onDatabaseModeChange = (newMode: ModelFetchMode | ModelFetchModeOption) => {
       // 类型安全处理
       if (typeof newMode === 'string' && ['cache', 'local', 'remote'].includes(newMode)) {
         databaseMode.value = newMode as ModelFetchMode;
@@ -445,7 +511,7 @@ export default defineComponent({
         try {
           // 修复：使用正确的API路径获取下载进度
           const response = await api.get(`models/progress/${downloadTaskId.value}`);
-          const progressData = await extractResponseData<any>(response);
+          const progressData = await extractResponseData<ProgressData>(response);
           
           if (progressData) {
             // 修改：不再依赖modelName字段
@@ -465,7 +531,7 @@ export default defineComponent({
                 };
                 
                 // 检查是否完成
-                if (progressData.status === 'completed' || progressData.completed) {
+                if (progressData.status === 'completed' || isCompletedProgress(progressData) && progressData.completed) {
                   // 显示通知
                   $q.notify({
                     type: 'positive',
@@ -543,8 +609,11 @@ export default defineComponent({
         isLoading.value = true;
         installing.value = modelName;
         
-        // 使用适当的 API 调用方式
-        const response = await api.post(`models/install/${modelName}`); 
+        // 根据选择的下载源确定API参数
+        const source = downloadSource.value === 'HuggingFace官方' ? 'hf' : 'mirror';
+        
+        // 使用适当的 API 调用方式，并传递下载源参数
+        const response = await api.post(`models/install/${modelName}`, { source }); 
         const data = await extractResponseData<{taskId?: string}>(response);
         
         if (data?.taskId) {
@@ -705,6 +774,8 @@ export default defineComponent({
       installing,
       confirmDialogVisible,
       modelToInstall,
+      downloadSource,
+      downloadSourceOptions,
       
       // 方法
       fetchModels,
