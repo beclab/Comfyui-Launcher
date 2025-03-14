@@ -357,22 +357,22 @@ const essentialModels: EssentialModel[] = [
 export class EssentialModelsController extends DownloadController {
   
   essentialModels = essentialModels;
-  private comfyuiPath: string;
+  private comfyuiModelsPath: string;
   private isDownloading: boolean = false;
 
   constructor() {
     super();
     // 从配置中获取 ComfyUI 路径
     const { config } = require('../config');
-    this.comfyuiPath = config.comfyui.path || process.env.COMFYUI_PATH || path.join(process.cwd(), 'comfyui');
+    this.comfyuiModelsPath = path.join(config.comfyui.path || process.env.COMFYUI_PATH || path.join(process.cwd(), 'comfyui'), 'models');
     
     // 确保路径存在
-    if (!this.comfyuiPath) {
+    if (!this.comfyuiModelsPath) {
       logger.error('未配置 ComfyUI 路径，将使用默认路径');
-      this.comfyuiPath = path.join(process.cwd(), 'comfyui');
+      this.comfyuiModelsPath = path.join(process.cwd(), 'comfyui');
     }
     
-    logger.info(`使用 ComfyUI 路径: ${this.comfyuiPath}`);
+    logger.info(`使用 ComfyUI 路径: ${this.comfyuiModelsPath}`);
   }
   
   // 获取必要基础模型列表
@@ -417,7 +417,7 @@ export class EssentialModelsController extends DownloadController {
       progress.lastUpdateTime = Date.now();
       
       // 使用类中存储的 ComfyUI 路径
-      const rootPath = this.comfyuiPath;
+      const rootPath = this.comfyuiModelsPath;
       if (!rootPath) {
         throw new Error('ComfyUI 路径未配置');
       }
@@ -559,7 +559,7 @@ export class EssentialModelsController extends DownloadController {
   // 获取基础模型安装状态
   public async getEssentialModelsStatus(ctx: Koa.Context) {
     // 使用类中存储的 ComfyUI 路径
-    const rootPath = this.comfyuiPath;
+    const rootPath = this.comfyuiModelsPath;
     
     let installedCount = 0;
     

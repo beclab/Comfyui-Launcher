@@ -108,6 +108,7 @@ RUN chmod +x /app/start.sh
 EXPOSE 8080 3000
 
 COPY ./entrypoint.sh /runner-scripts/entrypoint.sh
+RUN mkdir /newversion/ComfyUI/launchercache
 
 # 启动应用
 CMD ["/app/start.sh"]
