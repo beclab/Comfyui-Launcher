@@ -94,7 +94,8 @@ RUN chmod -R 777 /app/dist
 # 在运行环境中安装所有依赖，包括开发依赖，确保superagent可用
 WORKDIR /app/server
 RUN npm install && \
-    npm install superagent --save
+    npm install superagent --save && \
+    npm install fs-extra
 
 # 回到应用根目录
 WORKDIR /app
