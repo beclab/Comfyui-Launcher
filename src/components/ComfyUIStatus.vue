@@ -1,37 +1,71 @@
 <template>
-  <div class="comfyui-status">
-    <div class="status-indicator" :class="{ 'online': isConnected, 'offline': !isConnected }">
-      ComfyUI {{ isConnected ? '在线' : '离线' }}
-    </div>
-    
-    <div class="model-stats" v-if="isConnected">
-      <div class="stat-item">
-        <strong>已安装模型:</strong> {{ installedModelsCount }}
+  <div>
+    <div class="comfyui-status">
+      <div class="status-indicator" :class="{ 'online': isConnected, 'offline': !isConnected }">
+        ComfyUI {{ isConnected ? '在线' : '离线' }}
       </div>
-      <div class="stat-item">
-        <strong>可用模型:</strong> {{ availableModelsCount }}
+      
+      <div class="model-stats" v-if="isConnected">
+        <div class="stat-item">
+          <strong>已安装模型:</strong> {{ installedModelsCount }}
+        </div>
+        <div class="stat-item">
+          <strong>可用模型:</strong> {{ availableModelsCount }}
+        </div>
+      </div>
+      
+      <!-- 添加启动/停止按钮 -->
+      <div class="control-buttons">
+        <q-btn 
+          v-if="!isConnected" 
+          color="positive" 
+          icon="play_arrow" 
+          label="启动" 
+          @click="checkAndStartComfyUI"
+          :loading="isStarting"
+        />
+        <q-btn 
+          v-else 
+          color="negative" 
+          icon="stop" 
+          label="停止" 
+          @click="stopComfyUI"
+          :loading="isStopping"
+        />
       </div>
     </div>
-    
-    <!-- 添加启动/停止按钮 -->
-    <div class="control-buttons">
-      <q-btn 
-        v-if="!isConnected" 
-        color="positive" 
-        icon="play_arrow" 
-        label="启动" 
-        @click="checkAndStartComfyUI"
-        :loading="isStarting"
-      />
-      <q-btn 
-        v-else 
-        color="negative" 
-        icon="stop" 
-        label="停止" 
-        @click="stopComfyUI"
-        :loading="isStopping"
-      />
-    </div>
+
+    <!-- 添加日志显示区域 -->
+    <q-card v-if="showLogs" class="q-mt-md log-container">
+      <q-expansion-item
+        v-model="logsExpanded"
+        icon="report_problem"
+        label="ComfyUI 启动日志"
+        header-class="bg-red-1 text-red-9"
+        expand-icon-class="text-red-9"
+        default-opened
+      >
+        <q-card>
+          <q-card-section>
+            <div class="text-subtitle2 q-mb-sm">启动过程中发生错误，请查看以下日志信息：</div>
+            <q-scroll-area style="height: 300px;" class="bg-grey-1">
+              <div class="q-pa-sm log-content">
+                <div v-for="(log, index) in logs" :key="index" :class="{'log-error': log.includes('ERROR')}">
+                  {{ log }}
+                </div>
+                <div v-if="logs.length === 0" class="text-grey-6 text-center q-pa-md">
+                  正在加载日志...
+                </div>
+              </div>
+            </q-scroll-area>
+            <div class="row justify-end q-mt-md">
+              <q-btn flat dense color="primary" icon="refresh" @click="fetchLogs" label="刷新日志" />
+              <q-btn flat dense color="negative" icon="close" @click="showLogs = false" label="关闭" />
+            </div>
+          </q-card-section>
+        </q-card>
+      </q-expansion-item>
+    </q-card>
     
     <!-- 自定义确认对话框 -->
     <q-dialog v-model="showConfirmDialog" persistent>
@@ -93,6 +127,11 @@ export default defineComponent({
     // 添加对话框控制变量
     const showConfirmDialog = ref(false);
     
+    // 添加日志相关变量
+    const showLogs = ref(false);
+    const logsExpanded = ref(true);
+    const logs = ref<string[]>([]);
+    
     const checkConnection = async () => {
       try {
         // 检查 ComfyUI 连接状态
@@ -109,20 +148,35 @@ export default defineComponent({
       }
     };
     
+    // 获取ComfyUI日志
+    const fetchLogs = async () => {
+      try {
+        const response = await api.getLogs();
+        if (response && response.body && response.body.logs) {
+          logs.value = response.body.logs;
+        } else {
+          logs.value = ['无法获取日志数据'];
+        }
+      } catch (error) {
+        console.error('获取日志失败:', error);
+        logs.value = ['获取日志失败，请稍后重试'];
+      }
+    };
+    
     // 检查基础模型是否已安装
     const checkEssentialModels = async () => {
       try {
         // 获取必要基础模型列表
-        const essentialResponse = await api.get('models/essential');
-        if (essentialResponse && essentialResponse.data) {
-          essentialModels.value = Array.isArray(essentialResponse.data) ? essentialResponse.data : [];
+        const essentialResponse = await api.getEssentialModels();
+        if (essentialResponse && essentialResponse.body) {
+          essentialModels.value = Array.isArray(essentialResponse.body) ? essentialResponse.body : [];
         }
         
         // 获取已安装模型列表
-        const installedResponse = await api.get('models');
-        if (installedResponse && installedResponse.data) {
-          installedModels.value = Array.isArray(installedResponse.data) 
-            ? installedResponse.data.filter((model: InstalledModel) => model.installed) 
+        const installedResponse = await api.getModels();
+        if (installedResponse && installedResponse.body) {
+          installedModels.value = Array.isArray(installedResponse.body) 
+            ? installedResponse.body.filter((model: InstalledModel) => model.installed) 
             : [];
         }
         
@@ -165,16 +219,46 @@ export default defineComponent({
     const startComfyUI = async () => {
       try {
         isStarting.value = true;
-        await api.startComfyUI();
-        $q.notify({
-          type: 'positive',
-          message: 'ComfyUI 正在启动，请稍候...'
-        });
-        // 等待启动完成
-        setTimeout(async () => {
-          await checkConnection();
+        showLogs.value = false; // 重置日志显示状态
+        
+        const response = await api.startComfyUI();
+        
+        // 检查服务器返回的响应状态和结构
+        console.log('ComfyUI启动响应:', response);
+        
+        if (response && response.body && response.body.success) {
+          $q.notify({
+            type: 'positive',
+            message: 'ComfyUI 正在启动，请稍候...'
+          });
+          
+          // 等待启动完成
+          setTimeout(async () => {
+            await checkConnection();
+            isStarting.value = false;
+          }, 5000);
+        } else {
           isStarting.value = false;
-        }, 5000);
+          
+          // 启动失败时显示错误通知
+          $q.notify({
+            type: 'negative',
+            message: response?.body?.message || '启动 ComfyUI 失败'
+          });
+          
+          // 确保无论如何都能显示日志区域
+          if (response?.body?.logs && response.body.logs.length > 0) {
+            console.log('收到日志数据，长度:', response.body.logs.length);
+            logs.value = response.body.logs;
+            showLogs.value = true;
+            logsExpanded.value = true; // 确保日志区域展开
+          } else {
+            // 否则尝试获取日志
+            await fetchLogs();
+            showLogs.value = true;
+            logsExpanded.value = true; // 确保日志区域展开
+          }
+        }
       } catch (error) {
         isStarting.value = false;
         $q.notify({
@@ -182,6 +266,11 @@ export default defineComponent({
           message: '启动 ComfyUI 失败'
         });
         console.error('启动 ComfyUI 失败:', error);
+        
+        // 启动异常时尝试获取日志
+        await fetchLogs();
+        showLogs.value = true;
+        logsExpanded.value = true; // 确保日志区域展开
       }
     };
     
@@ -240,7 +329,12 @@ export default defineComponent({
       isStopping,
       showConfirmDialog,
       confirmStartComfyUI,
-      goToModels
+      goToModels,
+      // 添加日志相关的返回值
+      showLogs,
+      logsExpanded,
+      logs,
+      fetchLogs
     };
   }
 });
@@ -284,5 +378,23 @@ export default defineComponent({
 
 .control-buttons {
   margin-left: auto;
+}
+
+/* 添加日志相关样式 */
+.log-container {
+  border-left: 4px solid #f44336;
+  margin-top: 15px;
+}
+
+.log-content {
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.log-error {
+  color: #f44336;
+  font-weight: bold;
 }
 </style> 

@@ -17,12 +17,16 @@ export class ComfyUIController {
   private startTime: Date | null = null;
   // 追踪实际的ComfyUI进程ID
   private comfyPid: number | null = null;
+  // 存储最近的ComfyUI日志
+  private recentLogs: string[] = [];
+  private maxLogEntries: number = 100; // 保留最近100条日志
 
   constructor() {
     // 绑定方法到实例
     this.getStatus = this.getStatus.bind(this);
     this.startComfyUI = this.startComfyUI.bind(this);
     this.stopComfyUI = this.stopComfyUI.bind(this);
+    this.getLogs = this.getLogs.bind(this);
     
     // 初始化时检查ComfyUI是否已经运行
     this.checkIfComfyUIRunning();
@@ -72,14 +76,43 @@ export class ComfyUIController {
     };
   }
 
-  // 启动ComfyUI
+  // 添加新方法: 获取ComfyUI日志
+  async getLogs(ctx: Context): Promise<void> {
+    logger.info('[API] 收到获取ComfyUI日志请求');
+    ctx.body = {
+      logs: this.recentLogs
+    };
+  }
+
+  // 记录日志的辅助方法
+  private addLog(message: string, isError: boolean = false): void {
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] ${isError ? 'ERROR: ' : ''}${message}`;
+    
+    // 添加到日志数组并保持大小限制
+    this.recentLogs.push(logEntry);
+    if (this.recentLogs.length > this.maxLogEntries) {
+      this.recentLogs.shift(); // 移除最旧的日志
+    }
+    
+    // 同时记录到系统日志
+    if (isError) {
+      logger.error(message);
+    } else {
+      logger.info(message);
+    }
+  }
+
+  // 启动ComfyUI - 更新记录日志的部分
   async startComfyUI(ctx: Context): Promise<void> {
     logger.info('[API] 收到启动ComfyUI请求');
+    this.recentLogs = []; // 清除之前的日志
+    this.addLog('收到启动ComfyUI请求');
     
     // 首先检查是否已经在运行
     const running = await isComfyUIRunning();
     if (running) {
-      logger.info('[API] ComfyUI已经在运行中');
+      this.addLog('ComfyUI已经在运行中');
       ctx.body = {
         success: false,
         message: 'ComfyUI已经在运行中',
@@ -90,8 +123,8 @@ export class ComfyUIController {
     
     try {
       // 启动ComfyUI进程
-      logger.info('[API] 尝试启动ComfyUI进程...');
-      logger.info(`[API] 执行命令: bash ${path.resolve('/runner-scripts/entrypoint.sh')}`);
+      this.addLog('尝试启动ComfyUI进程...');
+      this.addLog(`执行命令: bash ${path.resolve('/runner-scripts/entrypoint.sh')}`);
       
       this.comfyProcess = spawn('bash', ['/runner-scripts/entrypoint.sh'], {
         detached: false, // 进程不分离，随主进程退出而退出
@@ -104,26 +137,27 @@ export class ComfyUIController {
       if (this.comfyProcess.stdout) {
         this.comfyProcess.stdout.on('data', (data) => {
           const output = data.toString().trim();
-          logger.info(`[ComfyUI] ${output}`);
+          this.addLog(`[ComfyUI] ${output}`);
           
           // 尝试从输出中捕获实际的ComfyUI进程ID
           const match = output.match(/ComfyUI.*启动.*pid[:\s]+(\d+)/i);
           if (match && match[1]) {
             this.comfyPid = parseInt(match[1], 10);
-            logger.info(`[API] 捕获到ComfyUI真实PID: ${this.comfyPid}`);
+            this.addLog(`捕获到ComfyUI真实PID: ${this.comfyPid}`);
           }
         });
       }
       
       if (this.comfyProcess.stderr) {
         this.comfyProcess.stderr.on('data', (data) => {
-          logger.error(`[ComfyUI-Error] ${data.toString().trim()}`);
+          const errorMsg = data.toString().trim();
+          this.addLog(`[ComfyUI-Error] ${errorMsg}`, true);
         });
       }
       
       // 监听进程退出
       this.comfyProcess.on('exit', (code, signal) => {
-        logger.info(`[API] 启动脚本进程已退出，退出码: ${code}, 信号: ${signal}`);
+        this.addLog(`启动脚本进程已退出，退出码: ${code}, 信号: ${signal}`);
         this.comfyProcess = null;
         
         // 检查ComfyUI是否仍在运行
@@ -138,7 +172,7 @@ export class ComfyUIController {
       
       // 监听错误
       this.comfyProcess.on('error', (err) => {
-        logger.error('[API] 启动脚本进程错误:', err);
+        this.addLog(`启动脚本进程错误: ${err.message}`, true);
         this.comfyProcess = null;
       });
       
@@ -157,7 +191,7 @@ export class ComfyUIController {
             exec("ps aux | grep '[p]ython.*comfyui' | awk '{print $2}'", (error, stdout) => {
               if (!error && stdout.trim()) {
                 this.comfyPid = parseInt(stdout.trim(), 10);
-                logger.info(`[API] 找到ComfyUI PID: ${this.comfyPid}`);
+                this.addLog(`找到ComfyUI PID: ${this.comfyPid}`);
               }
             });
           }
@@ -165,21 +199,23 @@ export class ComfyUIController {
         }
         
         retries++;
+        this.addLog(`等待ComfyUI启动，尝试 ${retries}/${maxRetries}`);
       }
       
       if (comfyStarted) {
-        logger.info('[API] ComfyUI启动成功');
+        this.addLog('ComfyUI启动成功');
         ctx.body = {
           success: true,
           message: 'ComfyUI已启动',
           pid: this.comfyPid
         };
       } else {
-        logger.error('[API] ComfyUI启动失败或超时');
+        this.addLog('ComfyUI启动失败或超时', true);
         ctx.status = 500;
         ctx.body = {
           success: false,
-          message: 'ComfyUI启动失败或超时'
+          message: 'ComfyUI启动失败或超时',
+          logs: this.recentLogs // 返回日志信息
         };
         
         // 尝试清理启动脚本进程
@@ -191,11 +227,12 @@ export class ComfyUIController {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error('[API] ComfyUI启动失败:', errorMessage);
+      this.addLog(`ComfyUI启动失败: ${errorMessage}`, true);
       ctx.status = 500;
       ctx.body = {
         success: false,
-        message: `启动失败: ${errorMessage}`
+        message: `启动失败: ${errorMessage}`,
+        logs: this.recentLogs // 返回日志信息
       };
     }
   }

@@ -229,6 +229,10 @@ const api = {
   // 添加模型安装API方法
   installModel: (modelName: string) => 
     superagent.post(`${API_BASE_URL}/models/install/${modelName}`).use(debug),
+
+  // 添加获取日志的方法
+  getLogs: () => 
+    superagent.get(`${API_BASE_URL}/comfyui/logs`).use(debug),
 };
 
 export default api;  // 只有一个默认导出 
