@@ -17,6 +17,8 @@
           <div class="text-caption">占用存储空间: {{ totalStorageUsed }}</div>
         </div>
         <div class="col-auto">
+          <q-btn color="primary" icon="search" label="扫描模型" class="q-mr-sm" 
+                 @click="onScanModels" :loading="isScanning" />
           <q-btn color="secondary" icon="refresh" label="刷新列表" @click="onRefresh" />
         </div>
       </div>
@@ -28,6 +30,38 @@
         :pagination="{ rowsPerPage: 10 }"
         class="installed-models-table"
       >
+        <template v-slot:body-cell-status="props">
+          <q-td :props="props">
+            <q-badge 
+              :color="getStatusColor(props.row.fileStatus)" 
+              :label="getStatusLabel(props.row.fileStatus)" 
+              class="q-mr-xs" 
+            />
+            <q-tooltip>
+              <div v-if="props.row.fileSize">
+                实际大小: {{ formatFileSize(props.row.fileSize) }}
+              </div>
+              <div v-if="props.row.size">
+                预期大小: {{ props.row.size }}
+              </div>
+              <div v-if="props.row.save_path">
+                路径: {{ props.row.save_path }}
+              </div>
+            </q-tooltip>
+          </q-td>
+        </template>
+        <template v-slot:body-cell-size="props">
+          <q-td :props="props">
+            <div>
+              {{ props.row.size || '未知' }}
+              <template v-if="props.row.fileSize && props.row.size">
+                <div class="text-caption" :class="getSizeComparisonClass(props.row)">
+                  实际: {{ formatFileSize(props.row.fileSize) }}
+                </div>
+              </template>
+            </div>
+          </q-td>
+        </template>
         <template v-slot:body-cell-actions="props">
           <q-td :props="props">
             <q-btn size="sm" flat round color="red" icon="delete" @click="onDeleteClick(props.row)" />
@@ -149,11 +183,14 @@ interface Model {
   name: string;
   description: string;
   type: string;
-  size: string;
+  size: string;  // 预期大小
   path?: string;
   installed: boolean;
   installedDate?: string;
   essential?: boolean;
+  fileStatus?: 'complete' | 'incomplete' | 'corrupted';  // 文件完整性状态
+  fileSize?: number;  // 实际文件大小（字节）
+  save_path?: string;  // 模型保存路径
 }
 
 // 表格列定义
@@ -175,6 +212,7 @@ export default defineComponent({
     const installedModelsCount = ref(0);
     const totalStorageUsed = ref('0 B');
     const isLoading = ref(false);
+    const isScanning = ref(false);
     const deleteConfirmDialog = ref(false);
     const modelInfoDialog = ref(false);
     const selectedModel = ref<Model | null>(null);
@@ -200,9 +238,10 @@ export default defineComponent({
     const modelColumns = ref<TableColumn[]>([
       { name: 'name', label: '名称', field: 'name', sortable: true },
       { name: 'type', label: '类型', field: 'type', sortable: true },
+      { name: 'status', label: '文件状态', field: 'fileStatus', sortable: true },
+      { name: 'size', label: '大小', field: 'size', sortable: true },
       { name: 'description', label: '描述', field: 'description' },
       { name: 'installedDate', label: '安装日期', field: 'installedDate', sortable: true },
-      { name: 'size', label: '大小', field: 'size', sortable: true },
       { name: 'actions', label: '操作', field: 'actions', align: 'right' }
     ]);
     
@@ -392,6 +431,48 @@ export default defineComponent({
       return typeColors[type] || 'grey';
     };
     
+    // 扫描模型目录
+    const onScanModels = async () => {
+      try {
+        isScanning.value = true;
+        $q.notify({
+          type: 'info',
+          message: '正在扫描模型目录，这可能需要一些时间...'
+        });
+        
+        const response = await api.post('models/scan');
+        const data = await extractResponseData<{
+          success: boolean,
+          count: number,
+          models: Model[]
+        }>(response);
+        
+        if (data?.success) {
+          // 更新模型列表
+          installedModels.value = data.models.filter(model => model.installed);
+          installedModelsCount.value = data.count || installedModels.value.length;
+          
+          // 计算总存储使用量
+          updateTotalStorageUsed();
+          
+          $q.notify({
+            type: 'positive',
+            message: `扫描完成，找到 ${installedModelsCount.value} 个已安装模型`
+          });
+        } else {
+          throw new Error('扫描模型失败');
+        }
+      } catch (error) {
+        console.error('扫描模型失败:', error);
+        $q.notify({
+          type: 'negative',
+          message: '扫描模型失败，请检查日志'
+        });
+      } finally {
+        isScanning.value = false;
+      }
+    };
+    
     // 组件加载时获取数据
     onMounted(() => {
       fetchInstalledModels();
@@ -403,12 +484,83 @@ export default defineComponent({
       // 例如，调用 API 删除模型
     };
     
+    // 添加获取状态颜色和标签的方法
+    const getStatusColor = (status?: string): string => {
+      switch (status) {
+        case 'complete': return 'positive';
+        case 'incomplete': return 'warning';
+        case 'corrupted': return 'negative';
+        default: return 'grey';
+      }
+    };
+    
+    const getStatusLabel = (status?: string): string => {
+      switch (status) {
+        case 'complete': return '完整';
+        case 'incomplete': return '不完整';
+        case 'corrupted': return '已损坏';
+        default: return '未知';
+      }
+    };
+    
+    // 根据大小对比添加样式类的方法
+    const getSizeComparisonClass = (model: Model): string => {
+      if (!model.size || !model.fileSize) return '';
+      
+      // 解析预期大小
+      const expectedSize = parseSizeString(model.size);
+      if (!expectedSize) return '';
+      
+      // 计算差异百分比
+      const diff = Math.abs(model.fileSize - expectedSize) / expectedSize;
+      
+      if (diff > 0.1) {
+        return model.fileSize < expectedSize ? 'text-warning' : 'text-positive';
+      }
+      return 'text-grey-8';
+    };
+    
+    // 添加解析大小字符串的方法
+    const parseSizeString = (sizeStr: string): number | null => {
+      try {
+        if (!sizeStr) return null;
+        
+        const match = sizeStr.match(/^([\d.]+)\s*([KMGT]B?)?$/i);
+        if (!match) return null;
+        
+        const value = parseFloat(match[1]);
+        const unit = match[2]?.toUpperCase() || '';
+        
+        if (isNaN(value)) return null;
+        
+        switch (unit) {
+          case 'KB':
+          case 'K':
+            return value * 1024;
+          case 'MB':
+          case 'M':
+            return value * 1024 * 1024;
+          case 'GB':
+          case 'G':
+            return value * 1024 * 1024 * 1024;
+          case 'TB':
+          case 'T':
+            return value * 1024 * 1024 * 1024 * 1024;
+          default:
+            return value;
+        }
+      } catch (error) {
+        return null;
+      }
+    };
+    
     return {
       // 状态
       installedModels,
       installedModelsCount,
       totalStorageUsed,
       isLoading,
+      isScanning,
       deleteConfirmDialog,
       modelInfoDialog,
       selectedModel,
@@ -425,11 +577,16 @@ export default defineComponent({
       closeModelInfo,
       formatFileSize,
       formatDate,
+      onScanModels,
       
       // 辅助功能
       getModelTypeLabel,
       getModelTypeColor,
-      confirmDelete
+      confirmDelete,
+      getStatusColor,
+      getStatusLabel,
+      getSizeComparisonClass,
+      parseSizeString
     };
   }
 });

@@ -233,6 +233,10 @@ const api = {
   // 添加获取日志的方法
   getLogs: () => 
     superagent.get(`${API_BASE_URL}/comfyui/logs`).use(debug),
+
+  // 添加模型扫描API方法
+  scanModels: () => 
+    superagent.post(`${API_BASE_URL}/models/scan`).use(debug),
 };
 
 export default api;  // 只有一个默认导出 

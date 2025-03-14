@@ -52,6 +52,9 @@ interface ModelInfo {
   sha256?: string;
   installed?: boolean;
   url?: string;  // 添加 url 属性
+  fileStatus?: 'complete' | 'incomplete' | 'corrupted';
+  fileSize?: number;
+  size?: string;  // 模型列表中提供的大小信息（字符串格式）
 }
 
 // 定义接口来匹配远程API的响应结构
@@ -79,6 +82,7 @@ export class ModelsController extends DownloadController {
   private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 1天的缓存时间
   private readonly MODEL_LIST_URL = 'https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/model-list.json';
   private readonly LOCAL_CACHE_PATH = path.join(config.dataDir, 'model-cache.json');
+  private readonly LOCAL_DEFAULT_LIST_PATH = path.join(__dirname, '../model-list.json');
   private comfyuiPath: string;
   private modelsDir: string;
   
@@ -95,6 +99,37 @@ export class ModelsController extends DownloadController {
     
     // 确保模型目录存在
     fs.ensureDirSync(this.modelsDir);
+
+    // 启动时自动进行一次模型扫描
+    this.initScan();
+  }
+
+  // 初始化扫描方法
+  private async initScan() {
+    try {
+      logger.info('应用启动，开始初始扫描已安装模型...');
+      
+      // 延迟几秒后执行，以免影响应用启动速度
+      setTimeout(async () => {
+        // 刷新模型安装状态
+        const updatedModels = await this.refreshInstalledStatus();
+        
+        // 更新本地缓存
+        this.modelCache = updatedModels;
+        this.cacheTimestamp = Date.now();
+        
+        // 保存到本地缓存
+        this.ensureCacheDirectory();
+        await fs.writeFile(this.LOCAL_CACHE_PATH, JSON.stringify({
+          models: updatedModels,
+          timestamp: this.cacheTimestamp
+        }));
+        
+        logger.info(`初始扫描完成，找到 ${updatedModels.filter(m => m.installed).length} 个已安装模型`);
+      }, 5000); // 延迟5秒执行，以免影响应用启动
+    } catch (error) {
+      logger.error(`初始模型扫描失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   private ensureCacheDirectory() {
@@ -107,28 +142,86 @@ export class ModelsController extends DownloadController {
   // 获取模型列表
   async getModelList(mode: 'cache' | 'local' | 'remote' = 'cache'): Promise<ModelInfo[]> {
     try {
-      let models: ModelInfo[] = [];
-      
-      switch (mode) {
-        case 'remote':
-          models = await this.getRemoteModels();
-          break;
-        case 'local':
-          models = await this.getLocalModels();
-          break;
-        case 'cache':
-        default:
-          models = await this.getCachedModels();
-          if (models.length === 0 || Date.now() - this.cacheTimestamp > this.CACHE_DURATION) {
-            models = await this.getRemoteModels();
-          }
-          break;
+      // 优先使用内存缓存(当mode为cache时)
+      if (mode === 'cache' && this.modelCache && this.cacheTimestamp && 
+          Date.now() - this.cacheTimestamp < this.CACHE_DURATION) {
+        logger.info('使用缓存的模型列表');
+        return this.modelCache;
       }
 
-      // 确保返回值是数组
-      return Array.isArray(models) ? models : [];
+      // 如果请求远程数据，直接获取
+      if (mode === 'remote') {
+        return await this.getRemoteModels();
+      }
+
+      // 如果请求本地数据，尝试读取本地缓存
+      if (mode === 'local') {
+        return await this.getLocalModels();
+      }
+
+      // 默认情况下按顺序尝试：缓存文件 -> 远程API -> 本地默认列表
+      // 尝试读取本地缓存文件
+      try {
+        if (await fs.pathExists(this.LOCAL_CACHE_PATH)) {
+          const cacheData = await fs.readFile(this.LOCAL_CACHE_PATH, 'utf8');
+          const cacheJson = JSON.parse(cacheData);
+          
+          if (cacheJson.models && Array.isArray(cacheJson.models) && 
+              cacheJson.timestamp && 
+              Date.now() - cacheJson.timestamp < this.CACHE_DURATION) {
+            logger.info('使用本地缓存文件的模型列表');
+            this.modelCache = cacheJson.models;
+            this.cacheTimestamp = cacheJson.timestamp;
+            return this.modelCache;
+          }
+        }
+      } catch (cacheError) {
+        logger.warn(`读取本地缓存文件失败: ${cacheError instanceof Error ? cacheError.message : String(cacheError)}`);
+      }
+      
+      // 尝试从远程API获取
+      try {
+        logger.info('从远程API获取模型列表...');
+        const models = await this.getRemoteModels();
+        
+        // 更新缓存
+        this.modelCache = models;
+        this.cacheTimestamp = Date.now();
+        
+        // 保存到本地缓存
+        this.ensureCacheDirectory();
+        await fs.writeFile(this.LOCAL_CACHE_PATH, JSON.stringify({
+          models: this.modelCache,
+          timestamp: this.cacheTimestamp
+        }));
+        
+        logger.info(`成功从API获取到 ${models.length} 个模型`);
+        return models;
+      } catch (apiError) {
+        logger.error(`从API获取模型列表失败: ${apiError instanceof Error ? apiError.message : String(apiError)}`);
+        
+        // 使用本地默认模型列表
+        try {
+          logger.info('使用本地默认模型列表...');
+          if (await fs.pathExists(this.LOCAL_DEFAULT_LIST_PATH)) {
+            const defaultData = await fs.readFile(this.LOCAL_DEFAULT_LIST_PATH, 'utf8');
+            const defaultJson = JSON.parse(defaultData);
+            
+            if (defaultJson.models && Array.isArray(defaultJson.models)) {
+              logger.info(`从本地默认列表加载了 ${defaultJson.models.length} 个模型`);
+              return defaultJson.models;
+            }
+          }
+        } catch (defaultError) {
+          logger.error(`读取本地默认模型列表失败: ${defaultError instanceof Error ? defaultError.message : String(defaultError)}`);
+        }
+      }
+      
+      // 所有方法都失败，返回空列表
+      logger.warn('无法获取模型列表，返回空列表');
+      return [];
     } catch (error) {
-      console.error('获取模型列表失败:', error);
+      logger.error(`获取模型列表出错: ${error instanceof Error ? error.message : String(error)}`);
       return [];
     }
   }
@@ -537,6 +630,270 @@ export class ModelsController extends DownloadController {
       case 'embedding': return 'models/embeddings';
       case 'inpaint': return 'models/inpaint';
       default: return 'models/checkpoints';
+    }
+  }
+
+  // 添加一个新方法用于扫描模型目录下所有已安装的模型
+  private async scanInstalledModels(): Promise<Map<string, any>> {
+    const installedModels = new Map<string, any>();
+    
+    try {
+      // 获取所有可能的模型目录
+      const modelDirs = [
+        path.join(this.comfyuiPath, 'models/checkpoints'),
+        path.join(this.comfyuiPath, 'models/loras'), 
+        path.join(this.comfyuiPath, 'models/vae'),
+        path.join(this.comfyuiPath, 'models/controlnet'),
+        path.join(this.comfyuiPath, 'models/upscale_models'),
+        path.join(this.comfyuiPath, 'models/embeddings'),
+        path.join(this.comfyuiPath, 'models/inpaint')
+      ];
+      
+      // 确保所有目录存在
+      for (const dir of modelDirs) {
+        await fs.ensureDir(dir);
+      }
+      
+      // 递归扫描所有目录
+      for (const dir of modelDirs) {
+        await this.scanDirectory(dir, installedModels);
+      }
+      
+      logger.info(`扫描完成，找到 ${installedModels.size} 个已安装模型`);
+      return installedModels;
+    } catch (error) {
+      logger.error(`扫描模型目录时出错: ${error instanceof Error ? error.message : String(error)}`);
+      return installedModels;
+    }
+  }
+  
+  // 递归扫描目录获取所有模型文件
+  private async scanDirectory(dir: string, result: Map<string, any>): Promise<void> {
+    try {
+      const files = await fs.readdir(dir);
+      
+      for (const file of files) {
+        const fullPath = path.join(dir, file);
+        const stat = await fs.stat(fullPath);
+        
+        if (stat.isDirectory()) {
+          // 递归扫描子目录
+          await this.scanDirectory(fullPath, result);
+        } else {
+          // 检查是否是模型文件
+          const ext = path.extname(file).toLowerCase();
+          if (['.safetensors', '.ckpt', '.pth', '.pt', '.bin'].includes(ext)) {
+            // 检查文件完整性
+            const fileInfo = await this.checkFileBasicIntegrity(fullPath, file, stat.size);
+            
+            // 使用文件名作为键，文件信息作为值
+            const relativePath = path.relative(this.comfyuiPath, fullPath);
+            result.set(file, {
+              path: relativePath,
+              size: stat.size,
+              status: fileInfo.status,
+              type: this.inferModelTypeFromPath(relativePath)
+            });
+            
+            // 记录文件状态信息到日志
+            logger.info(`模型文件: ${file}, 路径: ${relativePath}, 状态: ${fileInfo.status}, 大小: ${this.formatFileSize(stat.size)}`);
+          }
+        }
+      }
+    } catch (error) {
+      logger.error(`扫描目录 ${dir} 时出错: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  // 简化版的文件完整性检查
+  private async checkFileBasicIntegrity(filePath: string, fileName: string, fileSize: number): Promise<{status: 'complete' | 'incomplete' | 'corrupted', message?: string}> {
+    try {
+      // 1. 基本检查：文件是否为空
+      if (fileSize === 0) {
+        return { status: 'incomplete', message: '文件大小为0' };
+      }
+      
+      // 2. 尝试读取文件的前几个字节，检查是否可以访问
+      try {
+        // 使用 fs.promises.open 代替 fs.open
+        const fileHandle = await fs.promises.open(filePath, 'r');
+        const buffer = Buffer.alloc(1024); // 读取前1KB进行测试
+        
+        try {
+          const { bytesRead } = await fileHandle.read(buffer, 0, 1024, 0);
+          await fileHandle.close();
+          
+          if (bytesRead <= 0) {
+            return { status: 'corrupted', message: '文件无法读取' };
+          }
+        } catch (error) {
+          await fileHandle.close();
+          throw error;
+        }
+      } catch (error) {
+        logger.error(`读取文件 ${fileName} 时出错: ${error instanceof Error ? error.message : String(error)}`);
+        return { status: 'corrupted', message: '文件无法访问' };
+      }
+      
+      // 通过所有检查，文件被认为是完整的
+      return { status: 'complete' };
+    } catch (error) {
+      logger.error(`检查文件 ${fileName} 完整性时出错: ${error instanceof Error ? error.message : String(error)}`);
+      return { status: 'corrupted', message: '检查过程中出错' };
+    }
+  }
+
+  // 格式化文件大小为可读形式
+  private formatFileSize(bytes: number): string {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+  }
+
+  // 从路径推断模型类型
+  private inferModelTypeFromPath(relativePath: string): string {
+    const lowercasePath = relativePath.toLowerCase();
+    if (lowercasePath.includes('checkpoints')) return 'checkpoint';
+    if (lowercasePath.includes('loras')) return 'lora';
+    if (lowercasePath.includes('vae')) return 'vae';
+    if (lowercasePath.includes('controlnet')) return 'controlnet';
+    if (lowercasePath.includes('upscale')) return 'upscaler';
+    if (lowercasePath.includes('embeddings')) return 'embedding';
+    if (lowercasePath.includes('inpaint')) return 'inpaint';
+    return 'unknown';
+  }
+
+  // 解析大小字符串为字节数
+  private parseSizeString(sizeStr: string): number | null {
+    try {
+      if (!sizeStr) return null;
+      
+      const match = sizeStr.match(/^([\d.]+)\s*([KMGT]B?)?$/i);
+      if (!match) return null;
+      
+      const value = parseFloat(match[1]);
+      const unit = match[2]?.toUpperCase() || '';
+      
+      if (isNaN(value)) return null;
+      
+      switch (unit) {
+        case 'KB':
+        case 'K':
+          return value * 1024;
+        case 'MB':
+        case 'M':
+          return value * 1024 * 1024;
+        case 'GB':
+        case 'G':
+          return value * 1024 * 1024 * 1024;
+        case 'TB':
+        case 'T':
+          return value * 1024 * 1024 * 1024 * 1024;
+        default:
+          return value;
+      }
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // 刷新模型列表的安装状态并检查完整性
+  public async refreshInstalledStatus(): Promise<ModelInfo[]> {
+    try {
+      // 先获取模型列表
+      const models = await this.getModelList();
+      
+      // 扫描已安装的模型
+      const installedModels = await this.scanInstalledModels();
+      
+      // 更新每个模型的安装状态和文件状态
+      return await Promise.all(models.map(async model => {
+        // 检查模型文件名是否在已安装列表中
+        if (model.filename && installedModels.has(model.filename)) {
+          const fileInfo = installedModels.get(model.filename);
+          model.installed = true;
+          model.fileStatus = fileInfo.status;
+          model.fileSize = fileInfo.size;
+          model.save_path = fileInfo.path;
+          
+          // 如果模型有预期大小，检查是否匹配
+          if (model.size) {
+            const expectedSize = this.parseSizeString(model.size);
+            if (expectedSize && Math.abs(fileInfo.size - expectedSize) / expectedSize > 0.1) {
+              // 如果文件大小与预期相差超过10%，标记为不完整
+              model.fileStatus = 'incomplete';
+              logger.warn(`模型 ${model.filename} 大小不匹配：预期 ${model.size}，实际 ${this.formatFileSize(fileInfo.size)}`);
+            }
+          }
+        } else {
+          // 也检查模型名称是否匹配
+          const possibleMatches = Array.from(installedModels.keys()).filter(
+            filename => filename.includes(model.name) || (model.name && filename.includes(model.name))
+          );
+          
+          if (possibleMatches.length > 0) {
+            // 找到可能的匹配
+            const fileInfo = installedModels.get(possibleMatches[0]);
+            model.installed = true;
+            model.filename = possibleMatches[0];
+            model.fileStatus = fileInfo.status;
+            model.fileSize = fileInfo.size;
+            model.save_path = fileInfo.path;
+            
+            // 与预期大小比较
+            if (model.size) {
+              const expectedSize = this.parseSizeString(model.size);
+              if (expectedSize && Math.abs(fileInfo.size - expectedSize) / expectedSize > 0.1) {
+                model.fileStatus = 'incomplete';
+                logger.warn(`模型 ${model.filename} 大小不匹配：预期 ${model.size}，实际 ${this.formatFileSize(fileInfo.size)}`);
+              }
+            }
+          } else {
+            model.installed = false;
+            model.fileStatus = undefined;
+          }
+        }
+        
+        return model;
+      }));
+    } catch (error) {
+      logger.error(`刷新模型安装状态时出错: ${error instanceof Error ? error.message : String(error)}`);
+      return [];
+    }
+  }
+
+  // API路由处理程序：扫描并更新模型安装状态
+  public async scanModels(ctx: Context): Promise<void> {
+    try {
+      logger.info('开始扫描已安装模型...');
+      
+      // 刷新模型安装状态
+      const updatedModels = await this.refreshInstalledStatus();
+      
+      // 更新本地缓存
+      this.modelCache = updatedModels;
+      this.cacheTimestamp = Date.now();
+      
+      // 保存到本地缓存
+      this.ensureCacheDirectory();
+      await fs.writeFile(this.LOCAL_CACHE_PATH, JSON.stringify({
+        models: updatedModels,
+        timestamp: this.cacheTimestamp
+      }));
+      
+      ctx.body = {
+        success: true,
+        count: updatedModels.filter(m => m.installed).length,
+        models: updatedModels
+      };
+    } catch (error) {
+      logger.error(`扫描模型失败: ${error instanceof Error ? error.message : String(error)}`);
+      ctx.status = 500;
+      ctx.body = {
+        success: false,
+        message: `扫描模型失败: ${error instanceof Error ? error.message : String(error)}`
+      };
     }
   }
 } 
