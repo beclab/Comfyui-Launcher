@@ -106,5 +106,7 @@ RUN chmod +x /app/start.sh
 # 暴露前端和后端端口
 EXPOSE 8080 3000
 
+COPY ./entrypoint.sh /runner-scripts/entrypoint.sh
+
 # 启动应用
 CMD ["/app/start.sh"]
