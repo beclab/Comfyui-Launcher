@@ -23,8 +23,28 @@ superagent.Request.prototype.use = function(fn) {
   return this;
 };
 
-// 在每个请求前添加调试
-const debug = (req: superagent.Request) => console.log(`[前端] 发送请求: ${req.method} ${req.url}`);
+// 增强调试功能
+const debug = (req: superagent.Request) => {
+  const method = req.method || 'GET';
+  const url = req.url || '';
+  console.log(`[API] 发送请求: ${method} ${url}`);
+  
+  // 记录响应
+  const originalEnd = req.end;
+  req.end = function(fn) {
+    return originalEnd.call(this, (err, res) => {
+      if (err) {
+        console.error(`[API] 请求失败: ${method} ${url}`, err);
+      } else {
+        console.log(`[API] 请求成功: ${method} ${url}`, 
+          res.status, res.body && typeof res.body === 'object' ? '(对象)' : res.body);
+      }
+      fn && fn(err, res);
+    });
+  };
+  
+  return req;
+};
 
 // 封装SuperAgent响应为类似Axios的格式
 const adaptResponse = async (request: superagent.Request) => {
@@ -34,6 +54,61 @@ const adaptResponse = async (request: superagent.Request) => {
     status: response.status,
     headers: response.headers
   };
+};
+
+// 模型类型定义
+export interface Model {
+  name: string;
+  type: string;
+  description?: string;
+  installed?: boolean;
+  // 其他模型属性...
+}
+
+// 模型数据获取模式
+export type ModelFetchMode = 'cache' | 'local' | 'remote';
+
+// 模型相关 API
+export const modelsApi = {
+  // 获取模型列表
+  async getModels(mode: ModelFetchMode | { value: ModelFetchMode } = 'cache'): Promise<Model[]> {
+    try {
+      // 处理可能是对象的 mode 参数
+      const modeValue = typeof mode === 'object' && mode !== null
+        ? mode.value
+        : mode;
+      
+      // 使用与 api 对象相同的 URL 构建方式
+      const response = await superagent.get(`${API_BASE_URL}/models?mode=${modeValue}`).use(debug);
+      return response.body;
+    } catch (error) {
+      console.error('获取模型失败:', error);
+      return [];
+    }
+  },
+
+  // 安装模型
+  async installModel(modelName: string): Promise<boolean> {
+    try {
+      const encodedModelName = encodeURIComponent(modelName);
+      const response = await api.post(`models/install/${encodedModelName}`);
+      return response.data?.success === true;
+    } catch (error) {
+      console.error(`安装模型 ${modelName} 失败:`, error);
+      throw error;
+    }
+  },
+
+  // 取消下载
+  async cancelDownload(modelName: string): Promise<boolean> {
+    try {
+      await superagent.post(`${API_BASE_URL}/models/cancel-download`).send({ modelName }).use(debug);
+      return true;
+    } catch (error) {
+      console.error(`取消下载 ${modelName} 失败:`, error);
+      throw error;
+    }
+  }
 };
 
 // 统一API接口
@@ -76,8 +151,8 @@ const api = {
   downloadAllModels: () => 
     superagent.post(`${API_BASE_URL}/models/download-all`),
   
-  getModelProgress: (taskId: string) => 
-    superagent.get(`${API_BASE_URL}/models/progress/${taskId}`),
+  getModelProgress: (id: string) => 
+    superagent.get(`${API_BASE_URL}/models/progress/${id}`),
   
   // 插件管理
   getPlugins: () => 
@@ -106,8 +181,8 @@ const api = {
   getAllModels: () => 
     superagent.get(`${API_BASE_URL}/models`),
   
-  downloadEssentialModels: (source = 'mirror') => 
-    superagent.post(`${API_BASE_URL}/models/download-essential`).send({ source }),
+  downloadEssentialModels: (source: string) => 
+    superagent.post(`${API_BASE_URL}/models/download-essential`).send({ source }).use(debug),
   
   cancelDownload: (taskId: string) => 
     superagent.post(`${API_BASE_URL}/models/cancel-download`).send({ taskId }),
@@ -115,6 +190,10 @@ const api = {
   // 添加获取必要模型列表的API
   getEssentialModels: () => 
     superagent.get(`${API_BASE_URL}/models/essential`),
+
+  // 添加模型安装API方法
+  installModel: (modelName: string) => 
+    superagent.post(`${API_BASE_URL}/models/install/${modelName}`).use(debug),
 };
 
 export default api;  // 只有一个默认导出 

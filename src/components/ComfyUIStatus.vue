@@ -1,126 +1,190 @@
 <template>
   <div class="comfyui-status">
-    <q-banner v-if="status.running" class="bg-positive text-white q-mb-md">
-      <div class="row items-center">
-        <q-icon name="check_circle" size="md" class="q-mr-sm" />
-        <div>
-          <div class="text-subtitle1">ComfyUI 正在运行</div>
-          <div class="text-caption" v-if="status.uptime">已运行时间: {{ status.uptime }}</div>
-        </div>
-        <q-space />
-        <q-btn 
-          flat 
-          dense 
-          color="white" 
-          label="停止" 
-          @click="stopComfyUI" 
-          :loading="stopping"
-          :disable="stopping"
-        >
-          <template v-slot:loading>
-            <q-spinner-dots />
-          </template>
-        </q-btn>
-      </div>
-    </q-banner>
+    <div class="status-indicator" :class="{ 'online': isConnected, 'offline': !isConnected }">
+      ComfyUI {{ isConnected ? '在线' : '离线' }}
+    </div>
     
-    <q-banner v-else class="bg-negative text-white q-mb-md">
-      <div class="row items-center">
-        <q-icon name="error" size="md" class="q-mr-sm" />
-        <div>
-          <div class="text-subtitle1">ComfyUI 未运行</div>
-        </div>
-        <q-space />
-        <q-btn 
-          flat 
-          dense 
-          color="white" 
-          label="启动" 
-          @click="startComfyUI" 
-          :loading="starting"
-          :disable="starting"
-        >
-          <template v-slot:loading>
-            <q-spinner-dots />
-          </template>
-        </q-btn>
+    <div class="model-stats" v-if="isConnected">
+      <div class="stat-item">
+        <strong>已安装模型:</strong> {{ installedModelsCount }}
       </div>
-    </q-banner>
+      <div class="stat-item">
+        <strong>可用模型:</strong> {{ availableModelsCount }}
+      </div>
+    </div>
+    
+    <!-- 添加启动/停止按钮 -->
+    <div class="control-buttons">
+      <q-btn 
+        v-if="!isConnected" 
+        color="positive" 
+        icon="play_arrow" 
+        label="启动" 
+        @click="startComfyUI"
+        :loading="isStarting"
+      />
+      <q-btn 
+        v-else 
+        color="negative" 
+        icon="stop" 
+        label="停止" 
+        @click="stopComfyUI"
+        :loading="isStopping"
+      />
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, onUnmounted } from 'vue';
+import { defineComponent, ref, computed, onMounted, onUnmounted } from 'vue';
+import { modelsApi, Model } from '../api';
 import api from '../api';
+import { useQuasar } from 'quasar';
 
 export default defineComponent({
   name: 'ComfyUIStatus',
+  
   setup() {
-    const status = ref({ running: false, uptime: '', pid: null });
-    const starting = ref(false);
-    const stopping = ref(false);
-    const isPolling = ref(true); // 标志控制轮询
+    const $q = useQuasar();
+    const isConnected = ref(false);
+    const models = ref<Model[]>([]);
+    const isStarting = ref(false);
+    const isStopping = ref(false);
     
-    const fetchStatus = async () => {
-      console.log('尝试获取ComfyUI状态...');
+    const checkConnection = async () => {
       try {
-        // 路径必须与后端路由匹配 - 这里是 '/status'，不是 '/comfyui/status'
-        const response = await api.get('status'); // 注意：可以不带前导斜杠
-        console.log('ComfyUI状态更新:', response.data);
-        status.value = response.data;
+        // 检查 ComfyUI 连接状态
+        const response = await api.getStatus();
+        isConnected.value = response.status === 200 && response.body.running;
+        
+        if (isConnected.value) {
+          // 如果连接正常，获取模型列表
+          models.value = await modelsApi.getModels('local');
+        }
       } catch (error) {
-        console.error('获取状态失败:', error);
-      }
-      
-      // 递归调用，实现轮询
-      if (isPolling.value) {
-        setTimeout(fetchStatus, 5000);
+        isConnected.value = false;
+        console.error('连接 ComfyUI 失败:', error);
       }
     };
     
+    // 启动 ComfyUI
     const startComfyUI = async () => {
-      starting.value = true;
       try {
-        await api.post('start'); // 匹配后端路由
-        await fetchStatus();
+        isStarting.value = true;
+        await api.startComfyUI();
+        $q.notify({
+          type: 'positive',
+          message: 'ComfyUI 正在启动，请稍候...'
+        });
+        // 等待启动完成
+        setTimeout(async () => {
+          await checkConnection();
+          isStarting.value = false;
+        }, 5000);
       } catch (error) {
-        console.error('启动ComfyUI失败:', error);
-      } finally {
-        starting.value = false;
+        isStarting.value = false;
+        $q.notify({
+          type: 'negative',
+          message: '启动 ComfyUI 失败'
+        });
+        console.error('启动 ComfyUI 失败:', error);
       }
     };
     
+    // 停止 ComfyUI
     const stopComfyUI = async () => {
-      stopping.value = true;
       try {
-        await api.post('stop'); // 匹配后端路由
-        await fetchStatus();
+        isStopping.value = true;
+        await api.stopComfyUI();
+        $q.notify({
+          type: 'info',
+          message: 'ComfyUI 已停止'
+        });
+        isConnected.value = false;
+        isStopping.value = false;
       } catch (error) {
-        console.error('停止ComfyUI失败:', error);
-      } finally {
-        stopping.value = false;
+        isStopping.value = false;
+        $q.notify({
+          type: 'negative',
+          message: '停止 ComfyUI 失败'
+        });
+        console.error('停止 ComfyUI 失败:', error);
       }
     };
     
+    // 计算已安装模型数量
+    const installedModelsCount = computed(() => {
+      return models.value.filter(model => model.installed).length;
+    });
+    
+    // 计算可用模型总数
+    const availableModelsCount = computed(() => {
+      return models.value.length;
+    });
+    
+    // 定期检查连接状态
+    let intervalId: number | null = null;
     onMounted(() => {
-      console.log('ComfyUIStatus组件已挂载，启动首次状态获取');
-      // 启动轮询
-      fetchStatus();
+      checkConnection();
+      intervalId = window.setInterval(checkConnection, 30000); // 每30秒检查一次
     });
     
     onUnmounted(() => {
-      console.log('ComfyUIStatus组件卸载，停止轮询');
-      // 设置标志以停止轮询
-      isPolling.value = false;
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
     });
     
     return {
-      status,
-      starting,
-      stopping,
+      isConnected,
+      installedModelsCount,
+      availableModelsCount,
       startComfyUI,
-      stopComfyUI
+      stopComfyUI,
+      isStarting,
+      isStopping
     };
   }
 });
-</script> 
+</script>
+
+<style scoped>
+.comfyui-status {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.status-indicator {
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.status-indicator.online {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.status-indicator.offline {
+  background-color: #f44336;
+  color: white;
+}
+
+.model-stats {
+  display: flex;
+  gap: 15px;
+}
+
+.stat-item {
+  font-size: 0.9em;
+}
+
+.control-buttons {
+  margin-left: auto;
+}
+</style> 
