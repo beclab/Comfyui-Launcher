@@ -111,6 +111,40 @@ export const modelsApi = {
   }
 };
 
+// 更新ApiResponse接口定义，更准确地描述API响应
+export interface ApiResponse<T = any> {
+  data?: T;
+  body?: T | ReadableStream<Uint8Array>;  // body可能是ReadableStream
+  status?: number;
+  headers?: { [key: string]: string };
+}
+
+// 添加一个工具函数，安全地处理API响应
+export const isApiResponse = (response: any): response is ApiResponse => {
+  return response && typeof response === 'object' && 
+    ('data' in response || 'body' in response || 'status' in response);
+};
+
+// 修改get函数，确保有返回值
+const get = async <T>(url: string): Promise<ApiResponse<T> | Response> => {
+  try {
+    // 直接实现和使用现有的api.get方法相同的逻辑
+    const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    const response = await superagent.get(`${API_BASE_URL}/${cleanUrl}`).use(debug);
+    return {
+      data: response.body as T,
+      status: response.status,
+      headers: response.headers
+    };
+  } catch (error) {
+    // 如果出错，返回一个fetch API标准的Response对象
+    return new Response(JSON.stringify({error: String(error)}), {
+      status: 500,
+      headers: {'Content-Type': 'application/json'}
+    });
+  }
+};
+
 // 统一API接口
 const api = {
   // 通用HTTP方法

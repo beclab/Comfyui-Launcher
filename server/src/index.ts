@@ -6,6 +6,7 @@ import { ComfyUIController, createComfyUIProxy } from './controllers/comfyui.con
 import { ModelsController } from './controllers/models.controller';
 import { PluginsController } from './controllers/plugins.controller';
 import { SystemController } from './controllers/system.controller';
+import { EssentialModelsController } from './controllers/essential-models.controller';
 import { config } from './config';
 
 const app = new Koa();
@@ -20,33 +21,31 @@ const comfyuiController = new ComfyUIController();
 const modelsController = new ModelsController();
 const pluginsController = new PluginsController();
 const systemController = new SystemController();
+const essentialModelsController = new EssentialModelsController();
 
 // ComfyUI状态管理路由
 router.get('/api/status', (ctx) => comfyuiController.getStatus(ctx));
 router.post('/api/start', (ctx) => comfyuiController.startComfyUI(ctx));
 router.post('/api/stop', (ctx) => comfyuiController.stopComfyUI(ctx));
 
-// 模型管理路由 - 统一使用 /api 前缀
-router.get('/api/models', async (ctx) => {
-  try {
-    const mode = ctx.query.mode as 'cache' | 'local' | 'remote' || 'cache';
-    const models = await modelsController.getModelList(mode);
-    ctx.body = models;
-  } catch (error) {
-    console.error('Error fetching models:', error);
-    ctx.status = 500;
-    ctx.body = { error: 'Failed to fetch models' };
-  }
-});
+// 模型管理路由
+router.get('/api/models', modelsController.getModels.bind(modelsController));
+// router.post('/api/models/download', modelsController.downloadModel.bind(modelsController));
+// router.get('/api/models/downloadByName/:modelName', modelsController.downloadModelByNameApi.bind(modelsController));
+router.post('/api/models/delete', modelsController.deleteModel.bind(modelsController));
+router.get('/api/models/installed', modelsController.getInstalledModels.bind(modelsController));
 
-router.post('/api/models/download', modelsController.downloadModel.bind(modelsController));
-router.post('/api/models/download-all', modelsController.downloadAllModels.bind(modelsController));
-router.get('/api/models/progress/:id', (ctx) => modelsController.getModelProgress(ctx));
 router.post('/api/models/cancel-download', modelsController.cancelDownload.bind(modelsController));
-router.post('/api/models/download-essential', modelsController.downloadEssentialModels.bind(modelsController));
+// 模型管理路由 v2
+router.post('/api/models/install/:modelName', modelsController.installModel.bind(modelsController));
+router.get('/api/models/progress/:id', modelsController.getModelProgress.bind(modelsController));
 
-// 添加新的API路由
-router.get('/api/models/essential', modelsController.getEssentialModels.bind(modelsController));
+// 基础模型管理路由
+router.get('/api/models/essential', essentialModelsController.getEssentialModels.bind(essentialModelsController));
+router.post('/api/models/download-essential', essentialModelsController.downloadEssentialModels.bind(essentialModelsController));
+router.get('/api/models/essential-status', essentialModelsController.getEssentialModelsStatus.bind(essentialModelsController));
+router.get('/api/models/essential-progress/:id', essentialModelsController.getProgress.bind(essentialModelsController));
+router.post('/api/models/cancel-essential', essentialModelsController.cancelDownload.bind(essentialModelsController));
 
 // 插件管理路由
 router.get('/api/plugins', (ctx) => pluginsController.getAllPlugins(ctx));
@@ -59,11 +58,6 @@ router.post('/api/reset', systemController.resetSystem);
 router.get('/api/reset/progress/:taskId', systemController.getResetProgress);
 router.post('/api/restart', systemController.restartApp);
 
-// 安装模型的 API 端点
-router.post('/api/models/install/:modelName', modelsController.installModel.bind(modelsController));
-
-// 配置模型下载API路由
-router.get('/api/models/downloadByName/:modelName', modelsController.downloadModelByNameApi.bind(modelsController));
 
 // 使用路由
 app.use(router.routes());
