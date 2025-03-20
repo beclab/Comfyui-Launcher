@@ -13,7 +13,7 @@ import { downloadFile } from '../utils/download.utils';
 const logger = loggerIn.logger;
 
 // 必要模型列表
-const essentialModels: EssentialModel[] = [
+export const essentialModels: EssentialModel[] = [
   // 大模型（Checkpoints）
   {
     id: 'flux1-schnell-fp8',

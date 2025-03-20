@@ -11,6 +11,7 @@ import http from 'http';    // 使用内置的 http 模块
 import { v4 as uuidv4 } from 'uuid';
 import { DownloadController } from './download.controller';
 import { Model, DownloadProgress, EssentialModel } from '../types/models.types';
+import { essentialModels } from './essential-models.controller';
 
 // 必要模型接口定义
 
@@ -142,6 +143,21 @@ export class ModelsController extends DownloadController {
   // 获取模型列表
   async getModelList(mode: 'cache' | 'local' | 'remote' = 'cache'): Promise<ModelInfo[]> {
     try {
+      // 合并常规模型和基础模型列表
+      const regularModels = await this.getRegularModelList(mode);
+      const essentialModelsList = this.convertEssentialModelsToModelInfo(essentialModels);
+      
+      // 返回合并后的列表
+      return [...regularModels, ...essentialModelsList];
+    } catch (error) {
+      logger.error(`获取模型列表出错: ${error instanceof Error ? error.message : String(error)}`);
+      return [];
+    }
+  }
+  
+  // 原来的获取模型列表逻辑移到这个方法中
+  private async getRegularModelList(mode: 'cache' | 'local' | 'remote' = 'cache'): Promise<ModelInfo[]> {
+    try {
       // 优先使用内存缓存(当mode为cache时)
       if (mode === 'cache' && this.modelCache && this.cacheTimestamp && 
           Date.now() - this.cacheTimestamp < this.CACHE_DURATION) {
@@ -221,32 +237,52 @@ export class ModelsController extends DownloadController {
       logger.warn('无法获取模型列表，返回空列表');
       return [];
     } catch (error) {
-      logger.error(`获取模型列表出错: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`获取常规模型列表出错: ${error instanceof Error ? error.message : String(error)}`);
       return [];
     }
   }
-
-  // 从缓存获取模型列表
-  private async getCachedModels(): Promise<ModelInfo[]> {
+  
+  // 添加将基础模型转换为ModelInfo格式的方法
+  private convertEssentialModelsToModelInfo(essentialModels: EssentialModel[]): ModelInfo[] {
     try {
-      if (!fs.existsSync(this.LOCAL_CACHE_PATH)) {
-        return [];
-      }
-
-      const cacheData = JSON.parse(fs.readFileSync(this.LOCAL_CACHE_PATH, 'utf-8'));
-      
-      // 验证缓存数据格式
-      if (!cacheData || !Array.isArray(cacheData.models)) {
-        console.error('缓存数据格式不正确');
-        return [];
-      }
-
-      this.modelCache = cacheData.models;
-      this.cacheTimestamp = cacheData.timestamp || Date.now();
-      
-      return this.checkInstalledStatus(this.modelCache);
+      return essentialModels.map(model => {
+        // 创建路径字符串
+        const savePath = `models/${model.dir}/${model.out}`;
+        
+        // 检查模型是否已安装
+        const fullPath = path.join(this.comfyuiPath, model.dir, model.out);
+        const isInstalled = fs.existsSync(fullPath);
+        let fileSize = 0;
+        let fileStatus: 'complete' | 'incomplete' | 'corrupted' | 'unknown' = 'unknown';
+        
+        if (isInstalled) {
+          try {
+            const stat = fs.statSync(fullPath);
+            fileSize = stat.size;
+            fileStatus = fileSize > 0 ? 'complete' : 'incomplete';
+          } catch (error) {
+            logger.error(`检查基础模型文件 ${fullPath} 时出错: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        }
+        
+        // 创建与ModelInfo接口兼容的对象
+        return {
+          id: model.id,                  // 使用基础模型的ID
+          name: model.name,              // 使用基础模型的名称
+          type: model.type,              // 模型类型
+          base_url: '',                  // 基础模型没有base_url
+          save_path: savePath,           // 保存路径
+          description: model.description,// 描述
+          filename: model.out,           // 文件名
+          installed: isInstalled && fileSize > 0, // 是否已安装
+          essential: true,               // 标记为基础模型
+          fileStatus: fileStatus,        // 文件状态
+          fileSize: fileSize,            // 文件大小
+          url: model.url.mirror || model.url.hf  // 使用其中一个URL作为字符串值
+        } as unknown as ModelInfo;       // 使用双重类型断言
+      });
     } catch (error) {
-      console.error('读取模型缓存失败:', error);
+      logger.error(`转换基础模型列表出错: ${error instanceof Error ? error.message : String(error)}`);
       return [];
     }
   }
