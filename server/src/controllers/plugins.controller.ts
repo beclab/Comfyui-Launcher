@@ -26,7 +26,8 @@ const taskProgressMap: Record<string, {
   completed: boolean,
   pluginId: string,
   type: 'install' | 'uninstall',
-  message?: string
+  message?: string,
+  githubProxy?: string
 }> = {};
 
 // 缓存插件列表
@@ -311,6 +312,7 @@ export class PluginsController {
   // 安装插件
   async installPlugin(ctx: Context): Promise<void> {
     const { pluginId } = ctx.request.body as { pluginId: string };
+    const { githubProxy } = ctx.request.body as { githubProxy: string };
     console.log(`[API] 请求安装插件: ${pluginId}`);
     
     const taskId = uuidv4();
@@ -320,11 +322,12 @@ export class PluginsController {
       progress: 0,
       completed: false,
       pluginId,
-      type: 'install'
+      type: 'install',
+      githubProxy
     };
     
     // 实际安装插件任务
-    this.installPluginTask(taskId, pluginId);
+    this.installPluginTask(taskId, pluginId, githubProxy);
     
     ctx.body = {
       success: true,
@@ -334,22 +337,43 @@ export class PluginsController {
   }
 
   // 实际安装插件任务
-  private async installPluginTask(taskId: string, pluginId: string): Promise<void> {
+  private async installPluginTask(taskId: string, pluginId: string, githubProxy: string): Promise<void> {
     try {
       // 更新进度
       taskProgressMap[taskId].progress = 10;
       taskProgressMap[taskId].message = '正在查找插件信息...';
       
-      // 获取插件信息
-      const url = 'https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/custom-node-list.json';
-      const response = await superagent.get(url);
-      const managerData = JSON.parse(response.text);
+      // 从缓存中查找插件信息
+      let pluginInfo = null;
       
-      // 查找插件
-      const pluginInfo = managerData.custom_nodes.find((info: any) => info.id === pluginId);
+      // 检查缓存是否为空或过期
+      if (cachedPlugins.length === 0 || (Date.now() - lastFetchTime) >= CACHE_DURATION) {
+        // 缓存为空或已过期，获取最新数据
+        console.log('[API] 缓存为空或已过期，获取最新插件数据');
+        cachedPlugins = await this.fetchComfyUIManagerPlugins();
+        lastFetchTime = Date.now();
+      }
+      
+      // 从缓存中查找插件
+      pluginInfo = cachedPlugins.find((info: any) => info.id === pluginId);
+      
+      // 如果在缓存中找不到，尝试直接从源获取
+      if (!pluginInfo) {
+        console.log(`[API] 在缓存中未找到插件 ${pluginId}，尝试从源获取`);
+        const url = 'https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/custom-node-list.json';
+        const response = await superagent.get(url);
+        const managerData = JSON.parse(response.text);
+        
+        // 查找插件
+        pluginInfo = managerData.custom_nodes.find((info: any) => info.id === pluginId);
+      }
+      
       if (!pluginInfo) {
         throw new Error(`未找到插件: ${pluginId}`);
       }
+
+      console.log(`[API] 找到插件: ${JSON.stringify(pluginInfo)}`);
+
       
       // 更新进度
       taskProgressMap[taskId].progress = 20;
@@ -374,22 +398,22 @@ export class PluginsController {
       taskProgressMap[taskId].message = '正在下载插件...';
       
       // 根据安装类型执行安装
-      if (installType === 'git-clone' && pluginInfo.reference) {
+      if (installType === 'git-clone' && pluginInfo.github) {
         // 使用git clone安装
         try {
-          await execPromise(`git clone "${pluginInfo.reference}" "${targetDir}"`);
+          await execPromise(`git clone "${githubProxy}${pluginInfo.github}" "${targetDir}"`);
         } catch (cloneError) {
           console.error(`[API] Git克隆失败: ${cloneError}`);
           
           // 尝试使用HTTPS替代可能的SSH或HTTP2
-          const convertedUrl = pluginInfo.reference
+          const convertedUrl = pluginInfo.github
             .replace('git@github.com:', 'https://github.com/')
             .replace(/\.git$/, '');
           
           taskProgressMap[taskId].message = '尝试备用方式下载...';
           
           try {
-            await execPromise(`git clone "${convertedUrl}" "${targetDir}"`);
+            await execPromise(`git clone "${githubProxy}${convertedUrl}" "${targetDir}"`);
           } catch (retryError) {
             throw new Error(`git克隆失败: ${cloneError instanceof Error ? cloneError.message : String(cloneError)}. 备用方式也失败: ${retryError instanceof Error ? retryError.message : String(retryError)}`);
           }

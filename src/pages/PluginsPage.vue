@@ -71,6 +71,25 @@
       </div>
     </div>
     
+    <div class="row q-mb-md">
+      <div class="col-12 col-md-6">
+        <q-select
+          v-model="githubProxy"
+          :options="proxyOptions"
+          outlined
+          dense
+          label="GitHub代理"
+          class="q-mr-sm"
+          style="max-width: 300px"
+        >
+          <template v-slot:append>
+            <q-icon name="public" />
+            <q-tooltip>选择GitHub代理可以帮助在网络受限环境中更顺畅地安装插件</q-tooltip>
+          </template>
+        </q-select>
+      </div>
+    </div>
+    
     <div v-if="loading" class="row items-center justify-center q-py-lg">
       <q-spinner color="primary" size="3em" />
       <span class="q-ml-sm text-subtitle1">加载插件列表...</span>
@@ -352,6 +371,13 @@ const progressVisible = ref(false);
 const errorDialogVisible = ref(false);
 const errorMessage = ref('');
 
+// 代理选项
+const proxyOptions = ref<string[]>([
+  '',
+  'https://gh-proxy.com/'
+]);
+const githubProxy = ref('');
+
 // 获取插件列表
 const fetchPlugins = async () => {
   loading.value = true;
@@ -421,8 +447,8 @@ const installPlugin = async (plugin: Plugin) => {
     installationMessage.value = `正在准备安装 ${plugin.name}...`;
     progressVisible.value = true;
     
-    // 发送安装请求
-    const response = await api.installPlugin(plugin.id);
+    // 发送安装请求，传递GitHub代理地址
+    const response = await api.installPlugin(plugin.id, githubProxy.value);
     activeTaskId.value = response.body.taskId;
     
     // 开始轮询进度

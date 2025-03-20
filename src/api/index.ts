@@ -193,8 +193,8 @@ const api = {
   getPlugins: () => 
     superagent.get(`${API_BASE_URL}/plugins`),
   
-  installPlugin: (pluginId: string) => 
-    superagent.post(`${API_BASE_URL}/plugins/install`).send({ pluginId }),
+  installPlugin: (pluginId: string, githubProxy?: string) => 
+    superagent.post(`${API_BASE_URL}/plugins/install`).send({ pluginId, githubProxy }),
   
   uninstallPlugin: (pluginId: string) => 
     superagent.post(`${API_BASE_URL}/plugins/uninstall`).send({ pluginId }),
