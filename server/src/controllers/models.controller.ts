@@ -147,8 +147,27 @@ export class ModelsController extends DownloadController {
       const regularModels = await this.getRegularModelList(mode);
       const essentialModelsList = this.convertEssentialModelsToModelInfo(essentialModels);
       
-      // 返回合并后的列表
-      return [...regularModels, ...essentialModelsList];
+      // 使用Map进行去重，基础模型优先
+      const modelMap = new Map<string, ModelInfo>();
+      
+      // 先添加常规模型
+      regularModels.forEach(model => {
+        const key = model.filename || model.name || model.save_path;
+        if (key) {
+          modelMap.set(key, model);
+        }
+      });
+      
+      // 再添加基础模型（会覆盖同名的常规模型）
+      essentialModelsList.forEach(model => {
+        const key = model.filename || model.name || model.save_path;
+        if (key) {
+          modelMap.set(key, model);
+        }
+      });
+      
+      // 返回去重后的列表
+      return Array.from(modelMap.values());
     } catch (error) {
       logger.error(`获取模型列表出错: ${error instanceof Error ? error.message : String(error)}`);
       return [];
@@ -250,7 +269,7 @@ export class ModelsController extends DownloadController {
         const savePath = `models/${model.dir}/${model.out}`;
         
         // 检查模型是否已安装
-        const fullPath = path.join(this.comfyuiPath, model.dir, model.out);
+        const fullPath = path.join(this.comfyuiPath, savePath);
         const isInstalled = fs.existsSync(fullPath);
         let fileSize = 0;
         let fileStatus: 'complete' | 'incomplete' | 'corrupted' | 'unknown' = 'unknown';
@@ -267,7 +286,6 @@ export class ModelsController extends DownloadController {
         
         // 创建与ModelInfo接口兼容的对象
         return {
-          id: model.id,                  // 使用基础模型的ID
           name: model.name,              // 使用基础模型的名称
           type: model.type,              // 模型类型
           base_url: '',                  // 基础模型没有base_url
