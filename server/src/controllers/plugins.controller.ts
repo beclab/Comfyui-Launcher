@@ -203,8 +203,15 @@ export class PluginsController {
         };
       });
       
-      console.log(`[API] 已获取 ${plugins.length} 个插件`);
-      return plugins;
+      // 找出在本地已安装但不在官方列表中的插件
+      const officialIds = new Set(plugins.map((p: { id: string }) => p.id));
+      const localOnlyPlugins = installedPlugins.filter(plugin => !officialIds.has(plugin.id));
+      
+      // 合并两个列表
+      const allPlugins = [...plugins, ...localOnlyPlugins];
+      
+      console.log(`[API] 已获取 ${allPlugins.length} 个插件，其中本地独有 ${localOnlyPlugins.length} 个`);
+      return allPlugins;
     } catch (error) {
       console.error('[API] 获取ComfyUI-Manager插件列表失败:', error);
       // 加载失败时返回默认/模拟数据
@@ -231,7 +238,7 @@ export class PluginsController {
       
       for (const dir of directories) {
         // 跳过特殊目录
-        if (dir === 'comfyui-manager' || dir.startsWith('.')) continue;
+        if (dir.startsWith('.')) continue;
         
         const pluginPath = path.join(CUSTOM_NODES_PATH, dir);
         
