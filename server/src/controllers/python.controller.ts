@@ -197,8 +197,16 @@ export const analyzePluginDependencies = async (ctx: any) => {
         
         // 检查每个依赖是否已安装
         for (const dep of dependencies) {
-          const installed = installedPackages.find((pkg: {name: string; version: string}) => 
-            pkg.name.toLowerCase() === dep.name.toLowerCase());
+          // 标准化包名：转换为小写并处理连字符和下划线
+          const normalizedDepName = dep.name.toLowerCase();
+          
+          // 寻找匹配的已安装包，考虑连字符和下划线的互换
+          const installed = installedPackages.find((pkg: {name: string; version: string}) => {
+            const pkgName = pkg.name.toLowerCase();
+            return pkgName === normalizedDepName || 
+                   pkgName === normalizedDepName.replace(/-/g, '_') ||
+                   pkgName === normalizedDepName.replace(/_/g, '-');
+          });
           
           if (!installed) {
             dep.missing = true;
