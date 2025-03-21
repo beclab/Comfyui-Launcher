@@ -20,6 +20,10 @@ console.log(`[配置] ComfyUI 路径: ${COMFYUI_PATH}`);
 
 const CUSTOM_NODES_PATH = path.join(COMFYUI_PATH, 'custom_nodes');
 
+// 添加 GitHub API 配置
+const GITHUB_API_BASE = 'https://api.github.com';
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || ''; // 建议配置 GitHub Token 避免 API 速率限制
+
 // 任务进度映射
 const taskProgressMap: Record<string, { 
   progress: number, 
@@ -34,6 +38,10 @@ const taskProgressMap: Record<string, {
 let cachedPlugins: any[] = [];
 let lastFetchTime = 0;
 const CACHE_DURATION = 3600000; // 1小时缓存
+
+// 缓存 GitHub 统计数据
+let githubStatsCache: Record<string, { stars: number, updatedAt: number }> = {};
+const GITHUB_STATS_CACHE_DURATION = 86400000; // 24小时缓存 GitHub 统计数据
 
 // 模拟的插件列表
 const mockPlugins = [
@@ -193,7 +201,7 @@ export class PluginsController {
           version: info.version || '1.0.0',
           author: info.author || '未知作者',
           github: info.reference || '',
-          stars: info.stars || 0,
+          stars: info.stars || 0,  // 默认为0，后续会更新
           tags: info.tags || [],
           install_type: info.install_type || 'git_clone',
           files: info.files || [],
@@ -212,6 +220,10 @@ export class PluginsController {
       const allPlugins = [...plugins, ...localOnlyPlugins];
       
       console.log(`[API] 已获取 ${allPlugins.length} 个插件，其中本地独有 ${localOnlyPlugins.length} 个`);
+      
+      // 更新 GitHub stars 数据
+      // this.updateGitHubStats(allPlugins);
+      
       return allPlugins;
     } catch (error) {
       console.error('[API] 获取ComfyUI-Manager插件列表失败:', error);
@@ -564,5 +576,101 @@ export class PluginsController {
     ctx.body = {
       ...taskProgressMap[taskId]
     };
+  }
+
+  // 更新 GitHub 统计数据（星数）
+  private async updateGitHubStats(plugins: any[]): Promise<void> {
+    try {
+      // 获取所有需要更新统计的插件
+      const pluginsToUpdate = plugins.filter(plugin => 
+        plugin.github && 
+        (!githubStatsCache[plugin.github] || 
+         Date.now() - githubStatsCache[plugin.github].updatedAt > GITHUB_STATS_CACHE_DURATION)
+      );
+      
+      if (pluginsToUpdate.length === 0) {
+        console.log('[API] 无需更新 GitHub 统计数据');
+        return;
+      }
+      
+      console.log(`[API] 开始更新 ${pluginsToUpdate.length} 个插件的 GitHub 统计数据`);
+      
+      // 限制并发请求数量，避免 GitHub API 速率限制
+      const concurrentLimit = 5;
+      const chunks = [];
+      for (let i = 0; i < pluginsToUpdate.length; i += concurrentLimit) {
+        chunks.push(pluginsToUpdate.slice(i, i + concurrentLimit));
+      }
+      
+      for (const chunk of chunks) {
+        await Promise.all(chunk.map(plugin => this.updateSinglePluginStats(plugin)));
+        // 添加延迟以避免 GitHub API 速率限制
+        await new Promise(resolve => setTimeout(resolve, 1000 * 20));
+      }
+      
+      console.log('[API] GitHub 统计数据更新完成');
+    } catch (error) {
+      console.error('[API] 更新 GitHub 统计数据失败:', error);
+    }
+  }
+  
+  // 更新单个插件的 GitHub 统计数据
+  private async updateSinglePluginStats(plugin: any): Promise<void> {
+    try {
+      if (!plugin.github) return;
+      
+      // 从 GitHub URL 中提取用户名和仓库名
+      const githubUrl = plugin.github.trim();
+      let repoPath = '';
+      
+      if (githubUrl.includes('github.com')) {
+        const urlParts = githubUrl
+          .replace('https://github.com/', '')
+          .replace('http://github.com/', '')
+          .replace('git@github.com:', '')
+          .replace('.git', '')
+          .split('/');
+        
+        if (urlParts.length >= 2) {
+          repoPath = `${urlParts[0]}/${urlParts[1]}`;
+        }
+      }
+      
+      if (!repoPath) {
+        console.log(`[API] 无法解析 GitHub 仓库路径: ${githubUrl}`);
+        return;
+      }
+      
+      // 构建 GitHub API 请求
+      const apiUrl = `${GITHUB_API_BASE}/repos/${repoPath}`;
+      const headers: Record<string, string> = {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'ComfyUI-Plugin-Manager'
+      };
+      
+      // 如果有 GitHub Token，添加到请求头
+      if (GITHUB_TOKEN) {
+        headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+      }
+      
+      // 发送请求获取仓库信息
+      const response = await superagent.get(apiUrl).set(headers);
+      const repoData = response.body;
+      
+      if (repoData && typeof repoData.stargazers_count === 'number') {
+        // 更新插件的 star 数量
+        plugin.stars = repoData.stargazers_count;
+        
+        // 更新缓存
+        githubStatsCache[plugin.github] = {
+          stars: repoData.stargazers_count,
+          updatedAt: Date.now()
+        };
+        
+        console.log(`[API] 更新插件 ${plugin.name} 的 star 数量: ${plugin.stars}`);
+      }
+    } catch (error) {
+      console.error(`[API] 获取插件 ${plugin.name} 的 GitHub 统计数据失败:`, error);
+    }
   }
 } 
