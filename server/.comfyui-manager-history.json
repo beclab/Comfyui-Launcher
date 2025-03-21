@@ -1,0 +1,75 @@
+[
+  {
+    "id": "29ee4d6d-f32f-41f5-b879-515b19dab231",
+    "pluginId": "manager",
+    "pluginName": "ComfyUI-Manager",
+    "type": "uninstall",
+    "startTime": 1742535202225,
+    "status": "success",
+    "logs": [
+      "[3/21/2025, 1:33:22 PM] 开始卸载插件 manager",
+      "[3/21/2025, 1:33:22 PM] 准备卸载...",
+      "[3/21/2025, 1:33:22 PM] 正在卸载插件...",
+      "[3/21/2025, 1:33:22 PM] 已将插件目录备份到: /Users/sai/dev/work/os/ai/comfyui-starter/server/comfyui/custom_nodes/manager_backup_1742535202229",
+      "[3/21/2025, 1:33:22 PM] 清理临时文件...",
+      "[3/21/2025, 1:33:22 PM] 备份目录已保留: /Users/sai/dev/work/os/ai/comfyui-starter/server/comfyui/custom_nodes/manager_backup_1742535202229",
+      "[3/21/2025, 1:33:22 PM] 卸载完成于 3/21/2025, 1:33:22 PM"
+    ],
+    "endTime": 1742535202232,
+    "result": "卸载完成于 3/21/2025, 1:33:22 PM"
+  },
+  {
+    "id": "b7ab9237-bd1b-4e92-96fd-96208fa97a72",
+    "pluginId": "comfyui-impact-pack",
+    "pluginName": "ComfyUI Impact Pack",
+    "type": "uninstall",
+    "startTime": 1742535179972,
+    "status": "failed",
+    "logs": [
+      "[3/21/2025, 1:32:59 PM] 开始卸载插件 comfyui-impact-pack",
+      "[3/21/2025, 1:32:59 PM] 准备卸载...",
+      "[3/21/2025, 1:32:59 PM] 插件目录不存在: /Users/sai/dev/work/os/ai/comfyui-starter/server/comfyui/custom_nodes/comfyui-impact-pack",
+      "[3/21/2025, 1:32:59 PM] 卸载失败: 插件目录不存在: /Users/sai/dev/work/os/ai/comfyui-starter/server/comfyui/custom_nodes/comfyui-impact-pack"
+    ],
+    "endTime": 1742535179974,
+    "result": "卸载失败: 插件目录不存在: /Users/sai/dev/work/os/ai/comfyui-starter/server/comfyui/custom_nodes/comfyui-impact-pack"
+  },
+  {
+    "id": "48c117a4-5af0-447c-ac0c-f230a671988d",
+    "pluginId": "comfyui-impact-pack",
+    "pluginName": "ComfyUI Impact Pack",
+    "type": "disable",
+    "startTime": 1742535118655,
+    "status": "success",
+    "logs": [
+      "[3/21/2025, 1:31:58 PM] 开始禁用插件 comfyui-impact-pack",
+      "[3/21/2025, 1:31:58 PM] 准备禁用...",
+      "[3/21/2025, 1:31:58 PM] 正在移动插件到禁用目录: /Users/sai/dev/work/os/ai/comfyui-starter/server/comfyui/custom_nodes/comfyui-impact-pack -> /Users/sai/dev/work/os/ai/comfyui-starter/server/comfyui/custom_nodes/.disabled/comfyui-impact-pack",
+      "[3/21/2025, 1:31:58 PM] 禁用完成于 3/21/2025, 1:31:58 PM"
+    ],
+    "endTime": 1742535118658,
+    "result": "禁用完成于 3/21/2025, 1:31:58 PM"
+  },
+  {
+    "id": "0d998c78-8276-4a2e-bd30-aae2dedee95a",
+    "pluginId": "manager",
+    "pluginName": "ComfyUI-Manager",
+    "type": "install",
+    "startTime": 1742535055247,
+    "status": "success",
+    "logs": [
+      "[3/21/2025, 1:30:55 PM] 开始安装插件 manager",
+      "[3/21/2025, 1:30:55 PM] 正在查找插件信息...",
+      "[3/21/2025, 1:30:55 PM] 找到插件: {\"id\":\"manager\",\"name\":\"ComfyUI-Manager\",\"description\":\"ComfyUI-Manager itself is also a custom node.\",\"version\":\"1.0.0\",\"author\":\"Dr.Lt.Data\",\"github\":\"https://github.com/ltdrdata/ComfyUI-Manager\",\"install_type\":\"git-clone\",\"tags\":[],\"stars\":0,\"installed\":false,\"disabled\":false}",
+      "[3/21/2025, 1:30:55 PM] 准备安装...",
+      "[3/21/2025, 1:30:55 PM] 正在下载插件...",
+      "[3/21/2025, 1:30:55 PM] 执行: git clone \"https://gh-proxy.com/https://github.com/ltdrdata/ComfyUI-Manager\" \"/Users/sai/dev/work/os/ai/comfyui-starter/server/comfyui/custom_nodes/manager\"",
+      "[3/21/2025, 1:31:06 PM] Git错误: Cloning into '/Users/sai/dev/work/os/ai/comfyui-starter/server/comfyui/custom_nodes/manager'...\n",
+      "[3/21/2025, 1:31:06 PM] 开发环境：跳过依赖安装",
+      "[3/21/2025, 1:31:06 PM] 安装完成于 3/21/2025, 1:31:06 PM"
+    ],
+    "githubProxy": "https://gh-proxy.com/",
+    "endTime": 1742535066626,
+    "result": "安装完成于 3/21/2025, 1:31:06 PM"
+  }
+]

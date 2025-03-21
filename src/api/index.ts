@@ -249,6 +249,18 @@ const api = {
   // 刷新已安装插件列表
   refreshInstalledPlugins: () => 
     superagent.get(`${API_BASE_URL}/plugins/refresh`).use(debug),
+
+  // 获取操作历史记录
+  getOperationHistory: () => 
+    superagent.get(`${API_BASE_URL}/plugins/history`),
+
+  // 获取特定操作的详细日志
+  getOperationLogs: (taskId: string) => 
+    superagent.get(`${API_BASE_URL}/plugins/logs/${taskId}`),
+
+  // 清除操作历史记录
+  clearOperationHistory: () => 
+    superagent.post(`${API_BASE_URL}/plugins/history/clear`),
 };
 
 export default api;  // 只有一个默认导出 

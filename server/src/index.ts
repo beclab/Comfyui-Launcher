@@ -59,6 +59,11 @@ router.post('/api/plugins/disable', (ctx) => pluginsController.disablePlugin(ctx
 router.post('/api/plugins/enable', (ctx) => pluginsController.enablePlugin(ctx));
 router.get('/api/plugins/refresh', (ctx) => pluginsController.refreshInstalledPlugins(ctx));
 
+// 插件历史记录相关路由
+router.get('/api/plugins/history', pluginsController.getOperationHistory.bind(pluginsController));
+router.get('/api/plugins/logs/:taskId', pluginsController.getOperationLogs.bind(pluginsController));
+router.post('/api/plugins/history/clear', pluginsController.clearOperationHistory.bind(pluginsController));
+
 // 系统管理路由
 router.post('/api/reset', systemController.resetSystem);
 router.get('/api/reset/progress/:taskId', systemController.getResetProgress);
