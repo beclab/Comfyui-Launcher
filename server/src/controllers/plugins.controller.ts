@@ -131,6 +131,22 @@ const mockPlugins = [
   }
 ];
 
+// 添加代理URL作为备用方案
+async function fetchWithFallback(url: string) {
+  try {
+    // 首先尝试直接获取
+    const response = await superagent.get(url).timeout({ response: 5000, deadline: 15000 });
+    return response;  // 返回完整的 response 对象，而不仅仅是 body
+  } catch (error) {
+    console.log(`[插件API] 直接获取 ${url} 失败，尝试使用代理...`);
+    
+    // 如果直接获取失败，尝试使用gh-proxy代理
+    const proxyUrl = `https://gh-proxy.com/${url}`;
+    const proxyResponse = await superagent.get(proxyUrl);
+    return proxyResponse;  // 返回完整的 response 对象
+  }
+}
+
 export class PluginsController {
   constructor() {
     // 初始化 - 启动时预加载插件数据
@@ -210,7 +226,7 @@ export class PluginsController {
       // ComfyUI-Manager 插件列表URL
       const url = 'https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/custom-node-list.json';
       
-      const response = await superagent.get(url);
+      const response = await fetchWithFallback(url);
       const managerData = JSON.parse(response.text);
       
       // 确保custom_nodes目录存在
@@ -470,7 +486,7 @@ export class PluginsController {
       if (!pluginInfo) {
         console.log(`[API] 在缓存中未找到插件 ${pluginId}，尝试从源获取`);
         const url = 'https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/custom-node-list.json';
-        const response = await superagent.get(url);
+        const response = await fetchWithFallback(url);
         const managerData = JSON.parse(response.text);
         
         // 查找插件
