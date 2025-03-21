@@ -1,12 +1,14 @@
 <template>
   <q-page class="q-pa-md">
     <!-- 顶部标题区域 -->
+    <!-- 
     <div class="text-center q-mb-md">
       <img src="~assets/comfyui-logo.png" style="width: 120px; height: auto" alt="ComfyUI Logo">
       <h4 class="q-mt-sm q-mb-none">ComfyUI 管理器</h4>
       <p class="text-grey-7">轻松管理您的 AI 图像生成工作流</p>
     </div>
-    
+    -->
+
     <!-- 状态控制区域 -->
     <div class="q-mb-lg">
       <ComfyUIStatus />

@@ -1,39 +1,53 @@
 <template>
   <div>
-    <div class="comfyui-status">
-      <div class="status-indicator" :class="{ 'online': isConnected, 'offline': !isConnected }">
-        ComfyUI {{ isConnected ? '在线' : '离线' }}
-      </div>
-      
-      <div class="model-stats" v-if="isConnected">
-        <div class="stat-item">
-          <strong>已安装模型:</strong> {{ installedModelsCount }}
+    <q-card class="comfyui-card custom-card">
+      <div class="comfyui-container">
+        <!-- 左侧只放logo，移除q-avatar -->
+        <div class="logo-container">
+          <img src="~assets/comfyui-logo2.png" alt="ComfyUI" class="app-logo" />
         </div>
-        <div class="stat-item">
-          <strong>可用模型:</strong> {{ availableModelsCount }}
+        
+        <!-- 右侧放标题和控制按钮 -->
+        <div class="content-container">
+          <div class="title-container">
+            <div class="comfyui-title">ComfyUI</div>
+          </div>
+          
+          <div class="status-actions">
+            <!-- 先显示按钮 -->
+            <q-btn 
+              v-if="!isConnected" 
+              unelevated
+              color="blue-grey"
+              class="action-btn"
+              @click="checkAndStartComfyUI"
+              :loading="isStarting"
+            >
+              启动
+            </q-btn>
+            <q-btn 
+              v-else 
+              unelevated
+              color="blue-grey"
+              class="action-btn"
+              @click="stopComfyUI"
+              :loading="isStopping"
+            >
+              停止
+            </q-btn>
+            
+            <!-- 后显示状态标签 -->
+            <q-chip 
+              :color="isConnected ? 'green' : 'orange'"
+              text-color="white"
+              class="status-chip"
+            >
+              {{ isConnected ? '运行中' : '停止' }}
+            </q-chip>
+          </div>
         </div>
       </div>
-      
-      <!-- 添加启动/停止按钮 -->
-      <div class="control-buttons">
-        <q-btn 
-          v-if="!isConnected" 
-          color="positive" 
-          icon="play_arrow" 
-          label="启动" 
-          @click="checkAndStartComfyUI"
-          :loading="isStarting"
-        />
-        <q-btn 
-          v-else 
-          color="negative" 
-          icon="stop" 
-          label="停止" 
-          @click="stopComfyUI"
-          :loading="isStopping"
-        />
-      </div>
-    </div>
+    </q-card>
 
     <!-- 添加日志显示区域 -->
     <q-card v-if="showLogs" class="q-mt-md log-container">
@@ -341,46 +355,93 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.comfyui-status {
+/* 使用!important强制应用样式 */
+.custom-card {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.comfyui-card {
+  width: 100%;
+  padding: 0;
+  margin-bottom: 15px;
+  background-color: transparent;
+}
+
+/* 确保整个容器也有圆角 */
+.comfyui-container {
+  display: flex;
+  align-items: stretch;
+  min-height: 90px;
+  background-color: transparent;
+}
+
+.logo-container {
+  width: 90px;
+  height: 90px;
+  background-color: #000000;
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 10px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  margin-bottom: 15px;
+  justify-content: center;
+  border-right: none;
+  border-radius: inherit;
 }
 
-.status-indicator {
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-weight: bold;
+.app-logo {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
 }
 
-.status-indicator.online {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.status-indicator.offline {
-  background-color: #f44336;
-  color: white;
-}
-
-.model-stats {
+.content-container {
+  flex: 1;
+  padding: 0px 16px;
   display: flex;
-  gap: 15px;
+  flex-direction: column;
+  justify-content: center;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  position: relative;
 }
 
-.stat-item {
-  font-size: 0.9em;
+.title-container {
+  position: absolute;
+  top: 0px;
+  left: 16px;
 }
 
-.control-buttons {
-  margin-left: auto;
+.comfyui-title {
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin: 0;
+  padding: 0;
 }
 
-/* 添加日志相关样式 */
+.status-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 49px;
+  
+}
+
+.status-chip {
+  font-size: 0.9rem !important;
+  height: 28px !important;
+  padding: 0 12px !important;
+}
+
+.action-btn {
+  min-width: 70px;
+  font-size: 0.9rem !important;
+  padding: 8px 12px !important;
+  font-weight: 500;
+}
+
+/* 保留日志相关样式 */
 .log-container {
   border-left: 4px solid #f44336;
   margin-top: 15px;
@@ -396,5 +457,10 @@ export default defineComponent({
 .log-error {
   color: #f44336;
   font-weight: bold;
+}
+
+/* 添加深色风格的按钮样式 */
+.dark-style {
+  border: 1px solid currentColor;
 }
 </style> 
