@@ -200,6 +200,7 @@ export const analyzePluginDependencies = async (ctx: any) => {
           // 标准化包名：转换为小写并处理连字符和下划线
           const normalizedDepName = dep.name.toLowerCase();
           
+          
           // 寻找匹配的已安装包，考虑连字符和下划线的互换
           const installed = installedPackages.find((pkg: {name: string; version: string}) => {
             const pkgName = pkg.name.toLowerCase();
