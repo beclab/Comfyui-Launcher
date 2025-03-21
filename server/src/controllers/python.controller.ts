@@ -178,6 +178,9 @@ export const analyzePluginDependencies = async (ctx: any) => {
     // 使用 pluginsController 提供的方法
     const plugins = await pluginsController.getInstalledPluginsForPython();
     
+    // 获取实际安装的Python包列表
+    const installedPackages = await getInstalledPackagesData();
+    
     const result = [];
     
     for (const plugin of plugins) {
@@ -194,7 +197,7 @@ export const analyzePluginDependencies = async (ctx: any) => {
         
         // 检查每个依赖是否已安装
         for (const dep of dependencies) {
-          const installed = plugins.find((pkg: {name: string; version: string}) => 
+          const installed = installedPackages.find((pkg: {name: string; version: string}) => 
             pkg.name.toLowerCase() === dep.name.toLowerCase());
           
           if (!installed) {
