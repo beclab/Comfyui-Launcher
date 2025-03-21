@@ -815,11 +815,10 @@ export class PluginsController {
       const targetDir = path.join(CUSTOM_NODES_PATH, pluginId);
       if (fs.existsSync(targetDir)) {
         try {
-          // 重命名为失败目录，而不是直接删除（为了调试）
-          const failedDir = `${targetDir}_failed_${Date.now()}`;
-          fs.renameSync(targetDir, failedDir);
-          this.logOperation(taskId, `已将失败的安装目录重命名为: ${failedDir}`);
-          console.log(`[API] 已将失败的安装目录重命名为: ${failedDir}`);
+          // 直接删除失败的安装目录
+          await fs.promises.rm(targetDir, { recursive: true, force: true });
+          this.logOperation(taskId, `已删除失败的安装目录: ${targetDir}`);
+          console.log(`[API] 已删除失败的安装目录: ${targetDir}`);
         } catch (cleanupError) {
           this.logOperation(taskId, `清理失败的安装目录失败: ${cleanupError}`);
           console.error(`[API] 清理失败的安装目录失败: ${cleanupError}`);
@@ -865,33 +864,39 @@ export class PluginsController {
       taskProgressMap[taskId].message = '准备卸载...';
       this.logOperation(taskId, '准备卸载...');
       
-      // 确定插件路径
+      // 确定插件路径 - 检查常规目录和禁用目录
       const pluginPath = path.join(CUSTOM_NODES_PATH, pluginId);
+      const disabledPluginPath = path.join(DISABLED_PLUGINS_PATH, pluginId);
       
-      // 检查目录是否存在
+      // 先检查常规目录，再检查禁用目录
+      let targetPath = pluginPath;
+      let isDisabled = false;
+      
       if (!fs.existsSync(pluginPath)) {
-        this.logOperation(taskId, `插件目录不存在: ${pluginPath}`);
-        throw new Error(`插件目录不存在: ${pluginPath}`);
+        if (!fs.existsSync(disabledPluginPath)) {
+          this.logOperation(taskId, `插件目录不存在: ${pluginPath} 和 ${disabledPluginPath}`);
+          throw new Error(`插件目录不存在: 既不在启用目录也不在禁用目录`);
+        } else {
+          // 插件在禁用目录中
+          targetPath = disabledPluginPath;
+          isDisabled = true;
+          this.logOperation(taskId, `发现插件在禁用目录中: ${disabledPluginPath}`);
+        }
       }
       
       // 更新进度
       taskProgressMap[taskId].progress = 30;
-      taskProgressMap[taskId].message = '正在卸载插件...';
-      this.logOperation(taskId, '正在卸载插件...');
+      taskProgressMap[taskId].message = `正在卸载${isDisabled ? '禁用状态的' : ''}插件...`;
+      this.logOperation(taskId, `正在卸载${isDisabled ? '禁用状态的' : ''}插件...`);
       
-      // 创建备份（仅用于恢复）
-      const backupDir = `${pluginPath}_backup_${Date.now()}`;
-      fs.renameSync(pluginPath, backupDir);
-      this.logOperation(taskId, `已将插件目录备份到: ${backupDir}`);
+      // 删除插件目录
+      await fs.promises.rm(targetPath, { recursive: true, force: true });
+      this.logOperation(taskId, `已删除插件目录: ${targetPath}`);
       
       // 更新进度
       taskProgressMap[taskId].progress = 70;
       taskProgressMap[taskId].message = '清理临时文件...';
       this.logOperation(taskId, '清理临时文件...');
-      
-      // 在生产环境中可能需要延迟删除备份
-      // 此处为了简单，暂时保留备份
-      this.logOperation(taskId, `备份目录已保留: ${backupDir}`);
       
       // 完成卸载
       taskProgressMap[taskId].progress = 100;

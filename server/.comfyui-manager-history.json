@@ -1,5 +1,24 @@
 [
   {
+    "id": "9deec69c-42c5-43e0-ae3e-cd23b07b6f79",
+    "pluginId": "comfyui-impact-pack",
+    "pluginName": "ComfyUI Impact Pack",
+    "type": "uninstall",
+    "startTime": 1742535682983,
+    "status": "success",
+    "logs": [
+      "[3/21/2025, 1:41:22 PM] 开始卸载插件 comfyui-impact-pack",
+      "[3/21/2025, 1:41:23 PM] 准备卸载...",
+      "[3/21/2025, 1:41:23 PM] 发现插件在禁用目录中: /Users/sai/dev/work/os/ai/comfyui-starter/server/comfyui/custom_nodes/.disabled/comfyui-impact-pack",
+      "[3/21/2025, 1:41:23 PM] 正在卸载禁用状态的插件...",
+      "[3/21/2025, 1:41:23 PM] 已删除插件目录: /Users/sai/dev/work/os/ai/comfyui-starter/server/comfyui/custom_nodes/.disabled/comfyui-impact-pack",
+      "[3/21/2025, 1:41:23 PM] 清理临时文件...",
+      "[3/21/2025, 1:41:23 PM] 卸载完成于 3/21/2025, 1:41:23 PM"
+    ],
+    "endTime": 1742535683085,
+    "result": "卸载完成于 3/21/2025, 1:41:23 PM"
+  },
+  {
     "id": "29ee4d6d-f32f-41f5-b879-515b19dab231",
     "pluginId": "manager",
     "pluginName": "ComfyUI-Manager",
