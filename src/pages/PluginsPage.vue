@@ -40,7 +40,7 @@
             dense
             placeholder="搜索插件..." 
             class="q-mr-sm"
-            @update:model-value="filterPlugins"
+            @update:model-value="debouncedFilter"
           >
             <template v-slot:append>
               <q-icon name="search" />
@@ -127,7 +127,7 @@
         </div>
         
         <div v-else class="row q-col-gutter-md">
-          <div v-for="plugin in filteredPlugins" :key="plugin.id" class="col-12 col-md-6 col-lg-4">
+          <div v-for="plugin in visiblePlugins" :key="plugin.id" v-memo="[plugin.id, plugin.installed, plugin.disabled]" class="col-12 col-md-6 col-lg-4">
             <q-card class="plugin-card">
               <q-item>
                 <q-item-section avatar>
@@ -222,6 +222,11 @@
                 class="q-mt-sm"
               />
             </q-card>
+          </div>
+          
+          <!-- 加载更多按钮 -->
+          <div v-if="visiblePlugins.length < filteredPlugins.length" class="col-12 flex justify-center q-mt-md">
+            <q-btn color="primary" label="加载更多" @click="loadMorePlugins" />
           </div>
         </div>
       </div>
@@ -549,8 +554,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive, watch } from 'vue';
-import { useQuasar } from 'quasar';
+import { ref, onMounted, reactive, watch, computed } from 'vue';
+import { useQuasar, debounce } from 'quasar';
 import api from 'src/api';
 import { QTableColumn } from 'quasar';
 
@@ -590,7 +595,6 @@ interface PluginOperation {
 
 // 状态和数据
 const plugins = ref<Plugin[]>([]);
-const filteredPlugins = ref<Plugin[]>([]);
 const loading = ref(false);
 const searchQuery = ref('');
 const statusFilter = ref({ label: '全部', value: 'all' });
@@ -603,6 +607,84 @@ const tagFilter = ref<string[]>([]);
 const tagOptions = ref<string[]>([]);
 const selectedPlugin = ref<Plugin | null>(null);
 const pluginInfoDialog = ref(false);
+
+// 添加筛选函数定义（移到前面来）
+const filterPlugins = () => {
+  // 根据筛选条件更新可见插件列表
+  const filtered = plugins.value.filter(plugin => {
+    // 搜索条件
+    const matchesSearch = !searchQuery.value || 
+      plugin.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      plugin.description.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      plugin.author.toLowerCase().includes(searchQuery.value.toLowerCase());
+    
+    // 状态筛选
+    let matchesStatus = true;
+    if (statusFilter.value.value === 'installed') {
+      matchesStatus = plugin.installed;
+    } else if (statusFilter.value.value === 'not-installed') {
+      matchesStatus = !plugin.installed;
+    }
+    
+    // 标签筛选
+    let matchesTags = true;
+    if (tagFilter.value.length > 0) {
+      matchesTags = tagFilter.value.some(tag => 
+        plugin.tags?.includes(tag)
+      );
+    }
+    
+    return matchesSearch && matchesStatus && matchesTags;
+  });
+  
+  // 初始只显示部分插件
+  if (isInitialLoad.value) {
+    visiblePlugins.value = filtered.slice(0, initialLoadCount);
+    isInitialLoad.value = false;
+  } else {
+    visiblePlugins.value = filtered.slice(0, visiblePlugins.value.length);
+  }
+};
+
+// 对过滤函数进行去抖动处理
+const debouncedFilter = debounce(filterPlugins, 300);
+
+// 修改计算属性定义，不再在 filterPlugins 中直接修改
+const filteredPlugins = computed(() => {
+  // 如果没有任何过滤条件，直接返回原始数据
+  if (!searchQuery.value && statusFilter.value.value === 'all' && tagFilter.value.length === 0) {
+    return plugins.value;
+  }
+  
+  return plugins.value.filter(plugin => {
+    // 先检查最快的过滤器（如状态过滤）
+    if (statusFilter.value.value === 'installed' && !plugin.installed) return false;
+    if (statusFilter.value.value === 'not-installed' && plugin.installed) return false;
+    
+    // 然后检查标签过滤（如果有）
+    if (tagFilter.value.length > 0 && !plugin.tags?.some(tag => tagFilter.value.includes(tag))) {
+      return false;
+    }
+    
+    // 最后执行文本搜索（计算成本最高）
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase();
+      return plugin.name.toLowerCase().includes(query) || 
+             plugin.description.toLowerCase().includes(query) || 
+             plugin.author.toLowerCase().includes(query);
+    }
+    
+    return true;
+  });
+});
+
+// 添加清除筛选条件函数
+const clearFilters = () => {
+  searchQuery.value = '';
+  statusFilter.value = { label: '全部', value: 'all' };
+  tagFilter.value = [];
+  filterPlugins();
+};
 
 // 安装/卸载进度
 const installationInProgress = reactive<Record<string, boolean>>({});
@@ -638,6 +720,12 @@ const logsDialogVisible = ref(false);  // 日志对话框显示状态
 const selectedOperation = ref<PluginOperation | null>(null);  // 选中的操作
 const operationLogs = ref<string[]>([]);  // 操作日志
 const clearHistoryConfirmVisible = ref(false);  // 清除历史确认对话框
+
+// 添加延迟加载相关状态
+const isInitialLoad = ref(true);
+const initialLoadCount = 50; // 初始加载的插件数量
+const loadMoreCount = 50; // 每次加载更多的数量
+const visiblePlugins = ref<Plugin[]>([]);
 
 // 定义 QTable 列的类型
 const historyColumns: QTableColumn[] = [
@@ -689,6 +777,7 @@ const fetchPlugins = async () => {
   try {
     const response = await api.getPlugins();
     plugins.value = response.body;
+    // 调用 filterPlugins 函数更新可见插件列表
     filterPlugins();
   } catch (error) {
     console.error('获取插件列表失败:', error);
@@ -700,42 +789,6 @@ const fetchPlugins = async () => {
   } finally {
     loading.value = false;
   }
-};
-
-// 筛选插件
-const filterPlugins = () => {
-  filteredPlugins.value = plugins.value.filter(plugin => {
-    // 搜索条件
-    const matchesSearch = 
-      plugin.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      plugin.description.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      plugin.author.toLowerCase().includes(searchQuery.value.toLowerCase());
-    
-    // 状态筛选
-    let matchesStatus = true;
-    if (statusFilter.value.value === 'installed') {
-      matchesStatus = plugin.installed;
-    } else if (statusFilter.value.value === 'not-installed') {
-      matchesStatus = !plugin.installed;
-    }
-    
-    // 标签筛选
-    let matchesTags = true;
-    if (tagFilter.value.length > 0) {
-      matchesTags = tagFilter.value.some(tag => 
-        plugin.tags?.includes(tag)
-      );
-    }
-    
-    return matchesSearch && matchesStatus && matchesTags;
-  });
-};
-
-// 清除筛选条件
-const clearFilters = () => {
-  searchQuery.value = '';
-  statusFilter.value = { label: '全部', value: 'all' };
-  filterPlugins();
 };
 
 // 安装插件
@@ -1332,6 +1385,16 @@ const retryInstallation = (operation: PluginOperation) => {
     // 重试安装
     installPlugin(pluginToInstall);
   }
+};
+
+// 加载更多插件
+const loadMorePlugins = () => {
+  const currentLength = visiblePlugins.value.length;
+  const newPlugins = filteredPlugins.value.slice(
+    currentLength, 
+    currentLength + loadMoreCount
+  );
+  visiblePlugins.value = [...visiblePlugins.value, ...newPlugins];
 };
 
 // 监听标签页切换，加载历史记录
