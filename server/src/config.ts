@@ -35,4 +35,7 @@ export const config = {
   
   // 网络模式: 'public' | 'private' | 'offline'
   networkMode: process.env.NETWORK_MODE || 'public',
-}; 
+};
+
+// Python路径配置
+export const pythonPath = process.env.PYTHON_PATH || 'python3'; 

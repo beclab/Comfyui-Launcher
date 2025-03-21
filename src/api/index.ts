@@ -264,3 +264,32 @@ const api = {
 };
 
 export default api;  // 只有一个默认导出 
+
+// Python依赖管理相关API
+export const getPipSource = () => {
+  return superagent.get(`${API_BASE_URL}/python/pip-source`).use(debug).then(res => res.body);
+};
+
+export const setPipSource = (source: string) => {
+  return superagent.post(`${API_BASE_URL}/python/pip-source`).send({ source }).use(debug).then(res => res.body);
+};
+
+export const getInstalledPackages = () => {
+  return superagent.get(`${API_BASE_URL}/python/packages`).use(debug).then(res => res.body);
+};
+
+export const installPackage = (packageSpec: string) => {
+  return superagent.post(`${API_BASE_URL}/python/packages/install`).send({ package: packageSpec }).use(debug).then(res => res.body);
+};
+
+export const uninstallPackage = (packageName: string) => {
+  return superagent.post(`${API_BASE_URL}/python/packages/uninstall`).send({ package: packageName }).use(debug).then(res => res.body);
+};
+
+export const analyzePluginDependencies = () => {
+  return superagent.get(`${API_BASE_URL}/python/plugins/dependencies`).use(debug).then(res => res.body);
+};
+
+export const fixPluginDependencies = (pluginName: string) => {
+  return superagent.post(`${API_BASE_URL}/python/plugins/fix-dependencies`).send({ plugin: pluginName }).use(debug).then(res => res.body);
+}; 

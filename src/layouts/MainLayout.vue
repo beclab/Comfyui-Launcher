@@ -48,6 +48,13 @@
           <q-item-section>插件管理</q-item-section>
         </q-item>
 
+        <q-item clickable to="/python-dependencies">
+          <q-item-section avatar>
+            <q-icon name="code" />
+          </q-item-section>
+          <q-item-section>python依赖管理</q-item-section>
+        </q-item>
+
         <q-item clickable to="/reset">
           <q-item-section avatar>
             <q-icon name="restore" />

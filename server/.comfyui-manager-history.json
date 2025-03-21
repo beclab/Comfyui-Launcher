@@ -1,5 +1,27 @@
 [
   {
+    "id": "6a6b8252-e79b-405d-b690-9c1a1c6d0cbd",
+    "pluginId": "was",
+    "pluginName": "WAS Node Suite",
+    "type": "install",
+    "startTime": 1742544241510,
+    "status": "success",
+    "logs": [
+      "[3/21/2025, 4:04:01 PM] 开始安装插件 was",
+      "[3/21/2025, 4:04:01 PM] 正在查找插件信息...",
+      "[3/21/2025, 4:04:01 PM] 找到插件: {\"id\":\"was\",\"name\":\"WAS Node Suite\",\"description\":\"A node suite for ComfyUI with many new nodes, such as image processing, text processing, and more.\",\"version\":\"1.0.0\",\"author\":\"WASasquatch\",\"github\":\"https://github.com/WASasquatch/was-node-suite-comfyui\",\"install_type\":\"git-clone\",\"tags\":[],\"stars\":0,\"installed\":false,\"disabled\":false}",
+      "[3/21/2025, 4:04:01 PM] 准备安装...",
+      "[3/21/2025, 4:04:01 PM] 正在下载插件...",
+      "[3/21/2025, 4:04:01 PM] 执行: git clone \"https://github.com/WASasquatch/was-node-suite-comfyui\" \"/Users/sai/dev/work/os/ai/comfyui-starter/server/comfyui/custom_nodes/was\"",
+      "[3/21/2025, 4:04:19 PM] Git错误: Cloning into '/Users/sai/dev/work/os/ai/comfyui-starter/server/comfyui/custom_nodes/was'...\n",
+      "[3/21/2025, 4:04:19 PM] 开发环境：跳过依赖安装",
+      "[3/21/2025, 4:04:19 PM] 安装完成于 3/21/2025, 4:04:19 PM"
+    ],
+    "githubProxy": "",
+    "endTime": 1742544259628,
+    "result": "安装完成于 3/21/2025, 4:04:19 PM"
+  },
+  {
     "id": "9deec69c-42c5-43e0-ae3e-cd23b07b6f79",
     "pluginId": "comfyui-impact-pack",
     "pluginName": "ComfyUI Impact Pack",

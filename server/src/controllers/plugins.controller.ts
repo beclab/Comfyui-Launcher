@@ -1330,4 +1330,27 @@ export class PluginsController {
       };
     }
   }
+
+  // 如果其他控制器需要访问这些方法，确保它们是公共的
+  public getPluginPath(pluginId: string): string {
+    // 首先检查常规目录
+    const regularPath = path.join(CUSTOM_NODES_PATH, pluginId);
+    if (fs.existsSync(regularPath)) {
+      return regularPath;
+    }
+    
+    // 然后检查禁用目录
+    const disabledPath = path.join(DISABLED_PLUGINS_PATH, pluginId);
+    if (fs.existsSync(disabledPath)) {
+      return disabledPath;
+    }
+    
+    // 如果都找不到，返回常规路径（可能用于新安装）
+    return regularPath;
+  }
+
+  public async getInstalledPluginsForPython(): Promise<any[]> {
+    const installedPlugins = this.getInstalledPlugins();
+    return installedPlugins;
+  }
 } 

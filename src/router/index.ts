@@ -35,6 +35,10 @@ const routes: RouteRecordRaw[] = [
       { path: 'models', component: () => import('pages/ModelsPage.vue') },
       { path: 'plugins', component: () => import('pages/PluginsPage.vue') },
       { path: 'reset', component: () => import('pages/ResetPage.vue') },
+      { 
+        path: 'python-dependencies',
+        component: () => import('pages/PythonDependenciesPage.vue'),
+      }
     ],
   },
 ];

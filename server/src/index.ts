@@ -8,6 +8,15 @@ import { PluginsController } from './controllers/plugins.controller';
 import { SystemController } from './controllers/system.controller';
 import { EssentialModelsController } from './controllers/essential-models.controller';
 import { config } from './config';
+import {
+  getPipSource,
+  setPipSource,
+  getInstalledPackages,
+  installPackage,
+  uninstallPackage,
+  analyzePluginDependencies,
+  fixPluginDependencies
+} from './controllers/python.controller';
 
 const app = new Koa();
 const router = new Router();
@@ -69,6 +78,14 @@ router.post('/api/reset', systemController.resetSystem);
 router.get('/api/reset/progress/:taskId', systemController.getResetProgress);
 router.post('/api/restart', systemController.restartApp);
 
+// Python依赖管理路由
+router.get('/api/python/pip-source', (ctx) => getPipSource(ctx));
+router.post('/api/python/pip-source', (ctx) => setPipSource(ctx));
+router.get('/api/python/packages', (ctx) => getInstalledPackages(ctx));
+router.post('/api/python/packages/install', (ctx) => installPackage(ctx));
+router.post('/api/python/packages/uninstall', (ctx) => uninstallPackage(ctx));
+router.get('/api/python/plugins/dependencies', (ctx) => analyzePluginDependencies(ctx));
+router.post('/api/python/plugins/fix-dependencies', (ctx) => fixPluginDependencies(ctx));
 
 // 使用路由
 app.use(router.routes());
