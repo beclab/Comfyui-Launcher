@@ -175,6 +175,7 @@
                 color="warning"
                 icon="power_settings_new"
                 @click="togglePluginState(plugin)"
+                :loading="pluginStateChanging[plugin.id]"
               >
                 <q-tooltip>{{ plugin.disabled ? '启用' : '禁用' }}</q-tooltip>
               </q-btn>
@@ -377,6 +378,10 @@ const proxyOptions = ref<string[]>([
   'https://gh-proxy.com/'
 ]);
 const githubProxy = ref('');
+
+// 在 <script setup> 中增加新状态
+const pluginStateChanging = reactive<Record<string, boolean>>({});
+const pluginTaskId = reactive<Record<string, string>>({});
 
 // 获取插件列表
 const fetchPlugins = async () => {
@@ -646,14 +651,163 @@ const createSnapshot = () => {
   });
 };
 
-// 切换插件启用/禁用状态
-const togglePluginState = (plugin: Plugin) => {
-  plugin.disabled = !plugin.disabled;
-  $q.notify({
-    color: plugin.disabled ? 'warning' : 'positive',
-    message: `${plugin.name} 已${plugin.disabled ? '禁用' : '启用'}`,
-    icon: plugin.disabled ? 'power_off' : 'power'
+// 修改 togglePluginState 函数
+const togglePluginState = async (plugin: Plugin) => {
+  try {
+    // 避免重复操作
+    if (pluginStateChanging[plugin.id]) {
+      return;
+    }
+    
+    // 设置状态为处理中
+    pluginStateChanging[plugin.id] = true;
+    
+    // 显示进度对话框
+    overallProgress.value = 0;
+    installationMessage.value = `正在${plugin.disabled ? '启用' : '禁用'} ${plugin.name}...`;
+    progressVisible.value = true;
+    
+    // 根据当前状态选择操作
+    const action = plugin.disabled ? 'enable' : 'disable';
+    
+    // 发送请求
+    let response;
+    if (action === 'enable') {
+      response = await api.enablePlugin(plugin.id);
+    } else {
+      response = await api.disablePlugin(plugin.id);
+    }
+    
+    // 保存任务ID
+    activeTaskId.value = response.body.taskId;
+    pluginTaskId[plugin.id] = response.body.taskId;
+    
+    // 轮询进度
+    await pollPluginStateChange(activeTaskId.value, plugin.id, action);
+    
+    // 成功后刷新插件列表
+    await refreshInstalledPlugins();
+    
+  } catch (error) {
+    console.error(`${plugin.disabled ? '启用' : '禁用'}插件失败:`, error);
+    $q.notify({
+      color: 'negative',
+      message: `${plugin.disabled ? '启用' : '禁用'} ${plugin.name} 失败，请稍后重试`,
+      icon: 'error',
+      position: 'top',
+      timeout: 5000
+    });
+  } finally {
+    // 重置状态
+    pluginStateChanging[plugin.id] = false;
+    progressVisible.value = false;
+  }
+};
+
+// 添加轮询插件状态变更进度的函数
+const pollPluginStateChange = async (taskId: string, pluginId: string, action: 'enable' | 'disable') => {
+  return new Promise<void>((resolve, reject) => {
+    const interval = setInterval(async () => {
+      try {
+        const response = await api.getPluginProgress(taskId);
+        const { progress, completed, message } = response.body;
+        
+        // 更新进度
+        overallProgress.value = progress;
+        installationMessage.value = message || `${action === 'enable' ? '启用' : '禁用'}中...`;
+        
+        if (completed) {
+          clearInterval(interval);
+          
+          // 检查是否成功完成
+          if (progress === 100) {
+            $q.notify({
+              color: 'positive',
+              message: `${action === 'enable' ? '启用' : '禁用'} ${pluginId} 成功!`,
+              icon: 'check_circle',
+              position: 'top'
+            });
+            resolve();
+          } else {
+            // 失败情况 - 显示详细错误信息
+            const errorMsg = message || `${action === 'enable' ? '启用' : '禁用'} ${pluginId} 失败`;
+            console.error(`操作失败: ${errorMsg}`);
+            
+            // 显示错误对话框
+            errorMessage.value = errorMsg;
+            errorDialogVisible.value = true;
+            progressVisible.value = false;
+            
+            $q.notify({
+              color: 'negative',
+              message: errorMsg,
+              icon: 'error',
+              position: 'top',
+              timeout: 5000
+            });
+            reject(new Error(errorMsg));
+          }
+        }
+      } catch (error) {
+        console.error(`获取${action === 'enable' ? '启用' : '禁用'}进度失败:`, error);
+        clearInterval(interval);
+        
+        // 显示API请求错误
+        $q.notify({
+          color: 'negative',
+          message: `进度请求失败: ${error instanceof Error ? error.message : '连接错误'}`,
+          icon: 'error',
+          position: 'top',
+          timeout: 5000
+        });
+        
+        reject(error);
+      }
+    }, 1000);
   });
+};
+
+// 添加刷新已安装插件列表的函数
+const refreshInstalledPlugins = async () => {
+  try {
+    const response = await api.refreshInstalledPlugins();
+    
+    if (response.body.success) {
+      // 更新本地插件状态
+      const installedPlugins = response.body.plugins;
+      
+      // 创建映射以快速查找
+      const installedMap = new Map();
+      installedPlugins.forEach((plugin: Plugin) => {
+        installedMap.set(plugin.id, plugin);
+      });
+      
+      // 更新本地列表中的插件状态
+      plugins.value = plugins.value.map(plugin => {
+        const installedPlugin = installedMap.get(plugin.id);
+        if (installedPlugin) {
+          return {
+            ...plugin,
+            installed: true,
+            installedOn: installedPlugin.installedOn,
+            disabled: installedPlugin.disabled
+          };
+        }
+        return plugin;
+      });
+      
+      // 更新筛选后的列表
+      filterPlugins();
+    }
+  } catch (error) {
+    console.error('刷新插件列表失败:', error);
+    $q.notify({
+      color: 'negative',
+      message: '刷新插件列表失败',
+      icon: 'error',
+      position: 'top'
+    });
+  }
 };
 
 // 显示插件详情

@@ -20,6 +20,9 @@ console.log(`[配置] ComfyUI 路径: ${COMFYUI_PATH}`);
 
 const CUSTOM_NODES_PATH = path.join(COMFYUI_PATH, 'custom_nodes');
 
+// 确保有一个 .disabled 目录用于存放禁用的插件
+const DISABLED_PLUGINS_PATH = path.join(CUSTOM_NODES_PATH, '.disabled');
+
 // 添加 GitHub API 配置
 const GITHUB_API_BASE = 'https://api.github.com';
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || ''; // 建议配置 GitHub Token 避免 API 速率限制
@@ -29,7 +32,7 @@ const taskProgressMap: Record<string, {
   progress: number, 
   completed: boolean,
   pluginId: string,
-  type: 'install' | 'uninstall',
+  type: 'install' | 'uninstall' | 'disable' | 'enable',
   message?: string,
   githubProxy?: string
 }> = {};
@@ -129,6 +132,30 @@ const mockPlugins = [
 ];
 
 export class PluginsController {
+  constructor() {
+    // 初始化 - 启动时预加载插件数据
+    this.initPluginsCache();
+  }
+
+  // 初始化插件缓存
+  private async initPluginsCache() {
+    try {
+      console.log('[API] 启动时初始化插件缓存');
+      setTimeout(async () => {
+        try {
+          // 初始化时强制从网络获取
+          cachedPlugins = await this.fetchComfyUIManagerPlugins(true);
+          lastFetchTime = Date.now();
+          console.log(`[API] 插件缓存初始化完成，已缓存 ${cachedPlugins.length} 个插件`);
+        } catch (error) {
+          console.error('[API] 初始化插件缓存失败:', error);
+        }
+      }, 1000);
+    } catch (error) {
+      console.error('[API] 初始化插件缓存出错:', error);
+    }
+  }
+
   // 获取所有插件
   async getAllPlugins(ctx: Context): Promise<void> {
     try {
@@ -144,8 +171,8 @@ export class PluginsController {
         return;
       }
       
-      // 从 ComfyUI-Manager 获取插件列表
-      const pluginsData = await this.fetchComfyUIManagerPlugins();
+      // 从 ComfyUI-Manager 获取插件列表，传入forceRefresh参数
+      const pluginsData = await this.fetchComfyUIManagerPlugins(forceRefresh);
       
       // 更新缓存
       cachedPlugins = pluginsData;
@@ -160,76 +187,112 @@ export class PluginsController {
   }
 
   // 从 ComfyUI-Manager 获取插件列表
-  private async fetchComfyUIManagerPlugins(): Promise<any[]> {
+  private async fetchComfyUIManagerPlugins(forceNetworkFetch: boolean = false): Promise<any[]> {
     try {
+      console.log(`[API] 获取插件列表 (强制网络获取: ${forceNetworkFetch})`);
+      
+      // 如果不强制网络获取，且缓存中有数据，则仅更新本地状态
+      if (!forceNetworkFetch && cachedPlugins.length > 0) {
+        console.log('[API] 使用缓存数据并更新本地状态');
+        
+        // 获取本地安装的插件信息
+        const installedPlugins = this.getInstalledPlugins();
+        
+        // 更新缓存中插件的安装状态
+        this.updatePluginsInstallStatus(cachedPlugins, installedPlugins);
+        
+        return cachedPlugins;
+      }
+      
+      // 强制网络获取或缓存为空时，从网络获取完整列表
+      console.log('[API] 从网络获取完整插件列表');
+      
       // ComfyUI-Manager 插件列表URL
       const url = 'https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/custom-node-list.json';
       
-      console.log('[API] 从ComfyUI-Manager获取插件列表');
       const response = await superagent.get(url);
       const managerData = JSON.parse(response.text);
       
-      // 创建custom_nodes目录（如果不存在）
+      // 确保custom_nodes目录存在
       if (!fs.existsSync(CUSTOM_NODES_PATH)) {
         fs.mkdirSync(CUSTOM_NODES_PATH, { recursive: true });
       }
       
-      // 获取已安装插件列表
+      // 获取已安装插件
       const installedPlugins = this.getInstalledPlugins();
       
-      // 正确解析custom_nodes数组
-      const plugins = managerData.custom_nodes.map((info: any) => {
-        // 检查插件是否已安装
-        const installed = installedPlugins.some(plugin => 
-          plugin.id === info.id || 
-          plugin.name === info.title ||
-          (info.reference && plugin.github === info.reference)
-        );
-        
-        // 如果已安装，获取安装日期（如有）
-        const installedPlugin = installedPlugins.find(plugin => 
-          plugin.id === info.id || 
-          plugin.name === info.title ||
-          (info.reference && plugin.github === info.reference)
-        );
-        const installedDate = installedPlugin?.installedOn;
-        
-        return {
-          id: info.id || `plugin-${Math.random().toString(36).substring(2, 9)}`,
-          name: info.title || info.id || '未命名插件',
-          description: info.description || '没有描述',
+      // 解析插件数据
+      let plugins = managerData.custom_nodes.map((info: any) => {
+        // 转换为标准格式
+        const plugin = {
+          id: info.id || info.title.toLowerCase().replace(/\s+/g, '-'),
+          name: info.title,
+          description: info.description || '',
           version: info.version || '1.0.0',
-          author: info.author || '未知作者',
+          author: info.author || '未知',
           github: info.reference || '',
-          stars: info.stars || 0,  // 默认为0，后续会更新
-          tags: info.tags || [],
           install_type: info.install_type || 'git_clone',
-          files: info.files || [],
-          require_restart: info.require_restart || false,
-          installed,
-          installedOn: installedDate,
-          disabled: installedPlugin?.disabled || false
+          tags: info.tags || [],
+          stars: 0,
+          installed: false,
+          disabled: false
         };
+        
+        return plugin;
       });
       
-      // 找出在本地已安装但不在官方列表中的插件
-      const officialIds = new Set(plugins.map((p: { id: string }) => p.id));
-      const localOnlyPlugins = installedPlugins.filter(plugin => !officialIds.has(plugin.id));
+      // 更新安装状态
+      this.updatePluginsInstallStatus(plugins, installedPlugins);
       
-      // 合并两个列表
-      const allPlugins = [...plugins, ...localOnlyPlugins];
+      // // 异步更新GitHub统计信息
+      // this.updateGitHubStats(plugins);
       
-      console.log(`[API] 已获取 ${allPlugins.length} 个插件，其中本地独有 ${localOnlyPlugins.length} 个`);
-      
-      // 更新 GitHub stars 数据
-      // this.updateGitHubStats(allPlugins);
-      
-      return allPlugins;
+      return plugins;
     } catch (error) {
       console.error('[API] 获取ComfyUI-Manager插件列表失败:', error);
-      // 加载失败时返回默认/模拟数据
-      return this.getInstalledPlugins();
+      
+      // 如果从网络获取失败，但有缓存数据，则使用缓存
+      if (cachedPlugins.length > 0) {
+        console.log('[API] 使用缓存数据作为备选');
+        return cachedPlugins;
+      }
+      
+      // 缓存也没有，返回模拟数据
+      console.log('[API] 无缓存可用，返回模拟数据');
+      return [...mockPlugins];
     }
+  }
+
+  // 辅助方法：更新插件的安装状态
+  private updatePluginsInstallStatus(plugins: any[], installedPlugins: any[]): void {
+    // 创建一个快速查找表
+    const installedMap = new Map();
+    installedPlugins.forEach(plugin => {
+      installedMap.set(plugin.id, {
+        installedOn: plugin.installedOn,
+        disabled: plugin.disabled
+      });
+    });
+    
+    // 更新每个插件的安装状态
+    plugins.forEach(plugin => {
+      const installedInfo = installedMap.get(plugin.id);
+      if (installedInfo) {
+        plugin.installed = true;
+        plugin.installedOn = installedInfo.installedOn;
+        plugin.disabled = installedInfo.disabled;
+      } else {
+        plugin.installed = false;
+        plugin.disabled = false;
+      }
+    });
+    
+    // 添加本地安装但不在列表中的插件
+    installedPlugins.forEach(plugin => {
+      if (!plugins.some(p => p.id === plugin.id)) {
+        plugins.push(plugin);
+      }
+    });
   }
 
   // 获取已安装的插件列表
@@ -244,80 +307,114 @@ export class PluginsController {
         return [];
       }
       
-      // 读取所有插件目录
+      // 确保禁用插件目录存在
+      if (!fs.existsSync(DISABLED_PLUGINS_PATH)) {
+        console.log(`[API] 创建禁用插件目录: ${DISABLED_PLUGINS_PATH}`);
+        fs.mkdirSync(DISABLED_PLUGINS_PATH, { recursive: true });
+      }
+      
+      // 读取所有已启用插件目录
       const directories = fs.readdirSync(CUSTOM_NODES_PATH, { withFileTypes: true })
-        .filter(dirent => dirent.isDirectory())
+        .filter(dirent => dirent.isDirectory() && !dirent.name.startsWith('.'))
         .map(dirent => dirent.name);
       
+      // 处理已启用的插件
       for (const dir of directories) {
-        // 跳过特殊目录
-        if (dir.startsWith('.')) continue;
+        const pluginInfo = this.getPluginInfo(dir, false);
+        if (pluginInfo) {
+          installedPlugins.push(pluginInfo);
+        }
+      }
+      
+      // 读取所有禁用的插件目录
+      if (fs.existsSync(DISABLED_PLUGINS_PATH)) {
+        const disabledDirectories = fs.readdirSync(DISABLED_PLUGINS_PATH, { withFileTypes: true })
+          .filter(dirent => dirent.isDirectory() && !dirent.name.startsWith('.'))
+          .map(dirent => dirent.name);
         
-        const pluginPath = path.join(CUSTOM_NODES_PATH, dir);
-        
-        // 尝试读取git信息
-        let repoUrl = '';
-        try {
-          const gitConfig = path.join(pluginPath, '.git', 'config');
-          if (fs.existsSync(gitConfig)) {
-            const configContent = fs.readFileSync(gitConfig, 'utf-8');
-            const urlMatch = configContent.match(/url\s*=\s*(.+)/i);
-            if (urlMatch && urlMatch[1]) {
-              repoUrl = urlMatch[1].trim();
-            }
+        // 处理禁用的插件
+        for (const dir of disabledDirectories) {
+          const pluginInfo = this.getPluginInfo(dir, true);
+          if (pluginInfo) {
+            installedPlugins.push(pluginInfo);
           }
-        } catch (e) {
-          console.error(`[API] 无法读取git信息: ${e}`);
         }
-        
-        // 尝试从pyproject.toml获取元数据
-        let metadata: any = {};
-        try {
-          const pyprojectPath = path.join(pluginPath, 'pyproject.toml');
-          if (fs.existsSync(pyprojectPath)) {
-            const pyprojectContent = fs.readFileSync(pyprojectPath, 'utf-8');
-            // 简单解析，实际应使用toml解析器
-            const nameMatch = pyprojectContent.match(/name\s*=\s*"([^"]+)"/);
-            const versionMatch = pyprojectContent.match(/version\s*=\s*"([^"]+)"/);
-            const authorMatch = pyprojectContent.match(/author\s*=\s*"([^"]+)"/);
-            const descriptionMatch = pyprojectContent.match(/description\s*=\s*"([^"]+)"/);
-            
-            if (nameMatch) metadata.name = nameMatch[1];
-            if (versionMatch) metadata.version = versionMatch[1];
-            if (authorMatch) metadata.author = authorMatch[1];
-            if (descriptionMatch) metadata.description = descriptionMatch[1];
-          }
-        } catch (e) {
-          console.error(`[API] 无法读取pyproject.toml: ${e}`);
-        }
-        
-        // 获取安装日期（使用目录创建时间）
-        let installedOn;
-        try {
-          const stats = fs.statSync(pluginPath);
-          installedOn = stats.birthtime.toISOString();
-        } catch (e) {
-          installedOn = new Date().toISOString(); // 默认为当前时间
-        }
-        
-        // 添加到已安装插件列表
-        installedPlugins.push({
-          id: dir,
-          name: metadata.name || dir,
-          description: metadata.description || `安装在 ${dir} 目录中的插件`,
-          version: metadata.version || '1.0.0',
-          author: metadata.author || '未知作者',
-          github: repoUrl,
-          installed: true,
-          installedOn,
-          disabled: false // TODO: 实现插件禁用状态检测
-        });
       }
       
       return installedPlugins;
     } catch (error) {
       console.error(`[API] 获取已安装插件列表失败: ${error}`);
       return [];
+    }
+  }
+  
+  // 获取单个插件的信息
+  private getPluginInfo(dir: string, isDisabled: boolean): any {
+    try {
+      const pluginPath = isDisabled 
+        ? path.join(DISABLED_PLUGINS_PATH, dir)
+        : path.join(CUSTOM_NODES_PATH, dir);
+      
+      // 尝试读取git信息
+      let repoUrl = '';
+      try {
+        const gitConfig = path.join(pluginPath, '.git', 'config');
+        if (fs.existsSync(gitConfig)) {
+          const configContent = fs.readFileSync(gitConfig, 'utf-8');
+          const urlMatch = configContent.match(/url\s*=\s*(.+)/i);
+          if (urlMatch && urlMatch[1]) {
+            repoUrl = urlMatch[1].trim();
+          }
+        }
+      } catch (e) {
+        console.error(`[API] 无法读取git信息: ${e}`);
+      }
+      
+      // 尝试从pyproject.toml获取元数据
+      let metadata: any = {};
+      try {
+        const pyprojectPath = path.join(pluginPath, 'pyproject.toml');
+        if (fs.existsSync(pyprojectPath)) {
+          const pyprojectContent = fs.readFileSync(pyprojectPath, 'utf-8');
+          // 简单解析，实际应使用toml解析器
+          const nameMatch = pyprojectContent.match(/name\s*=\s*"([^"]+)"/);
+          const versionMatch = pyprojectContent.match(/version\s*=\s*"([^"]+)"/);
+          const authorMatch = pyprojectContent.match(/author\s*=\s*"([^"]+)"/);
+          const descriptionMatch = pyprojectContent.match(/description\s*=\s*"([^"]+)"/);
+          
+          if (nameMatch) metadata.name = nameMatch[1];
+          if (versionMatch) metadata.version = versionMatch[1];
+          if (authorMatch) metadata.author = authorMatch[1];
+          if (descriptionMatch) metadata.description = descriptionMatch[1];
+        }
+      } catch (e) {
+        console.error(`[API] 无法读取pyproject.toml: ${e}`);
+      }
+      
+      // 获取安装日期（使用目录创建时间）
+      let installedOn;
+      try {
+        const stats = fs.statSync(pluginPath);
+        installedOn = stats.birthtime.toISOString();
+      } catch (e) {
+        installedOn = new Date().toISOString(); // 默认为当前时间
+      }
+      
+      // 返回插件信息
+      return {
+        id: dir,
+        name: metadata.name || dir,
+        description: metadata.description || `安装在 ${dir} 目录中的插件`,
+        version: metadata.version || '1.0.0',
+        author: metadata.author || '未知作者',
+        github: repoUrl,
+        installed: true,
+        installedOn,
+        disabled: isDisabled
+      };
+    } catch (error) {
+      console.error(`[API] 获取插件信息失败: ${error}`);
+      return null;
     }
   }
 
@@ -447,19 +544,26 @@ export class PluginsController {
       
       // 安装依赖
       taskProgressMap[taskId].progress = 70;
-      taskProgressMap[taskId].message = '检查依赖...';
       
-      const requirementsPath = path.join(targetDir, 'requirements.txt');
-      if (fs.existsSync(requirementsPath)) {
-        taskProgressMap[taskId].message = '安装依赖...';
-        await execPromise(`pip install -r "${requirementsPath}"`);
-      }
-      
-      // 执行安装脚本
-      const installScriptPath = path.join(targetDir, 'install.py');
-      if (fs.existsSync(installScriptPath)) {
-        taskProgressMap[taskId].message = '执行安装脚本...';
-        await execPromise(`cd "${targetDir}" && python3 "${installScriptPath}"`);
+      // 在开发环境下跳过依赖安装
+      if (isDev) {
+        taskProgressMap[taskId].message = '开发环境：跳过依赖安装...';
+        console.log('[API] 开发环境：跳过依赖安装');
+      } else {
+        taskProgressMap[taskId].message = '检查依赖...';
+        
+        const requirementsPath = path.join(targetDir, 'requirements.txt');
+        if (fs.existsSync(requirementsPath)) {
+          taskProgressMap[taskId].message = '安装依赖...';
+          await execPromise(`pip install -r "${requirementsPath}"`);
+        }
+        
+        // 执行安装脚本
+        const installScriptPath = path.join(targetDir, 'install.py');
+        if (fs.existsSync(installScriptPath)) {
+          taskProgressMap[taskId].message = '执行安装脚本...';
+          await execPromise(`cd "${targetDir}" && python3 "${installScriptPath}"`);
+        }
       }
       
       // 完成安装
@@ -470,6 +574,9 @@ export class PluginsController {
       // 记录安装时间
       const now = new Date();
       taskProgressMap[taskId].message = `安装完成于 ${now.toLocaleString()}`;
+      
+      // 安装完成后刷新缓存
+      await this.onPluginOperationCompleted(taskId);
       
     } catch (error) {
       console.error(`[API] 安装插件失败: ${error}`);
@@ -551,6 +658,9 @@ export class PluginsController {
       taskProgressMap[taskId].progress = 100;
       taskProgressMap[taskId].completed = true;
       taskProgressMap[taskId].message = '卸载完成！';
+      
+      // 卸载完成后刷新缓存
+      await this.onPluginOperationCompleted(taskId);
       
     } catch (error) {
       console.error(`[API] 卸载插件失败: ${error}`);
@@ -671,6 +781,246 @@ export class PluginsController {
       }
     } catch (error) {
       console.error(`[API] 获取插件 ${plugin.name} 的 GitHub 统计数据失败:`, error);
+    }
+  }
+
+  // 禁用插件
+  async disablePlugin(ctx: Context): Promise<void> {
+    const { pluginId } = ctx.request.body as { pluginId: string };
+    console.log(`[API] 请求禁用插件: ${pluginId}`);
+    
+    const taskId = uuidv4();
+    
+    // 创建任务并初始化进度
+    taskProgressMap[taskId] = {
+      progress: 0,
+      completed: false,
+      pluginId,
+      type: 'disable'
+    };
+    
+    // 实际禁用插件任务
+    this.disablePluginTask(taskId, pluginId);
+    
+    ctx.body = {
+      success: true,
+      message: '开始禁用插件',
+      taskId
+    };
+  }
+
+  // 实际禁用插件任务
+  private async disablePluginTask(taskId: string, pluginId: string): Promise<void> {
+    try {
+      // 更新进度
+      taskProgressMap[taskId].progress = 10;
+      taskProgressMap[taskId].message = '准备禁用...';
+      
+      // 确定插件路径
+      const pluginPath = path.join(CUSTOM_NODES_PATH, pluginId);
+      const disabledPath = path.join(DISABLED_PLUGINS_PATH, pluginId);
+      
+      // 检查目录是否存在
+      if (!fs.existsSync(pluginPath)) {
+        throw new Error(`插件目录不存在: ${pluginPath}`);
+      }
+      
+      // 确保禁用目录存在
+      if (!fs.existsSync(DISABLED_PLUGINS_PATH)) {
+        fs.mkdirSync(DISABLED_PLUGINS_PATH, { recursive: true });
+      }
+      
+      // 检查禁用目录中是否已存在同名插件
+      if (fs.existsSync(disabledPath)) {
+        // 如果存在同名禁用插件，先删除它
+        taskProgressMap[taskId].message = '删除已存在的禁用版本...';
+        await fs.promises.rm(disabledPath, { recursive: true, force: true });
+      }
+      
+      // 更新进度
+      taskProgressMap[taskId].progress = 50;
+      taskProgressMap[taskId].message = '正在移动插件到禁用目录...';
+      
+      // 移动插件到禁用目录
+      await fs.promises.rename(pluginPath, disabledPath);
+      
+      // 完成禁用
+      taskProgressMap[taskId].progress = 100;
+      taskProgressMap[taskId].completed = true;
+      taskProgressMap[taskId].message = '禁用完成！';
+      
+      // 禁用完成后刷新缓存
+      await this.onPluginOperationCompleted(taskId);
+      
+    } catch (error) {
+      console.error(`[API] 禁用插件失败: ${error}`);
+      taskProgressMap[taskId].progress = 0;
+      taskProgressMap[taskId].completed = true;
+      taskProgressMap[taskId].message = `禁用失败: ${error instanceof Error ? error.message : '未知错误'}`;
+    }
+  }
+
+  // 启用插件
+  async enablePlugin(ctx: Context): Promise<void> {
+    const { pluginId } = ctx.request.body as { pluginId: string };
+    console.log(`[API] 请求启用插件: ${pluginId}`);
+    
+    const taskId = uuidv4();
+    
+    // 创建任务并初始化进度
+    taskProgressMap[taskId] = {
+      progress: 0,
+      completed: false,
+      pluginId,
+      type: 'enable'
+    };
+    
+    // 实际启用插件任务
+    this.enablePluginTask(taskId, pluginId);
+    
+    ctx.body = {
+      success: true,
+      message: '开始启用插件',
+      taskId
+    };
+  }
+
+  // 实际启用插件任务
+  private async enablePluginTask(taskId: string, pluginId: string): Promise<void> {
+    try {
+      // 更新进度
+      taskProgressMap[taskId].progress = 10;
+      taskProgressMap[taskId].message = '准备启用...';
+      
+      // 确定插件路径
+      const disabledPath = path.join(DISABLED_PLUGINS_PATH, pluginId);
+      const enabledPath = path.join(CUSTOM_NODES_PATH, pluginId);
+      
+      // 检查禁用目录是否存在
+      if (!fs.existsSync(disabledPath)) {
+        throw new Error(`禁用的插件目录不存在: ${disabledPath}`);
+      }
+      
+      // 检查启用目录中是否已存在同名插件
+      if (fs.existsSync(enabledPath)) {
+        // 如果存在同名已启用插件，先删除它
+        taskProgressMap[taskId].message = '删除已存在的启用版本...';
+        await fs.promises.rm(enabledPath, { recursive: true, force: true });
+      }
+      
+      // 更新进度
+      taskProgressMap[taskId].progress = 50;
+      taskProgressMap[taskId].message = '正在移动插件到启用目录...';
+      
+      // 移动插件到启用目录
+      await fs.promises.rename(disabledPath, enabledPath);
+      
+      // 完成启用
+      taskProgressMap[taskId].progress = 100;
+      taskProgressMap[taskId].completed = true;
+      taskProgressMap[taskId].message = '启用完成！';
+      
+      // 启用完成后刷新缓存
+      await this.onPluginOperationCompleted(taskId);
+      
+    } catch (error) {
+      console.error(`[API] 启用插件失败: ${error}`);
+      taskProgressMap[taskId].progress = 0;
+      taskProgressMap[taskId].completed = true;
+      taskProgressMap[taskId].message = `启用失败: ${error instanceof Error ? error.message : '未知错误'}`;
+    }
+  }
+
+  // 刷新插件缓存
+  private async refreshPluginsCache() {
+    try {
+      console.log('[API] 刷新插件缓存');
+      // 只更新安装状态，不强制从网络获取
+      cachedPlugins = await this.fetchComfyUIManagerPlugins(false);
+      lastFetchTime = Date.now();
+      console.log(`[API] 插件缓存刷新完成，当前有 ${cachedPlugins.length} 个插件`);
+    } catch (error) {
+      console.error('[API] 刷新插件缓存失败:', error);
+    }
+  }
+
+  // 安装插件完成后的回调
+  private async onPluginOperationCompleted(taskId: string) {
+    const task = taskProgressMap[taskId];
+    if (task && task.completed && task.progress === 100) {
+      console.log(`[API] 插件${task.type === 'install' ? '安装' : 
+                         task.type === 'uninstall' ? '卸载' : 
+                         task.type === 'disable' ? '禁用' : '启用'}完成，刷新缓存`);
+      
+      // 刷新插件缓存
+      await this.refreshPluginsCache();
+    }
+  }
+
+  // 更新本地插件列表
+  async refreshInstalledPlugins(ctx: Context): Promise<void> {
+    try {
+      console.log('[API] 刷新本地插件列表');
+      
+      // 获取最新的已安装插件列表
+      const installedPlugins = this.getInstalledPlugins();
+      
+      // 如果缓存为空或过期，先获取最新的ComfyUI-Manager插件列表
+      if (cachedPlugins.length === 0 || (Date.now() - lastFetchTime) >= CACHE_DURATION) {
+        await this.refreshPluginsCache();
+      }
+      
+      // 更新缓存中已安装插件的状态
+      if (cachedPlugins.length > 0) {
+        // 创建一个映射以快速查找插件
+        const installedMap = new Map();
+        installedPlugins.forEach(plugin => {
+          installedMap.set(plugin.id, {
+            installed: true,
+            installedOn: plugin.installedOn,
+            disabled: plugin.disabled
+          });
+        });
+        
+        // 更新缓存中的插件状态
+        cachedPlugins = cachedPlugins.map(plugin => {
+          const installed = installedMap.get(plugin.id);
+          if (installed) {
+            return {
+              ...plugin,
+              installed: true,
+              installedOn: installed.installedOn,
+              disabled: installed.disabled
+            };
+          } else {
+            return {
+              ...plugin,
+              installed: false,
+              disabled: false
+            };
+          }
+        });
+        
+        // 也更新本地安装但不在缓存中的插件
+        installedPlugins.forEach(plugin => {
+          if (!cachedPlugins.some(p => p.id === plugin.id)) {
+            cachedPlugins.push(plugin);
+          }
+        });
+      }
+      
+      ctx.body = {
+        success: true,
+        message: '已刷新插件列表',
+        plugins: installedPlugins
+      };
+    } catch (error) {
+      console.error(`[API] 刷新本地插件列表失败: ${error}`);
+      ctx.status = 500;
+      ctx.body = {
+        success: false,
+        message: `刷新失败: ${error instanceof Error ? error.message : '未知错误'}`
+      };
     }
   }
 } 

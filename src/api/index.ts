@@ -237,6 +237,18 @@ const api = {
   // 添加模型扫描API方法
   scanModels: () => 
     superagent.post(`${API_BASE_URL}/models/scan`).use(debug),
+
+  // 禁用插件
+  disablePlugin: (pluginId: string) => 
+    superagent.post(`${API_BASE_URL}/plugins/disable`).send({ pluginId }).use(debug),
+
+  // 启用插件
+  enablePlugin: (pluginId: string) => 
+    superagent.post(`${API_BASE_URL}/plugins/enable`).send({ pluginId }).use(debug),
+
+  // 刷新已安装插件列表
+  refreshInstalledPlugins: () => 
+    superagent.get(`${API_BASE_URL}/plugins/refresh`).use(debug),
 };
 
 export default api;  // 只有一个默认导出 

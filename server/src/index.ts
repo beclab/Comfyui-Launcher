@@ -54,6 +54,10 @@ router.get('/api/plugins', (ctx) => pluginsController.getAllPlugins(ctx));
 router.post('/api/plugins/install', (ctx) => pluginsController.installPlugin(ctx));
 router.post('/api/plugins/uninstall', (ctx) => pluginsController.uninstallPlugin(ctx));
 router.get('/api/plugins/progress/:taskId', (ctx) => pluginsController.getPluginProgress(ctx));
+// 新增的插件启用/禁用路由
+router.post('/api/plugins/disable', (ctx) => pluginsController.disablePlugin(ctx));
+router.post('/api/plugins/enable', (ctx) => pluginsController.enablePlugin(ctx));
+router.get('/api/plugins/refresh', (ctx) => pluginsController.refreshInstalledPlugins(ctx));
 
 // 系统管理路由
 router.post('/api/reset', systemController.resetSystem);
