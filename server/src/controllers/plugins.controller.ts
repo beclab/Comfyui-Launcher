@@ -459,7 +459,7 @@ export class PluginsController {
       const installScriptPath = path.join(targetDir, 'install.py');
       if (fs.existsSync(installScriptPath)) {
         taskProgressMap[taskId].message = '执行安装脚本...';
-        await execPromise(`cd "${targetDir}" && python "${installScriptPath}"`);
+        await execPromise(`cd "${targetDir}" && python3 "${installScriptPath}"`);
       }
       
       // 完成安装
