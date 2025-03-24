@@ -95,6 +95,7 @@ router.get('/api/civitai/models/latest', (ctx) => civitaiController.getLatestMod
 router.get('/api/civitai/models/hot', (ctx) => civitaiController.getHotModels(ctx));
 router.get('/api/civitai/models/:id', (ctx) => civitaiController.getModelDetails(ctx));
 router.get('/api/civitai/download/models/:versionId', (ctx) => civitaiController.downloadModel(ctx));
+router.get('/api/civitai/latest-workflows', (ctx) => civitaiController.getLatestWorkflows(ctx));
 
 // 使用路由
 app.use(router.routes());

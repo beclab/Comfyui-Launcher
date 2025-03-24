@@ -297,7 +297,7 @@ export const fixPluginDependencies = (pluginName: string) => {
 // 添加Civitai API相关
 export const civitaiApi = {
   // 获取最新模型
-  getLatestModels: async (page = 1, limit = 12, cursor?: string) => {
+  getLatestModels: async (page = 1, limit = 24, cursor?: string) => {
     let url = `${API_BASE_URL}/civitai/models/latest?limit=${limit}`;
     
     // 如果有游标，优先使用游标分页
@@ -343,5 +343,23 @@ export const civitaiApi = {
       .query({ url: fullUrl })
       .use(debug);
     return response.body;
-  }
+  },
+
+  // 获取最新工作流
+  getLatestWorkflows: async (page = 1, limit = 24, cursor?: string) => {
+    const url = `${API_BASE_URL}/civitai/latest-workflows`;
+    const queryParams: Record<string, string | number> = { limit };
+    
+    if (cursor) {
+      queryParams.cursor = encodeURIComponent(cursor);
+    } else if (page > 1) {
+      queryParams.page = page;
+    }
+    
+    const response = await superagent
+      .get(url)
+      .query(queryParams)
+      .use(debug);
+    return response.body;
+  },
 }; 

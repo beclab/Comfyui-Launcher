@@ -276,6 +276,68 @@ export class CivitaiController {
       }
     }
   }
+
+  /**
+   * 获取最新工作流
+   * @param ctx Koa上下文对象
+   */
+  async getLatestWorkflows(ctx: Context): Promise<void> {
+    try {
+      // 获取查询参数并确保它们是单个值
+      const limit = typeof ctx.query.limit === 'string' ? parseInt(ctx.query.limit) : 24;
+      const page = typeof ctx.query.page === 'string' ? parseInt(ctx.query.page) : 1;
+      const cursor = typeof ctx.query.cursor === 'string' ? ctx.query.cursor : undefined;
+      
+      // 构建Civitai API请求URL，使用types查询参数而不是路径
+      let apiUrl = `${CIVITAI_API_BASE_URL}/models`;
+      
+      // 构建查询参数对象
+      const queryParams: Record<string, string | number | boolean> = {
+        limit,
+        types: 'Workflows',
+        sort: 'Newest',
+        nsfw: false
+      };
+      
+      // 处理分页
+      if (cursor) {
+        queryParams.cursor = cursor;
+      } else {
+        queryParams.page = page;
+      }
+      
+      logger.info(`获取工作流，参数: ${JSON.stringify(queryParams)}`);
+      
+    //   发起请求并返回结果
+      const response = await superagent
+        .get(apiUrl)
+        .query(queryParams);
+      
+      ctx.body = response.body;
+    } catch (error) {
+      logger.error('获取最新工作流失败:', error);
+      
+      // 处理错误响应
+      const err = error as SuperAgentError;
+      
+      if (err.response) {
+        const statusCode = err.status || 500;
+        const errorMessage = err.response.body?.message || '获取最新工作流时发生错误';
+        
+        ctx.status = statusCode;
+        ctx.body = {
+          error: true,
+          message: errorMessage
+        };
+      } else {
+        ctx.status = 500;
+        ctx.body = {
+          error: true,
+          message: '服务器内部错误'
+        };
+      }
+    }
+  }
 }
 
 export default new CivitaiController();
