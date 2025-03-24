@@ -292,4 +292,56 @@ export const analyzePluginDependencies = () => {
 
 export const fixPluginDependencies = (pluginName: string) => {
   return superagent.post(`${API_BASE_URL}/python/plugins/fix-dependencies`).send({ plugin: pluginName }).use(debug).then(res => res.body);
+};
+
+// 添加Civitai API相关
+export const civitaiApi = {
+  // 获取最新模型
+  getLatestModels: async (page = 1, limit = 12, cursor?: string) => {
+    let url = `${API_BASE_URL}/civitai/models/latest?limit=${limit}`;
+    
+    // 如果有游标，优先使用游标分页
+    if (cursor) {
+      url += `&cursor=${encodeURIComponent(cursor)}`;
+    } else if (page > 1) {
+      // 否则使用页码分页
+      url += `&page=${page}`;
+    }
+    
+    const response = await superagent.get(url).use(debug);
+    return response.body;
+  },
+  
+  // 获取热门模型
+  getHotModels: (page = 1, limit = 24) => {
+    return superagent
+      .get(`${API_BASE_URL}/civitai/models/hot`)
+      .query({ page, limit })
+      .use(debug)
+      .then(res => res.body);
+  },
+  
+  // 获取模型详情
+  getModelDetails: (modelId: string) => {
+    return superagent
+      .get(`${API_BASE_URL}/civitai/models/${modelId}`)
+      .use(debug)
+      .then(res => res.body);
+  },
+  
+  // 下载模型
+  downloadModel: (versionId: string) => {
+    // 创建下载链接
+    return `${API_BASE_URL}/civitai/download/models/${versionId}`;
+  },
+
+  // 获取最新模型（使用完整URL）
+  getLatestModelsWithUrl: async (fullUrl: string) => {
+    // 修正: 使用我们的后端API代理请求
+    const response = await superagent
+      .get(`${API_BASE_URL}/civitai/models/by-url`)
+      .query({ url: fullUrl })
+      .use(debug);
+    return response.body;
+  }
 }; 

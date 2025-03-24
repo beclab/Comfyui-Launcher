@@ -17,6 +17,7 @@ import {
   analyzePluginDependencies,
   fixPluginDependencies
 } from './controllers/python.controller';
+import civitaiController from './controllers/civitai.controller';
 
 const app = new Koa();
 const router = new Router();
@@ -86,6 +87,14 @@ router.post('/api/python/packages/install', (ctx) => installPackage(ctx));
 router.post('/api/python/packages/uninstall', (ctx) => uninstallPackage(ctx));
 router.get('/api/python/plugins/dependencies', (ctx) => analyzePluginDependencies(ctx));
 router.post('/api/python/plugins/fix-dependencies', (ctx) => fixPluginDependencies(ctx));
+
+// Civitai API 路由 - 注意路由顺序很重要!
+// 特定路径的路由应该放在更通用的路由之前
+router.get('/api/civitai/models/by-url', (ctx) => civitaiController.getLatestModelsByUrl(ctx));
+router.get('/api/civitai/models/latest', (ctx) => civitaiController.getLatestModels(ctx));
+router.get('/api/civitai/models/hot', (ctx) => civitaiController.getHotModels(ctx));
+router.get('/api/civitai/models/:id', (ctx) => civitaiController.getModelDetails(ctx));
+router.get('/api/civitai/download/models/:versionId', (ctx) => civitaiController.downloadModel(ctx));
 
 // 使用路由
 app.use(router.routes());

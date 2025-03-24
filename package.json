@@ -19,13 +19,15 @@
     "@quasar/extras": "^1.16.4",
     "@types/fs-extra": "^11.0.4",
     "@types/uuid": "^10.0.0",
+    "@yeger/vue-masonry-wall": "^5.0.18",
     "fs-extra": "^11.3.0",
     "http-proxy": "^1.18.1",
     "quasar": "^2.8.0",
     "superagent": "^10.1.1",
     "uuid": "^11.1.0",
     "vue": "^3.4.18",
-    "vue-router": "^4.0.12"
+    "vue-router": "^4.0.12",
+    "vue-waterfall2": "^1.10.9"
   },
   "devDependencies": {
     "@quasar/app-vite": "^1.8.0",
