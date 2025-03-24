@@ -86,6 +86,13 @@
         <div v-else class="text-grey-7">没有更多数据了</div>
       </div>
     </div>
+    
+    <!-- 添加错误信息显示区域 -->
+    <div v-if="errorMessage" class="text-center q-mt-lg text-negative">
+      <q-icon name="error" size="2rem" />
+      <p>{{ errorMessage }}</p>
+      <q-btn color="primary" label="重试" @click="resetAndRetry" />
+    </div>
   </div>
 </template>
 
@@ -93,6 +100,7 @@
 import { defineComponent, ref, onMounted, onUnmounted, nextTick } from 'vue';
 import MasonryWall from '@yeger/vue-masonry-wall';
 import { civitaiApi } from '../../api';
+import { useQuasar } from 'quasar';
 
 // 定义Civitai模型接口
 interface CivitaiImage {
@@ -156,6 +164,7 @@ export default defineComponent({
     MasonryWall
   },
   setup() {
+    const $q = useQuasar();
     const items = ref<CivitaiModel[]>([]);
     const loading = ref(true);
     const errorMessage = ref('');
@@ -170,6 +179,9 @@ export default defineComponent({
     const initialLoadComplete = ref(false);
     let scrollPosition = 0;
     const nextPageUrl = ref('');
+    
+    // 添加标记是否正在使用直接访问Civitai的状态
+    const isUsingDirectCivitai = ref(false);
     
     // 观察器实例
     let observer: IntersectionObserver | null = null;
@@ -189,6 +201,57 @@ export default defineComponent({
     const handleScroll = () => {
       if (scrollContainer.value && !isRestoringScroll) {
         scrollPosition = scrollContainer.value.scrollTop;
+      }
+    };
+    
+    // 直接从Civitai API获取热门工作流数据
+    const fetchDirectlyFromCivitai = async (page: number, limit: number) => {
+      try {
+        console.log('正在直接从Civitai API获取热门工作流数据...');
+        
+        // Civitai API基础URL
+        const CIVITAI_API_URL = 'https://civitai.com/api/v1';
+        
+        // 构建查询参数，注意工作流需要特殊参数
+        const params = new URLSearchParams({
+          limit: limit.toString(),
+          page: page.toString(),
+          types: 'Workflows', // 指定类型为工作流
+          sort: 'Most Downloaded', // 热门工作流排序
+          period: 'Month',
+          nsfw: 'false'
+        });
+        
+        // 发起直接请求
+        const response = await fetch(`${CIVITAI_API_URL}/models?${params.toString()}`);
+        
+        if (!response.ok) {
+          throw new Error(`API请求失败: ${response.status}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('直接从Civitai获取热门工作流数据失败:', error);
+        throw error;
+      }
+    };
+    
+    // 使用直接URL从Civitai获取数据
+    const fetchDirectlyWithUrl = async (url: string) => {
+      try {
+        console.log('正在使用完整URL直接从Civitai获取数据:', url);
+        
+        // 发起直接请求
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`API请求失败: ${response.status}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('使用URL直接从Civitai获取数据失败:', error);
+        throw error;
       }
     };
     
@@ -252,19 +315,34 @@ export default defineComponent({
       }
       
       try {
-        console.log('加载热门工作流，参数:', directUrl || `第${page}页`);
+        let response;
         
-        // 根据是否有直接URL决定调用方式
-        const response = directUrl 
-          ? await civitaiApi.getLatestModelsWithUrl(directUrl) as CivitaiApiResponse
-          : await civitaiApi.getHotWorkflows(page, itemsPerPage) as CivitaiApiResponse;
+        // 根据当前模式决定如何获取数据
+        if (isUsingDirectCivitai.value) {
+          // 已经在使用直接Civitai访问模式
+          if (directUrl) {
+            response = await fetchDirectlyWithUrl(directUrl);
+          } else {
+            response = await fetchDirectlyFromCivitai(page, itemsPerPage);
+          }
+        } else {
+          // 默认通过后端代理
+          console.log('通过后端加载热门工作流，参数:', directUrl || `第${page}页`);
+          
+          // 根据是否有直接URL决定调用方式
+          response = directUrl 
+            ? await civitaiApi.getLatestModelsWithUrl(directUrl) as CivitaiApiResponse
+            : await civitaiApi.getHotWorkflows(page, itemsPerPage) as CivitaiApiResponse;
+        }
         
         console.log('热门工作流加载结果:', response);
+        loadingError.value = false; // 加载成功，重置错误状态
+        retryCount.value = 0; // 重置重试计数
         
         // 确保响应中包含items数组
         if (response && response.items) {
           // 首先为每个项目添加aspect ratio
-          const processedItems = response.items.map(item => {
+          const processedItems = response.items.map((item: CivitaiModel) => {
             // 找到主图像
             let mainImage = null;
             
@@ -279,194 +357,255 @@ export default defineComponent({
               mainImage = item.images[0];
             }
             
-            // 设置合理的宽高比
-            let ratio = 16/9; // 工作流默认为宽屏截图比例
-            
-            if (mainImage && mainImage.width && mainImage.height) {
-              ratio = mainImage.width / mainImage.height;
-            }
-            
-            // 标记是否为新加载项
+            // 计算比例，如果没有图片则使用默认值16:9
+            const ratio = mainImage 
+              ? (mainImage.width && mainImage.height 
+                ? mainImage.width / mainImage.height 
+                : 16/9) 
+              : 16/9;
+              
+            // 标记新项目
             return {
               ...item,
               ratio,
-              _isNew: isLoadingMore // 只有加载更多时才标记为新项
+              _isNew: isLoadingMore
             };
           });
           
-          // 根据是加载更多还是新加载决定是追加还是替换
+          // 更新状态
           if (isLoadingMore) {
+            // 合并数据
             items.value = [...items.value, ...processedItems];
           } else {
             items.value = processedItems;
           }
           
-          // 更新分页信息
+          // 更新元数据
           if (response.metadata) {
-            console.log('API返回的metadata:', response.metadata);
-            
-            // 确保正确计算totalPages
-            totalPages.value = response.metadata.totalPages || 
-              Math.ceil((response.metadata.totalItems || 0) / itemsPerPage);
-            
-            // 保存下一页URL
-            if (response.metadata.nextPage) {
-              nextPageUrl.value = response.metadata.nextPage;
-              console.log('保存下一页URL:', nextPageUrl.value);
-              hasMore.value = true;
-            } else {
-              nextPageUrl.value = '';
-              hasMore.value = currentPage.value < totalPages.value;
-            }
+            totalPages.value = response.metadata.totalPages || 1;
+            nextPageUrl.value = response.metadata.nextPage || '';
+            hasMore.value = !!nextPageUrl.value;
+          }
+          
+          // 初始加载完成
+          initialLoadComplete.value = true;
+          
+          // 在数据加载完成后使用nextTick确保DOM已更新，然后恢复滚动位置
+          if (isLoadingMore) {
+            nextTick(() => {
+              // 使用更稳健的方式恢复滚动位置
+              restoreScrollPosition();
+            });
           }
         } else {
-          console.error('无效的响应格式:', response);
-          errorMessage.value = '获取工作流数据失败: 无效的响应格式';
+          console.warn('API响应中缺少items数组');
+          if (!isLoadingMore) {
+            items.value = [];
+          }
+          hasMore.value = false;
         }
       } catch (error) {
-        console.error('加载热门工作流失败:', error);
-        errorMessage.value = `获取热门工作流数据失败: ${(error as Error).message}`;
-        
-        // 新增: 设置错误状态，增加重试计数
+        console.error('获取热门工作流失败:', error);
         loadingError.value = true;
         retryCount.value++;
         
-        // 当超过最大重试次数时，停止继续尝试
-        if (retryCount.value >= MAX_RETRIES) {
-          hasMore.value = false; // 停止加载更多
-          console.warn(`已达到最大重试次数(${MAX_RETRIES})，停止加载更多数据`);
-        }
-      } finally {
-        loading.value = false;
-        loadingMore.value = false;
-        initialLoadComplete.value = true;
-        
-        // 如果是加载更多，恢复滚动位置
-        if (isLoadingMore && scrollContainer.value) {
-          nextTick(() => {
-            // 使用两种方法尝试恢复滚动位置
-            setTimeout(() => {
-              // 方法1: 滚动到记录的项目(优先)
-              if (lastVisibleItemId.value) {
-                const targetElement = scrollContainer.value?.querySelector(`[data-id="${lastVisibleItemId.value}"]`);
-                if (targetElement) {
-                  targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
-                  console.log('滚动到上次记录的元素:', lastVisibleItemId.value);
-                  return;
+        // 如果不是通过直接访问且重试次数未超过最大值
+        if (!isUsingDirectCivitai.value && retryCount.value <= MAX_RETRIES) {
+          console.log(`第${retryCount.value}次重试，尝试直接访问Civitai`);
+          
+          // 尝试通过直接访问获取数据
+          try {
+            isUsingDirectCivitai.value = true;
+            
+            let response;
+            if (directUrl) {
+              response = await fetchDirectlyWithUrl(directUrl);
+            } else {
+              response = await fetchDirectlyFromCivitai(page, itemsPerPage);
+            }
+            
+            // 处理直接访问返回的数据
+            if (response.items && Array.isArray(response.items)) {
+              // 处理新加载的数据
+              const processedItems = response.items.map((item: CivitaiModel) => {
+                // 找到主图像
+                let mainImage = null;
+                
+                if (item.coverImage) {
+                  mainImage = { url: item.coverImage };
+                } else if (item.modelVersions && item.modelVersions.length > 0) {
+                  const latestVersion = item.modelVersions[item.modelVersions.length - 1];
+                  if (latestVersion.images && latestVersion.images.length > 0) {
+                    mainImage = latestVersion.images[0];
+                  }
+                } else if (item.images && item.images.length > 0) {
+                  mainImage = item.images[0];
+                }
+                
+                // 计算比例
+                let ratio = 1;
+                if (mainImage && mainImage.width && mainImage.height) {
+                  ratio = mainImage.width / mainImage.height;
+                } else {
+                  // 默认比例为16:9
+                  ratio = 16/9;
+                }
+                
+                return {
+                  ...item,
+                  ratio,
+                  _isNew: !initialLoadComplete.value || isLoadingMore
+                };
+              });
+              
+              // 更新数据
+              if (isLoadingMore) {
+                items.value = [...items.value, ...processedItems];
+              } else {
+                items.value = processedItems;
+              }
+              
+              // 更新分页信息
+              if (response.metadata) {
+                nextPageUrl.value = response.metadata.nextPage || '';
+                hasMore.value = !!nextPageUrl.value;
+                
+                if (response.metadata.totalPages) {
+                  totalPages.value = response.metadata.totalPages;
                 }
               }
               
-              // 方法2: 使用记录的滚动位置(备用)
-              if (scrollContainer.value) {
-                scrollContainer.value.scrollTop = scrollPosition;
-                console.log('恢复滚动位置:', scrollPosition);
-                
-                // 额外尝试恢复几次，确保成功
-                const maxAttempts = 5;
-                let attempts = 0;
-                const intervalId = setInterval(() => {
-                  if (scrollContainer.value && attempts < maxAttempts) {
-                    scrollContainer.value.scrollTop = scrollPosition;
-                    attempts++;
-                  } else {
-                    clearInterval(intervalId);
-                  }
-                }, 100);
+              // 通知用户
+              $q.notify({
+                message: '已切换到直接访问Civitai模式',
+                color: 'positive',
+                timeout: 3000
+              });
+              
+              // 清除错误信息，因为已经成功加载数据
+              errorMessage.value = '';
+              loadingError.value = false;
+              retryCount.value = 0;
+              
+              // 恢复滚动位置
+              if (isLoadingMore) {
+                nextTick(() => {
+                  // 使用更稳健的方式恢复滚动位置
+                  restoreScrollPosition();
+                });
               }
-            }, 300); // 增加延迟，确保DOM完全更新
-          });
+            }
+          } catch (directError) {
+            console.error('直接访问Civitai也失败:', directError);
+            
+            if (!isLoadingMore) {
+              errorMessage.value = '获取工作流列表失败，请检查网络连接后重试';
+            }
+            
+            // 重置回代理模式
+            isUsingDirectCivitai.value = false;
+          }
+        } else {
+          // 如果已经是直接访问模式下失败，或者重试次数已达上限
+          if (!isLoadingMore) {
+            errorMessage.value = '获取工作流列表失败，请检查网络连接后重试';
+          }
+          
+          console.log(`重试失败，当前重试次数:${retryCount.value}，最大重试次数:${MAX_RETRIES}`);
         }
-        
-        // 初始化或重新设置Intersection Observer
-        if (loadMore.value) {
-          nextTick(() => {
-            setupIntersectionObserver();
-          });
+      } finally {
+        if (isLoadingMore) {
+          loadingMore.value = false;
+        } else {
+          loading.value = false;
         }
       }
     };
     
     // 使用Intersection Observer观察加载触发器
     const setupIntersectionObserver = () => {
-      // 先断开之前的观察器连接
+      if (!loadMore.value) return;
+      
       if (observer) {
         observer.disconnect();
-        observer = null;
       }
       
-      // 如果元素不存在，直接返回
-      if (!loadMoreTrigger.value) {
-        console.warn('加载更多触发器元素不存在，无法设置观察器');
-        return;
-      }
-      
-      // 设置新的观察器
       observer = new IntersectionObserver(entries => {
         const [entry] = entries;
-        console.log('观察到的元素可见性:', entry.isIntersecting, 'loadingMore:', loadingMore.value, 'hasMore:', hasMore.value);
         
-        // 添加错误状态检查
-        const hasReachedMaxRetries = loadingError.value && retryCount.value >= MAX_RETRIES;
-        
-        // 只有在没有到达最大重试次数时才触发加载更多
-        if (entry.isIntersecting && !loadingMore.value && hasMore.value && !hasReachedMaxRetries) {
-          console.log('触发加载更多');
-          onLoadMore(); 
+        // 只要元素有一点进入视口就触发
+        if (entry.isIntersecting && !loadingMore.value && hasMore.value) {
+          onLoadMore();
         }
       }, { 
+        // 降低阈值，只要有一点可见就触发
         threshold: 0.1,
+        // 扩大触发区域
         rootMargin: '200px 0px'
       });
       
       // 确保元素存在再观察
-      if (loadMoreTrigger.value && observer) {
-        console.log('开始观察加载更多触发器');
-        observer.observe(loadMoreTrigger.value);
+      nextTick(() => {
+        if (loadMoreTrigger.value && observer) {
+          observer.observe(loadMoreTrigger.value);
+        } else {
+          console.log('未找到加载更多触发器元素');
+        }
+      });
+    };
+    
+    // 切换加载模式
+    const toggleLoadMode = () => {
+      loadMore.value = !loadMore.value;
+      if (loadMore.value) {
+        setupIntersectionObserver();
+      } else {
+        if (observer) {
+          observer.disconnect();
+          observer = null;
+        }
       }
     };
     
-    // 打开模型详情页
+    // 打开模型页面
     const openModelPage = (modelId: string) => {
       window.open(`https://civitai.com/models/${modelId}`, '_blank');
     };
     
-    // 处理下载
-    const downloadModel = (versionId: string) => {
-      const url = civitaiApi.downloadModel(versionId);
-      window.open(url, '_blank');
-    };
-    
-    // 切换加载模式（无限滚动/分页）
-    const toggleLoadMode = () => {
-      loadMore.value = !loadMore.value;
-      
-      if (loadMore.value) {
-        nextTick(() => {
-          setupIntersectionObserver();
+    // 下载模型
+    const downloadModel = (model: CivitaiModel) => {
+      if (!model.modelVersions || model.modelVersions.length === 0) {
+        $q.notify({
+          message: '没有可用的模型版本',
+          color: 'negative'
         });
-      } else if (observer) {
-        observer.disconnect();
-        observer = null;
+        return;
       }
+      
+      const latestVersion = model.modelVersions[0];
+      const downloadUrl = civitaiApi.downloadModel(latestVersion.id);
+      window.open(downloadUrl, '_blank');
+      
+      $q.notify({
+        message: `开始下载工作流: ${model.name}`,
+        color: 'positive'
+      });
     };
     
-    // 格式化数字
+    // 展示信息的辅助函数
+    const getAuthor = (model: CivitaiModel): string => {
+      return model.creator?.username || '未知作者';
+    };
+    
     const formatNumber = (num: number): string => {
       if (num >= 1000000) {
         return (num / 1000000).toFixed(1) + 'M';
       } else if (num >= 1000) {
         return (num / 1000).toFixed(1) + 'K';
-      } else {
-        return num.toString();
       }
+      return num.toString();
     };
     
-    // 获取作者信息
-    const getAuthor = (model: CivitaiModel): string => {
-      return model.creator?.username || '未知作者';
-    };
-    
-    // 获取统计信息
     const getDownloads = (model: CivitaiModel): number => {
       return model.stats?.downloadCount || 0;
     };
@@ -490,8 +629,22 @@ export default defineComponent({
       }
       return 'SD1';
     };
+    
+    // 修改重置逻辑，允许重置访问模式
+    const resetAndRetry = () => {
+      // 重置状态
+      isUsingDirectCivitai.value = false;
+      currentPage.value = 1;
+      items.value = [];
+      errorMessage.value = '';
+      loadingError.value = false;
+      retryCount.value = 0;
+      
+      // 重新加载
+      loadModels();
+    };
 
-    // 添加onLoadMore函数，与加载更多按钮关联
+    // 添加onLoadMore函数，处理加载更多
     const onLoadMore = () => {
       // 如果正在加载、没有更多数据，或者处于错误状态且已达到最大重试次数，则不加载更多
       if (loadingMore.value || !hasMore.value || (loadingError.value && retryCount.value >= MAX_RETRIES)) {
@@ -517,7 +670,67 @@ export default defineComponent({
       }
     };
     
-    // 获取工作流图片
+    // 添加重试函数
+    const retryLoadMore = () => {
+      // 重置错误状态和重试计数
+      loadingError.value = false;
+      retryCount.value = 0;
+      
+      // 重新加载当前页
+      loadingMore.value = true;
+      loadModels(currentPage.value);
+    };
+    
+    // 添加一个更强健的滚动位置恢复函数
+    const restoreScrollPosition = () => {
+      if (!scrollContainer.value) return;
+      
+      isRestoringScroll = true;
+      console.log('尝试恢复滚动位置:', scrollPosition);
+      
+      // 首先立即设置滚动位置
+      if (scrollContainer.value) {
+        scrollContainer.value.scrollTop = scrollPosition;
+      }
+      
+      // 然后尝试查找并滚动到记录的项目
+      const scrollToElement = () => {
+        if (lastVisibleItemId.value && scrollContainer.value) {
+          const lastVisibleElement = scrollContainer.value.querySelector(`.masonry-card[data-id="${lastVisibleItemId.value}"]`);
+          if (lastVisibleElement) {
+            // 使用行为平滑滚动到元素
+            lastVisibleElement.scrollIntoView({ block: 'center', behavior: 'auto' });
+            console.log('滚动到元素:', lastVisibleItemId.value);
+          }
+        }
+      };
+      
+      // 尝试多次恢复滚动位置，因为瀑布流布局可能需要时间完成
+      scrollToElement(); // 立即尝试一次
+      
+      // 然后在短延迟后再尝试几次
+      setTimeout(() => {
+        if (scrollContainer.value) {
+          scrollContainer.value.scrollTop = scrollPosition;
+        }
+        scrollToElement();
+        
+        // 延迟更长时间后再次尝试
+        setTimeout(() => {
+          if (scrollContainer.value) {
+            scrollContainer.value.scrollTop = scrollPosition;
+          }
+          scrollToElement();
+          
+          // 最后恢复滚动事件处理
+          setTimeout(() => {
+            isRestoringScroll = false;
+          }, 100);
+        }, 200);
+      }, 50);
+    };
+    
+    // 获取工作流图片函数
     const getWorkflowImage = (item: CivitaiModel) => {
       // 首先尝试获取封面图
       if (item.coverImage) return item.coverImage;
@@ -537,17 +750,6 @@ export default defineComponent({
       
       // 最后使用默认图片
       return 'https://placehold.co/600x400?text=工作流';
-    };
-    
-    // 添加重试函数
-    const retryLoadMore = () => {
-      // 重置错误状态和重试计数
-      loadingError.value = false;
-      retryCount.value = 0;
-      
-      // 重新加载当前页
-      loadingMore.value = true;
-      loadModels(currentPage.value);
     };
     
     onMounted(() => {
@@ -609,7 +811,9 @@ export default defineComponent({
       loadingError,
       retryCount,
       MAX_RETRIES,
-      retryLoadMore
+      retryLoadMore,
+      resetAndRetry,
+      restoreScrollPosition
     };
   }
 });

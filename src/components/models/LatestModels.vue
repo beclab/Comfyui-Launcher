@@ -93,7 +93,7 @@
     <div v-if="errorMessage" class="text-center q-mt-lg text-negative">
       <q-icon name="error" size="2rem" />
       <p>{{ errorMessage }}</p>
-      <q-btn color="primary" label="重试" @click="() => loadModels()" />
+      <q-btn color="primary" label="重试" @click="resetAndRetry" />
     </div>
   </div>
 </template>
@@ -180,6 +180,59 @@ export default defineComponent({
     const initialLoadComplete = ref(false); // 跟踪初始加载是否完成
     let scrollPosition = 0;
     
+    // 添加标记是否正在使用直接访问Civitai的状态
+    const isUsingDirectCivitai = ref(false);
+    
+    // 直接从Civitai API获取模型
+    const fetchDirectlyFromCivitai = async (page: number, limit: number) => {
+      try {
+        console.log('正在直接从Civitai API获取数据...');
+        
+        // Civitai API基础URL
+        const CIVITAI_API_URL = 'https://civitai.com/api/v1';
+        
+        // 构建查询参数
+        const params = new URLSearchParams({
+          limit: limit.toString(),
+          page: page.toString(),
+          sort: 'Newest',
+          period: 'AllTime',
+          nsfw: 'false'
+        });
+        
+        // 发起直接请求
+        const response = await fetch(`${CIVITAI_API_URL}/models?${params.toString()}`);
+        
+        if (!response.ok) {
+          throw new Error(`API请求失败: ${response.status}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('直接从Civitai获取数据失败:', error);
+        throw error;
+      }
+    };
+    
+    // 使用直接URL从Civitai获取数据
+    const fetchDirectlyWithUrl = async (url: string) => {
+      try {
+        console.log('正在使用完整URL直接从Civitai获取数据:', url);
+        
+        // 发起直接请求
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`API请求失败: ${response.status}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('使用URL直接从Civitai获取数据失败:', error);
+        throw error;
+      }
+    };
+    
     // 加载模型数据
     const loadModels = async (pageOrEvent?: number | Event | string) => {
       // 如果是加载更多，记录滚动位置
@@ -215,13 +268,24 @@ export default defineComponent({
       
       try {
         let response;
-        if (directUrl) {
-          console.log('使用直接URL加载:', directUrl);
-          // 使用URL参数直接从API加载
-          response = await civitaiApi.getLatestModelsWithUrl(directUrl) as CivitaiApiResponse;
+        
+        // 根据当前模式决定如何获取数据
+        if (isUsingDirectCivitai.value) {
+          // 已经在使用直接Civitai访问模式
+          if (directUrl) {
+            response = await fetchDirectlyWithUrl(directUrl);
+          } else {
+            response = await fetchDirectlyFromCivitai(page, itemsPerPage);
+          }
         } else {
-          console.log('使用页码加载第', page, '页数据');
-          response = await civitaiApi.getLatestModels(page, itemsPerPage) as CivitaiApiResponse;
+          // 默认通过后端代理
+          if (directUrl) {
+            console.log('使用直接URL通过后端加载:', directUrl);
+            response = await civitaiApi.getLatestModelsWithUrl(directUrl) as CivitaiApiResponse;
+          } else {
+            console.log('使用页码通过后端加载第', page, '页数据');
+            response = await civitaiApi.getLatestModels(page, itemsPerPage) as CivitaiApiResponse;
+          }
         }
         
         // 处理返回数据
@@ -301,9 +365,93 @@ export default defineComponent({
         }
       } catch (error) {
         console.error('加载模型失败:', error);
-        if (!isLoadingMore) {
-          errorMessage.value = '获取模型列表失败，请稍后重试';
-          items.value = [];
+        
+        // 如果当前不是直接访问模式，尝试切换到直接访问
+        if (!isUsingDirectCivitai.value) {
+          try {
+            isUsingDirectCivitai.value = true;
+            console.log('通过后端访问失败，切换到直接访问Civitai...');
+            
+            // 显示提示
+            $q.notify({
+              message: '正在尝试直接访问Civitai...',
+              color: 'warning',
+              timeout: 2000
+            });
+            
+            let response;
+            if (directUrl) {
+              response = await fetchDirectlyWithUrl(directUrl);
+            } else {
+              response = await fetchDirectlyFromCivitai(page, itemsPerPage);
+            }
+            
+            // 处理直接访问返回的数据
+            if (response.items && Array.isArray(response.items)) {
+              // 处理新加载的数据
+              const newItems = response.items.map((item: CivitaiModel) => {
+                // 提取第一个模型版本的图片信息
+                const firstVersion = item.modelVersions && item.modelVersions.length > 0 
+                  ? item.modelVersions[0] 
+                  : null;
+                
+                const firstImage = firstVersion?.images && firstVersion.images.length > 0
+                  ? firstVersion.images[0]
+                  : null;
+                
+                let ratio = 1;
+                if (firstImage && firstImage.width && firstImage.height) {
+                  ratio = firstImage.width / firstImage.height;
+                }
+                
+                return {
+                  ...item,
+                  coverImage: item.coverImage || '', 
+                  images: firstVersion?.images || [],
+                  ratio: ratio,
+                  description: item.description || '暂无描述',
+                  _isNew: true,
+                };
+              });
+              
+              // 更新数据
+              if (isLoadingMore) {
+                items.value = [...items.value, ...newItems];
+              } else {
+                items.value = newItems;
+              }
+              
+              // 保存nextPage URL
+              nextPageUrl.value = response.metadata?.nextPage || '';
+              hasMore.value = !!nextPageUrl.value;
+              
+              // 通知用户
+              $q.notify({
+                message: '已切换到直接访问Civitai模式',
+                color: 'positive',
+                timeout: 3000
+              });
+              
+              // 清除错误信息，因为已经成功加载数据
+              errorMessage.value = '';
+            }
+          } catch (directError) {
+            console.error('直接访问Civitai也失败:', directError);
+            
+            if (!isLoadingMore) {
+              errorMessage.value = '获取模型列表失败，请检查网络连接后重试';
+              items.value = [];
+            }
+            
+            // 重置回代理模式
+            isUsingDirectCivitai.value = false;
+          }
+        } else {
+          // 如果已经是直接访问模式下失败
+          if (!isLoadingMore) {
+            errorMessage.value = '获取模型列表失败，请检查网络连接后重试';
+            items.value = [];
+          }
         }
       } finally {
         if (isLoadingMore) {
@@ -511,6 +659,18 @@ export default defineComponent({
       return 'SD1';
     };
     
+    // 修改重置逻辑，允许重置访问模式
+    const resetAndRetry = () => {
+      // 重置状态
+      isUsingDirectCivitai.value = false;
+      currentPage.value = 1;
+      items.value = [];
+      errorMessage.value = '';
+      
+      // 重新加载
+      loadModels();
+    };
+    
     onMounted(() => {
       loadModels();
       console.log('组件挂载完成，当前items:', items.value);
@@ -547,6 +707,7 @@ export default defineComponent({
       scrollContainer,
       initialLoadComplete,
       onLoadMore,
+      resetAndRetry,
       getAuthor,
       formatNumber,
       getDownloads,
