@@ -43,12 +43,12 @@
                       <span class="q-ml-xs">{{ formatNumber(getDownloads(item)) }}</span>
                     </div>
                     <div class="stats-item q-mr-md">
-                      <q-icon name="favorite" size="xs" />
-                      <span class="q-ml-xs">{{ formatNumber(getLikes(item)) }}</span>
+                      <q-icon name="thumb_up" size="xs" />
+                      <span class="q-ml-xs">{{ formatNumber(getThumbs(item)) }}</span>
                     </div>
                     <div class="stats-item">
-                      <q-icon name="visibility" size="xs" />
-                      <span class="q-ml-xs">{{ formatNumber(getViews(item)) }}</span>
+                      <q-icon name="paid" size="xs" />
+                      <span class="q-ml-xs">{{ formatNumber(getTips(item)) }}</span>
                     </div>
                   </div>
                 </div>
@@ -140,9 +140,10 @@ interface CivitaiModel {
   };
   stats?: {
     downloadCount: number;
-    favoriteCount: number;
+    thumbsUpCount: number;
     commentCount: number;
     viewCount: number;
+    tippedAmountCount: number;
   };
 }
 
@@ -490,12 +491,12 @@ export default defineComponent({
       return model.stats?.downloadCount || 0;
     };
 
-    const getLikes = (model: CivitaiModel): number => {
-      return model.stats?.favoriteCount || 0;
+    const getThumbs = (model: CivitaiModel): number => {
+      return model.stats?.thumbsUpCount || 0;
     };
 
-    const getComments = (model: CivitaiModel): number => {
-      return model.stats?.commentCount || 0;
+    const getTips = (model: CivitaiModel): number => {
+      return model.stats?.tippedAmountCount || 0;
     };
 
     const getViews = (model: CivitaiModel): number => {
@@ -549,8 +550,8 @@ export default defineComponent({
       getAuthor,
       formatNumber,
       getDownloads,
-      getLikes,
-      getComments,
+      getThumbs,
+      getTips,
       getViews,
       getBaseModel
     };
