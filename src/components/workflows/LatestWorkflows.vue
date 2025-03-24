@@ -173,6 +173,11 @@ export default defineComponent({
     let lastScrollPosition = 0;
     let isRestoringScroll = false;
     
+    // 在setup函数中添加一个错误状态和重试计数器
+    const loadingError = ref(false);
+    const retryCount = ref(0);
+    const MAX_RETRIES = 3; // 最大重试次数
+    
     // 滚动事件处理函数
     const handleScroll = () => {
       if (scrollContainer.value && !isRestoringScroll) {
@@ -312,8 +317,18 @@ export default defineComponent({
           errorMessage.value = '获取工作流数据失败: 无效的响应格式';
         }
       } catch (error) {
-        console.error('加载工作流失败:', error);
-        errorMessage.value = `获取工作流数据失败: ${(error as Error).message}`;
+        console.error('加载最新工作流失败:', error);
+        errorMessage.value = `获取最新工作流数据失败: ${(error as Error).message}`;
+        
+        // 新增: 设置错误状态，增加重试计数
+        loadingError.value = true;
+        retryCount.value++;
+        
+        // 当超过最大重试次数时，停止继续尝试
+        if (retryCount.value >= MAX_RETRIES) {
+          hasMore.value = false; // 停止加载更多
+          console.warn(`已达到最大重试次数(${MAX_RETRIES})，停止加载更多数据`);
+        }
       } finally {
         loading.value = false;
         loadingMore.value = false;
@@ -441,9 +456,18 @@ export default defineComponent({
       return 'SD1';
     };
 
-    // 添加onLoadMore函数，与加载更多按钮关联
+    // 修改onLoadMore函数，添加错误状态检查
     const onLoadMore = () => {
-      if (loadingMore.value || !hasMore.value) return;
+      // 如果正在加载、没有更多数据，或者处于错误状态且已达到最大重试次数，则不加载更多
+      if (loadingMore.value || !hasMore.value || (loadingError.value && retryCount.value >= MAX_RETRIES)) {
+        return;
+      }
+      
+      // 重置错误状态，允许重试
+      if (loadingError.value && retryCount.value < MAX_RETRIES) {
+        console.log(`重试加载数据，第${retryCount.value}次重试`);
+        loadingError.value = false; // 重试前重置错误状态
+      }
       
       if (nextPageUrl.value) {
         // 如果有nextPage URL，使用它

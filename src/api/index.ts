@@ -362,4 +362,22 @@ export const civitaiApi = {
       .use(debug);
     return response.body;
   },
+
+  // 获取热门工作流
+  getHotWorkflows: async (page = 1, limit = 24, cursor?: string) => {
+    const url = `${API_BASE_URL}/civitai/hot-workflows`;
+    const queryParams: Record<string, string | number> = { limit };
+    
+    if (cursor) {
+      queryParams.cursor = encodeURIComponent(cursor);
+    } else if (page > 1) {
+      queryParams.page = page;
+    }
+    
+    const response = await superagent
+      .get(url)
+      .query(queryParams)
+      .use(debug);
+    return response.body;
+  },
 }; 
