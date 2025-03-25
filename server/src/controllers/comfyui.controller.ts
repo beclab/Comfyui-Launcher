@@ -492,54 +492,8 @@ export class ComfyUIController {
         } catch (scriptError) {
           // 恢复脚本执行失败，尝试重启Pod
           const errorMsg = scriptError instanceof Error ? scriptError.message : String(scriptError);
-          this.addResetLog(`恢复脚本执行失败: ${errorMsg}，将尝试重启Pod`, true);
-          
-          // 检查是否在Kubernetes环境中
-          const isInK8s = fs.existsSync('/var/run/secrets/kubernetes.io/serviceaccount');
-          
-          if (isInK8s) {
-            // 在Kubernetes环境中，尝试触发Pod重启
-            this.addResetLog('检测到Kubernetes环境，将尝试触发Pod重启');
-            
-            // 尝试多种方法强制重启容器
-            this.addResetLog('正在尝试强制重启容器...');
-            
-            // 方法1: 使用SIGKILL信号 - 无法被捕获或忽略
-            try {
-              this.addResetLog('尝试方法1: 向主进程发送SIGKILL信号');
-              await execPromise('kill -9 1');
-            } catch (error1) {
-              this.addResetLog(`方法1失败: ${error1 instanceof Error ? error1.message : String(error1)}`, true);
-              
-              // 方法2: 尝试使用Docker/Kubernetes退出代码
-              try {
-                this.addResetLog('尝试方法2: 创建特殊退出文件');
-                // 创建一个特殊的标记文件，用于告知容器管理系统需要重启
-                const exitFile = '/dev/termination';
-                await execPromise(`echo "RESTART" > ${exitFile}`);
-              } catch (error2) {
-                this.addResetLog(`方法2失败: ${error2 instanceof Error ? error2.message : String(error2)}`, true);
-                
-                // 方法3: 创建一个无限循环进程耗尽资源触发OOM终止
-                try {
-                  this.addResetLog('尝试方法3: 触发资源终止');
-                  await execPromise('bash -c "for i in $(seq 1 10); do yes > /dev/null & done; sleep 3; pkill -9 yes"');
-                } catch (error3) {
-                  this.addResetLog(`方法3失败: ${error3 instanceof Error ? error3.message : String(error3)}`, true);
-                  
-                  // 最后方法: 尝试所有可能的系统级命令
-                  this.addResetLog('尝试最后方法: 综合系统命令');
-                  try {
-                    await execPromise('bash -c "sync; reboot -f || systemctl reboot -f || init 6 || telinit 6"');
-                  } catch (errorLast) {
-                    this.addResetLog(`所有重启方法都失败，请手动重启Pod`, true);
-                  }
-                }
-              }
-            }
-          } else {
-            this.addResetLog('未在Kubernetes环境中运行，无法重启Pod', true);
-          }
+          this.addResetLog(`恢复脚本执行失败: ${errorMsg}，请手工重启Pod`, true);
+
         }
       } catch (cmdError) {
         const errorMsg = cmdError instanceof Error ? cmdError.message : String(cmdError);

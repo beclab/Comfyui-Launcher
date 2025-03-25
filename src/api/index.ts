@@ -268,6 +268,18 @@ const api = {
   
   getResetLogs: () => 
     superagent.get(`${API_BASE_URL}/comfyui/reset-logs`).use(debug),
+
+  // 添加获取下载历史记录的API方法
+  getDownloadHistory: () => 
+    superagent.get(`${API_BASE_URL}/models/download-history`).use(debug),
+
+  // 添加清除下载历史记录的API方法
+  clearDownloadHistory: () => 
+    superagent.post(`${API_BASE_URL}/models/download-history/clear`).use(debug),
+
+  // 添加删除单条下载历史记录的API方法
+  deleteDownloadHistoryItem: (id: string) => 
+    superagent.post(`${API_BASE_URL}/models/download-history/delete`).send({ id }).use(debug),
 };
 
 export default api;  // 只有一个默认导出 

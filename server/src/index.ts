@@ -53,6 +53,10 @@ router.post('/api/models/cancel-download', modelsController.cancelDownload.bind(
 // 模型管理路由 v2
 router.post('/api/models/install/:modelName', modelsController.installModel.bind(modelsController));
 router.get('/api/models/progress/:id', modelsController.getModelProgress.bind(modelsController));
+// 下载历史
+router.get('/api/models/download-history', modelsController.getDownloadHistory.bind(modelsController));
+router.post('/api/models/download-history/clear', modelsController.clearDownloadHistory.bind(modelsController));
+router.post('/api/models/download-history/delete', modelsController.deleteDownloadHistoryItem.bind(modelsController)); 
 
 // 基础模型管理路由
 router.get('/api/models/essential', essentialModelsController.getEssentialModels.bind(essentialModelsController));

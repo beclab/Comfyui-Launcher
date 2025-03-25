@@ -456,7 +456,7 @@ export class ModelsController extends DownloadController {
       }
       
       // 6. 异步启动下载过程
-      this.downloadModelByName(modelName, downloadUrl, outputPath, taskId).catch(err => {
+      this.downloadModelByName(modelName, downloadUrl, outputPath, taskId, source).catch(err => {
         logger.error(`下载模型 ${modelName} 失败: ${err instanceof Error ? err.message : String(err)}`);
       });
       
