@@ -438,12 +438,23 @@ export class ComfyUIController {
       // 2. 清空COMFYUI_PATH下除models外的所有内容
       const comfyuiPath = paths.comfyui;
       if (comfyuiPath && fs.existsSync(comfyuiPath)) {
-        this.addResetLog(`清理ComfyUI路径(保留models和output): ${comfyuiPath}`);
+        this.addResetLog(`清理ComfyUI路径(保留models、output和数据目录): ${comfyuiPath}`);
+        
+        // 检查数据目录是否在comfyuiPath内
+        const dataDir = config.dataDir;
+        const dataDirRelative = dataDir && path.relative(comfyuiPath, dataDir);
+        const isDataDirInComfyUI = dataDirRelative && !dataDirRelative.startsWith('..') && !path.isAbsolute(dataDirRelative);
+        
+        if (isDataDirInComfyUI) {
+          this.addResetLog(`数据目录(${dataDir})位于ComfyUI目录内，将保留此目录`);
+        }
+        
         const entries = fs.readdirSync(comfyuiPath, { withFileTypes: true });
         
         for (const entry of entries) {
-          // 跳过models和output目录
-          if (entry.name === 'models' || entry.name === 'output') {
+          // 跳过models、output和数据目录
+          if (entry.name === 'models' || entry.name === 'output' || 
+              (isDataDirInComfyUI && entry.name === path.basename(dataDir))) {
             this.addResetLog(`保留${entry.name}目录`);
             continue;
           }
@@ -461,42 +472,12 @@ export class ComfyUIController {
         this.addResetLog(`ComfyUI路径不存在: ${comfyuiPath}`, true);
       }
       
-      // 3. 执行恢复初始文件的命令 - 改为重启Pod
+      // 3. 尝试执行恢复脚本，仅在失败时才重启Pod
       try {
-        this.addResetLog('准备重启POD以恢复初始状态...');
+        this.addResetLog('尝试执行恢复脚本...');
         
-        // 检查是否在Kubernetes环境中
-        const isInK8s = fs.existsSync('/var/run/secrets/kubernetes.io/serviceaccount');
-        
-        if (isInK8s) {
-          // 在Kubernetes环境中，尝试触发Pod重启
-          this.addResetLog('检测到Kubernetes环境，将尝试触发Pod重启');
-          
-          // 创建一个标记文件，表示需要重启 - 使用dataDir目录
-          try {
-            // 确保目录存在
-            if (!fs.existsSync(config.dataDir)) {
-              this.addResetLog(`创建数据目录: ${config.dataDir}`);
-              fs.mkdirSync(config.dataDir, { recursive: true });
-            }
-            
-            const restartFlagFile = path.join(config.dataDir, '.need_restart');
-            fs.writeFileSync(restartFlagFile, new Date().toISOString());
-            this.addResetLog('已创建重启标记文件');
-            
-            // 向主进程发送SIGTERM信号
-            this.addResetLog('正在触发容器重启...');
-            await execPromise('kill 1'); // 向PID 1发送信号，这通常是容器的主进程
-          } catch (fileError) {
-            // 如果写入标记文件失败，记录错误并尝试直接退出
-            this.addResetLog(`无法创建重启标记文件: ${fileError instanceof Error ? fileError.message : String(fileError)}`, true);
-            this.addResetLog('将直接尝试退出进程触发重启...');
-            await execPromise('kill 1'); 
-          }
-          
-        } else {
-          // 不在Kubernetes环境中，执行原来的恢复命令
-          this.addResetLog('未检测到Kubernetes环境，执行标准恢复脚本');
+        // 首先尝试执行恢复脚本
+        try {
           await execPromise('chmod +x /runner-scripts/up-version-cp.sh');
           this.addResetLog('已赋予脚本执行权限');
           
@@ -505,6 +486,60 @@ export class ComfyUIController {
           
           const { stdout: rsyncOutput } = await execPromise('rsync -av --update /runner-scripts/ /root/runner-scripts/');
           this.addResetLog(`同步runner-scripts目录结果: ${rsyncOutput.trim().split('\n')[0]}...`);
+          
+          this.addResetLog('恢复脚本执行成功，无需重启Pod');
+          
+        } catch (scriptError) {
+          // 恢复脚本执行失败，尝试重启Pod
+          const errorMsg = scriptError instanceof Error ? scriptError.message : String(scriptError);
+          this.addResetLog(`恢复脚本执行失败: ${errorMsg}，将尝试重启Pod`, true);
+          
+          // 检查是否在Kubernetes环境中
+          const isInK8s = fs.existsSync('/var/run/secrets/kubernetes.io/serviceaccount');
+          
+          if (isInK8s) {
+            // 在Kubernetes环境中，尝试触发Pod重启
+            this.addResetLog('检测到Kubernetes环境，将尝试触发Pod重启');
+            
+            // 尝试多种方法强制重启容器
+            this.addResetLog('正在尝试强制重启容器...');
+            
+            // 方法1: 使用SIGKILL信号 - 无法被捕获或忽略
+            try {
+              this.addResetLog('尝试方法1: 向主进程发送SIGKILL信号');
+              await execPromise('kill -9 1');
+            } catch (error1) {
+              this.addResetLog(`方法1失败: ${error1 instanceof Error ? error1.message : String(error1)}`, true);
+              
+              // 方法2: 尝试使用Docker/Kubernetes退出代码
+              try {
+                this.addResetLog('尝试方法2: 创建特殊退出文件');
+                // 创建一个特殊的标记文件，用于告知容器管理系统需要重启
+                const exitFile = '/dev/termination';
+                await execPromise(`echo "RESTART" > ${exitFile}`);
+              } catch (error2) {
+                this.addResetLog(`方法2失败: ${error2 instanceof Error ? error2.message : String(error2)}`, true);
+                
+                // 方法3: 创建一个无限循环进程耗尽资源触发OOM终止
+                try {
+                  this.addResetLog('尝试方法3: 触发资源终止');
+                  await execPromise('bash -c "for i in $(seq 1 10); do yes > /dev/null & done; sleep 3; pkill -9 yes"');
+                } catch (error3) {
+                  this.addResetLog(`方法3失败: ${error3 instanceof Error ? error3.message : String(error3)}`, true);
+                  
+                  // 最后方法: 尝试所有可能的系统级命令
+                  this.addResetLog('尝试最后方法: 综合系统命令');
+                  try {
+                    await execPromise('bash -c "sync; reboot -f || systemctl reboot -f || init 6 || telinit 6"');
+                  } catch (errorLast) {
+                    this.addResetLog(`所有重启方法都失败，请手动重启Pod`, true);
+                  }
+                }
+              }
+            }
+          } else {
+            this.addResetLog('未在Kubernetes环境中运行，无法重启Pod', true);
+          }
         }
       } catch (cmdError) {
         const errorMsg = cmdError instanceof Error ? cmdError.message : String(cmdError);

@@ -110,5 +110,9 @@ EXPOSE 8080 3000
 COPY ./entrypoint.sh /runner-scripts/entrypoint.sh
 RUN mkdir /newversion/ComfyUI/launchercache
 
+# 修改目录所有权为用户ID 1000（非root用户）
+RUN chown -R 1000:1000 /runner-scripts /newversion && \
+    chmod -R 755 /runner-scripts /newversion
+
 # 启动应用
 CMD ["/app/start.sh"]
