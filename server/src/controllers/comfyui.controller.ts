@@ -12,6 +12,10 @@ import { logger } from '../utils/logger';
 // 将exec转换为Promise
 const execPromise = util.promisify(exec);
 
+// 重置日志的保存路径
+const RESET_LOG_PATH = path.join(process.cwd(), 'logs');
+const RESET_LOG_FILE = path.join(RESET_LOG_PATH, 'comfyui-reset.log');
+
 export class ComfyUIController {
   private comfyProcess: ChildProcess | null = null;
   private startTime: Date | null = null;
@@ -117,6 +121,24 @@ export class ComfyUIController {
       logger.error(message);
     } else {
       logger.info(message);
+    }
+    
+    // 将日志写入文件
+    this.writeResetLogToFile(logEntry);
+  }
+  
+  // 将重置日志写入文件
+  private writeResetLogToFile(logEntry: string): void {
+    try {
+      // 确保日志目录存在
+      if (!fs.existsSync(RESET_LOG_PATH)) {
+        fs.mkdirSync(RESET_LOG_PATH, { recursive: true });
+      }
+      
+      // 追加写入日志
+      fs.appendFileSync(RESET_LOG_FILE, logEntry + '\n');
+    } catch (error) {
+      logger.error(`写入重置日志文件失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -367,6 +389,17 @@ export class ComfyUIController {
     logger.info('[API] 收到重置ComfyUI请求');
     // 清空重置日志
     this.resetLogs = [];
+    
+    // 同时清空日志文件
+    try {
+      if (!fs.existsSync(RESET_LOG_PATH)) {
+        fs.mkdirSync(RESET_LOG_PATH, { recursive: true });
+      }
+      fs.writeFileSync(RESET_LOG_FILE, ''); // 清空文件内容
+    } catch (error) {
+      logger.error(`清空重置日志文件失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    
     this.addResetLog('收到重置ComfyUI到初始状态的请求');
     this.addLog('收到重置ComfyUI到初始状态的请求');
     
@@ -405,13 +438,13 @@ export class ComfyUIController {
       // 2. 清空COMFYUI_PATH下除models外的所有内容
       const comfyuiPath = paths.comfyui;
       if (comfyuiPath && fs.existsSync(comfyuiPath)) {
-        this.addResetLog(`清理ComfyUI路径(保留models): ${comfyuiPath}`);
+        this.addResetLog(`清理ComfyUI路径(保留models和output): ${comfyuiPath}`);
         const entries = fs.readdirSync(comfyuiPath, { withFileTypes: true });
         
         for (const entry of entries) {
-          // 跳过models目录
-          if (entry.name === 'models') {
-            this.addResetLog('保留models目录');
+          // 跳过models和output目录
+          if (entry.name === 'models' || entry.name === 'output') {
+            this.addResetLog(`保留${entry.name}目录`);
             continue;
           }
           
@@ -428,20 +461,43 @@ export class ComfyUIController {
         this.addResetLog(`ComfyUI路径不存在: ${comfyuiPath}`, true);
       }
       
-      // 3. 执行恢复初始文件的命令
+      // 3. 执行恢复初始文件的命令 - 改为重启Pod
       try {
-        this.addResetLog('执行恢复脚本...');
-        await execPromise('chmod +x /runner-scripts/up-version-cp.sh');
-        this.addResetLog('已赋予脚本执行权限');
+        this.addResetLog('准备重启POD以恢复初始状态...');
         
-        const { stdout: upVersionOutput } = await execPromise('sh /runner-scripts/up-version-cp.sh');
-        this.addResetLog(`执行up-version-cp.sh脚本结果: ${upVersionOutput.trim() || '完成'}`);
+        // 检查是否在Kubernetes环境中
+        const isInK8s = fs.existsSync('/var/run/secrets/kubernetes.io/serviceaccount');
         
-        const { stdout: rsyncOutput } = await execPromise('rsync -av --update /runner-scripts/ /root/runner-scripts/');
-        this.addResetLog(`同步runner-scripts目录结果: ${rsyncOutput.trim().split('\n')[0]}...`);
+        if (isInK8s) {
+          // 在Kubernetes环境中，尝试触发Pod重启
+          this.addResetLog('检测到Kubernetes环境，将尝试触发Pod重启');
+          
+          // 创建一个标记文件，表示需要重启
+          const restartFlagFile = path.join(process.cwd(), '.need_restart');
+          fs.writeFileSync(restartFlagFile, new Date().toISOString());
+          this.addResetLog('已创建重启标记文件');
+          
+          // 正常退出进程，让Kubernetes重启Pod
+          this.addResetLog('正在优雅退出当前进程，等待Kubernetes重启Pod...');
+          setTimeout(() => {
+            process.exit(0); // 使用退出码0表示正常退出
+          }, 3000); // 延迟3秒退出，以便API有时间返回响应
+          
+        } else {
+          // 不在Kubernetes环境中，执行原来的恢复命令
+          this.addResetLog('未检测到Kubernetes环境，执行标准恢复脚本');
+          await execPromise('chmod +x /runner-scripts/up-version-cp.sh');
+          this.addResetLog('已赋予脚本执行权限');
+          
+          const { stdout: upVersionOutput } = await execPromise('sh /runner-scripts/up-version-cp.sh');
+          this.addResetLog(`执行up-version-cp.sh脚本结果: ${upVersionOutput.trim() || '完成'}`);
+          
+          const { stdout: rsyncOutput } = await execPromise('rsync -av --update /runner-scripts/ /root/runner-scripts/');
+          this.addResetLog(`同步runner-scripts目录结果: ${rsyncOutput.trim().split('\n')[0]}...`);
+        }
       } catch (cmdError) {
         const errorMsg = cmdError instanceof Error ? cmdError.message : String(cmdError);
-        this.addResetLog(`执行恢复脚本时出错: ${errorMsg}`, true);
+        this.addResetLog(`执行恢复/重启操作时出错: ${errorMsg}`, true);
         // 继续执行，不中断整个重置过程
       }
       
@@ -501,6 +557,21 @@ export class ComfyUIController {
   // 添加获取重置日志的新API方法
   async getResetLogs(ctx: Context): Promise<void> {
     logger.info('[API] 收到获取ComfyUI重置日志请求');
+    
+    // 如果内存中没有日志，尝试从文件读取
+    if (this.resetLogs.length === 0) {
+      try {
+        if (fs.existsSync(RESET_LOG_FILE)) {
+          const fileContent = fs.readFileSync(RESET_LOG_FILE, 'utf8');
+          if (fileContent.trim()) {
+            this.resetLogs = fileContent.split('\n').filter(line => line.trim());
+          }
+        }
+      } catch (error) {
+        logger.error(`读取重置日志文件失败: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    
     ctx.body = {
       logs: this.resetLogs
     };
