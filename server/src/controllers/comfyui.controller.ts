@@ -472,16 +472,25 @@ export class ComfyUIController {
           // 在Kubernetes环境中，尝试触发Pod重启
           this.addResetLog('检测到Kubernetes环境，将尝试触发Pod重启');
           
-          // 创建一个标记文件，表示需要重启
-          const restartFlagFile = path.join(process.cwd(), '.need_restart');
-          fs.writeFileSync(restartFlagFile, new Date().toISOString());
-          this.addResetLog('已创建重启标记文件');
-          
-          // 正常退出进程，让Kubernetes重启Pod
-          this.addResetLog('正在优雅退出当前进程，等待Kubernetes重启Pod...');
-          setTimeout(() => {
-            process.exit(0); // 使用退出码0表示正常退出
-          }, 3000); // 延迟3秒退出，以便API有时间返回响应
+          // 创建一个标记文件，表示需要重启 - 使用临时目录
+          const restartFlagFile = path.join(config.dataDir, '.need_restart');
+          try {
+            fs.writeFileSync(restartFlagFile, new Date().toISOString());
+            this.addResetLog('已创建重启标记文件');
+            
+            // 正常退出进程，让Kubernetes重启Pod
+            this.addResetLog('正在优雅退出当前进程，等待Kubernetes重启Pod...');
+            setTimeout(() => {
+              process.exit(0); // 使用退出码0表示正常退出
+            }, 3000); // 延迟3秒退出，以便API有时间返回响应
+          } catch (fileError) {
+            // 如果写入标记文件失败，记录错误并尝试直接退出
+            this.addResetLog(`无法创建重启标记文件: ${fileError instanceof Error ? fileError.message : String(fileError)}`, true);
+            this.addResetLog('将直接尝试退出进程触发重启...');
+            setTimeout(() => {
+              process.exit(0); 
+            }, 3000);
+          }
           
         } else {
           // 不在Kubernetes环境中，执行原来的恢复命令
