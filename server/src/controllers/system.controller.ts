@@ -1,6 +1,10 @@
 import { Context } from 'koa';
 import superagent from 'superagent';
 
+// 定义认证相关常量
+const AuthorizationTokenCookieKey = "auth_token";
+const AuthorizationTokenKey = "X-Authorization";
+
 export class SystemController {
   /**
    * 打开目录
@@ -77,11 +81,25 @@ export class SystemController {
    * @returns 令牌字符串或空字符串
    */
   private getToken(ctx: Context): string {
-    // 假设令牌在请求头的Authorization字段中
+    // 尝试从 Cookie 中获取令牌
+    const cookieToken = ctx.cookies.get(AuthorizationTokenCookieKey);
+    if (cookieToken) {
+      return cookieToken;
+    }
+
+    // 尝试从 X-Authorization 头获取令牌
+    const xAuthToken = ctx.headers[AuthorizationTokenKey.toLowerCase()];
+    if (xAuthToken) {
+      return Array.isArray(xAuthToken) ? xAuthToken[0] : xAuthToken;
+    }
+
+    // 尝试从 Authorization 头获取 Bearer 令牌
     const authHeader = ctx.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       return authHeader.substring(7);
     }
+
+    // 如果都没有找到，返回空字符串
     return '';
   }
 } 
