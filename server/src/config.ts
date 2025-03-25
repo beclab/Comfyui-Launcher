@@ -39,3 +39,5 @@ export const config = {
 
 // Python路径配置
 export const pythonPath = process.env.PYTHON_PATH || 'python3'; 
+
+export const cachePath = process.env.CACHE_DIR;

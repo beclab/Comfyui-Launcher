@@ -1,6 +1,6 @@
 import { Context } from 'koa';
 import { spawn, ChildProcess, exec } from 'child_process';
-import { config } from '../config';
+import { config, cachePath, paths } from '../config';
 import path from 'path';
 import * as http from 'http';
 import httpProxy from 'http-proxy';
@@ -20,6 +20,7 @@ export class ComfyUIController {
   // 存储最近的ComfyUI日志
   private recentLogs: string[] = [];
   private maxLogEntries: number = 100; // 保留最近100条日志
+  private resetLogs: string[] = []; // 存储最近一次重置操作的日志
 
   constructor() {
     // 绑定方法到实例
@@ -27,6 +28,8 @@ export class ComfyUIController {
     this.startComfyUI = this.startComfyUI.bind(this);
     this.stopComfyUI = this.stopComfyUI.bind(this);
     this.getLogs = this.getLogs.bind(this);
+    this.resetComfyUI = this.resetComfyUI.bind(this);
+    this.getResetLogs = this.getResetLogs.bind(this);
     
     // 初始化时检查ComfyUI是否已经运行
     this.checkIfComfyUIRunning();
@@ -94,6 +97,20 @@ export class ComfyUIController {
     if (this.recentLogs.length > this.maxLogEntries) {
       this.recentLogs.shift(); // 移除最旧的日志
     }
+    
+    // 同时记录到系统日志
+    if (isError) {
+      logger.error(message);
+    } else {
+      logger.info(message);
+    }
+  }
+
+  // 添加一个专门记录重置日志的方法
+  private addResetLog(message: string, isError: boolean = false): void {
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] ${isError ? 'ERROR: ' : ''}${message}`;
+    this.resetLogs.push(logEntry);
     
     // 同时记录到系统日志
     if (isError) {
@@ -343,6 +360,150 @@ export class ComfyUIController {
       const mins = Math.floor((diffSecs % 3600) / 60);
       return `${hours}小时${mins}分钟`;
     }
+  }
+
+  // 重置ComfyUI到初始状态
+  async resetComfyUI(ctx: Context): Promise<void> {
+    logger.info('[API] 收到重置ComfyUI请求');
+    // 清空重置日志
+    this.resetLogs = [];
+    this.addResetLog('收到重置ComfyUI到初始状态的请求');
+    this.addLog('收到重置ComfyUI到初始状态的请求');
+    
+    try {
+      // 首先检查ComfyUI是否在运行，如果是则停止它
+      const running = await isComfyUIRunning();
+      if (running) {
+        this.addResetLog('ComfyUI正在运行，将先停止服务');
+        this.addLog('ComfyUI正在运行，将先停止服务');
+        await this.killComfyUIGeneric();
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const stillRunning = await isComfyUIRunning();
+        if (stillRunning) {
+          this.addResetLog('无法停止ComfyUI，重置操作中止', true);
+          ctx.status = 500;
+          ctx.body = { success: false, message: '无法停止ComfyUI，重置操作中止' };
+          return;
+        }
+        
+        this.comfyPid = null;
+        this.startTime = null;
+      }
+      
+      // 开始重置操作
+      this.addResetLog('开始重置ComfyUI到初始状态...');
+      
+      // 1. 清空cache路径
+      if (cachePath && fs.existsSync(cachePath)) {
+        this.addResetLog(`清空cache路径: ${cachePath}`);
+        await this.clearDirectory(cachePath);
+      } else {
+        this.addResetLog(`cache路径不存在: ${cachePath}`, true);
+      }
+      
+      // 2. 清空COMFYUI_PATH下除models外的所有内容
+      const comfyuiPath = paths.comfyui;
+      if (comfyuiPath && fs.existsSync(comfyuiPath)) {
+        this.addResetLog(`清理ComfyUI路径(保留models): ${comfyuiPath}`);
+        const entries = fs.readdirSync(comfyuiPath, { withFileTypes: true });
+        
+        for (const entry of entries) {
+          // 跳过models目录
+          if (entry.name === 'models') {
+            this.addResetLog('保留models目录');
+            continue;
+          }
+          
+          const fullPath = path.join(comfyuiPath, entry.name);
+          if (entry.isDirectory()) {
+            this.addResetLog(`删除目录: ${entry.name}`);
+            await this.clearDirectory(fullPath, true); // 删除整个目录
+          } else {
+            this.addResetLog(`删除文件: ${entry.name}`);
+            fs.unlinkSync(fullPath);
+          }
+        }
+      } else {
+        this.addResetLog(`ComfyUI路径不存在: ${comfyuiPath}`, true);
+      }
+      
+      // 3. 执行恢复初始文件的命令
+      try {
+        this.addResetLog('执行恢复脚本...');
+        await execPromise('chmod +x /runner-scripts/up-version-cp.sh');
+        this.addResetLog('已赋予脚本执行权限');
+        
+        const { stdout: upVersionOutput } = await execPromise('sh /runner-scripts/up-version-cp.sh');
+        this.addResetLog(`执行up-version-cp.sh脚本结果: ${upVersionOutput.trim() || '完成'}`);
+        
+        const { stdout: rsyncOutput } = await execPromise('rsync -av --update /runner-scripts/ /root/runner-scripts/');
+        this.addResetLog(`同步runner-scripts目录结果: ${rsyncOutput.trim().split('\n')[0]}...`);
+      } catch (cmdError) {
+        const errorMsg = cmdError instanceof Error ? cmdError.message : String(cmdError);
+        this.addResetLog(`执行恢复脚本时出错: ${errorMsg}`, true);
+        // 继续执行，不中断整个重置过程
+      }
+      
+      this.addResetLog('ComfyUI重置完成');
+      ctx.body = {
+        success: true,
+        message: 'ComfyUI已成功重置到初始状态'
+      };
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.addResetLog(`重置ComfyUI时发生错误: ${errorMessage}`, true);
+      logger.error(`[API] 重置ComfyUI时发生错误: ${errorMessage}`);
+      
+      ctx.status = 500;
+      ctx.body = {
+        success: false,
+        message: `重置失败: ${errorMessage}`,
+        logs: this.resetLogs
+      };
+    }
+  }
+  
+  // 辅助方法：清空目录
+  private async clearDirectory(dirPath: string, removeDir: boolean = false): Promise<void> {
+    if (!fs.existsSync(dirPath)) {
+      return;
+    }
+    
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+      
+      if (entry.isDirectory()) {
+        await this.clearDirectory(fullPath, true);
+      } else {
+        // 安全删除文件
+        try {
+          fs.unlinkSync(fullPath);
+        } catch (error) {
+          this.addResetLog(`无法删除文件 ${fullPath}: ${error instanceof Error ? error.message : String(error)}`, true);
+        }
+      }
+    }
+    
+    // 如果需要，删除目录本身
+    if (removeDir) {
+      try {
+        fs.rmdirSync(dirPath);
+      } catch (error) {
+        this.addResetLog(`无法删除目录 ${dirPath}: ${error instanceof Error ? error.message : String(error)}`, true);
+      }
+    }
+  }
+
+  // 添加获取重置日志的新API方法
+  async getResetLogs(ctx: Context): Promise<void> {
+    logger.info('[API] 收到获取ComfyUI重置日志请求');
+    ctx.body = {
+      logs: this.resetLogs
+    };
   }
 }
 

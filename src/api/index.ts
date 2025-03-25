@@ -261,6 +261,13 @@ const api = {
   // 清除操作历史记录
   clearOperationHistory: () => 
     superagent.post(`${API_BASE_URL}/plugins/history/clear`),
+
+  // ComfyUI 重置相关 API
+  resetComfyUI: () => 
+    superagent.post(`${API_BASE_URL}/comfyui/reset`).use(debug),
+  
+  getResetLogs: () => 
+    superagent.get(`${API_BASE_URL}/comfyui/reset-logs`).use(debug),
 };
 
 export default api;  // 只有一个默认导出 

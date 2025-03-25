@@ -38,6 +38,8 @@ router.get('/api/status', (ctx) => comfyuiController.getStatus(ctx));
 router.post('/api/start', (ctx) => comfyuiController.startComfyUI(ctx));
 router.post('/api/stop', (ctx) => comfyuiController.stopComfyUI(ctx));
 router.get('/api/comfyui/logs', (ctx) => comfyuiController.getLogs(ctx));
+router.post('/api/comfyui/reset', (ctx) => comfyuiController.resetComfyUI(ctx));
+router.get('/api/comfyui/reset-logs', (ctx) => comfyuiController.getResetLogs(ctx));
 
 // 模型管理路由
 router.get('/api/models', modelsController.getModels.bind(modelsController));
