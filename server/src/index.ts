@@ -80,11 +80,6 @@ router.get('/api/plugins/history', pluginsController.getOperationHistory.bind(pl
 router.get('/api/plugins/logs/:taskId', pluginsController.getOperationLogs.bind(pluginsController));
 router.post('/api/plugins/history/clear', pluginsController.clearOperationHistory.bind(pluginsController));
 
-// 系统管理路由
-router.post('/api/reset', systemController.resetSystem);
-router.get('/api/reset/progress/:taskId', systemController.getResetProgress);
-router.post('/api/restart', systemController.restartApp);
-
 // Python依赖管理路由
 router.get('/api/python/pip-source', (ctx) => getPipSource(ctx));
 router.post('/api/python/pip-source', (ctx) => setPipSource(ctx));
@@ -103,6 +98,9 @@ router.get('/api/civitai/models/:id', (ctx) => civitaiController.getModelDetails
 router.get('/api/civitai/download/models/:versionId', (ctx) => civitaiController.downloadModel(ctx));
 router.get('/api/civitai/latest-workflows', (ctx) => civitaiController.getLatestWorkflows(ctx));
 router.get('/api/civitai/hot-workflows', (ctx) => civitaiController.getHotWorkflows(ctx));
+
+// 系统相关路由
+router.get('/api/system/open-path', systemController.openPath.bind(systemController));
 
 // 使用路由
 app.use(router.routes());

@@ -54,6 +54,81 @@
         <div class="col-12 q-mt-lg">
           <q-card flat bordered class="q-pa-md">
             <q-card-section>
+              <div class="text-h5 q-mb-md text-weight-bold">常用目录</div>
+              <div class="row q-col-gutter-md">
+                <div class="col-12 col-md-6 col-lg-3">
+                  <q-btn 
+                    class="full-width" 
+                    color="primary" 
+                    icon="folder"
+                    label="ComfyUI 目录" 
+                    @click="openDirectory('comfyui')"
+                  />
+                </div>
+                <div class="col-12 col-md-6 col-lg-3">
+                  <q-btn 
+                    class="full-width" 
+                    color="secondary" 
+                    icon="folder"
+                    label="模型目录" 
+                    @click="openDirectory('models')"
+                  />
+                </div>
+                <div class="col-12 col-md-6 col-lg-3">
+                  <q-btn 
+                    class="full-width" 
+                    color="accent" 
+                    icon="folder"
+                    label="输出目录" 
+                    @click="openDirectory('output')"
+                  />
+                </div>
+                <div class="col-12 col-md-6 col-lg-3">
+                  <q-btn 
+                    class="full-width" 
+                    color="deep-purple" 
+                    icon="folder"
+                    label="插件目录" 
+                    @click="openDirectory('custom_nodes')"
+                  />
+                </div>
+                <div class="col-12 q-mt-md">
+                  <q-separator />
+                  <div class="text-subtitle1 q-my-sm text-weight-medium">自定义路径</div>
+                </div>
+                <div class="col-12">
+                  <div class="row q-col-gutter-sm">
+                    <div class="col-12 col-md-9">
+                      <q-input 
+                        v-model="customPath" 
+                        outlined 
+                        dense
+                        label="输入路径" 
+                        placeholder="例如: /home/user/projects"
+                        clearable
+                        class="full-width"
+                      />
+                    </div>
+                    <div class="col-12 col-md-3">
+                      <q-btn 
+                        class="full-width" 
+                        color="teal" 
+                        icon="open_in_new" 
+                        label="打开" 
+                        :disable="!customPath"
+                        @click="openCustomPath"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </q-card-section>
+          </q-card>
+        </div>
+
+        <div class="col-12 q-mt-lg">
+          <q-card flat bordered class="q-pa-md">
+            <q-card-section>
               <div class="text-h5 q-mb-md text-weight-bold">技术栈</div>
               <div class="row q-col-gutter-md">
                 <div class="col-6 col-md-3 text-center">
@@ -91,7 +166,74 @@
 </template>
 
 <script setup lang="ts">
-// 这里可以添加任何需要的组件逻辑
+import { useQuasar } from 'quasar';
+import api from '../api';
+import { ref } from 'vue';
+
+const q = useQuasar();
+const customPath = ref('');
+
+// 定义目录路径映射
+const directoryPaths = {
+  comfyui: process.env.COMFYUI_PATH || './comfyui',
+  models: process.env.MODELS_PATH || './comfyui/models',
+  output: process.env.OUTPUT_PATH || './comfyui/output',
+  custom_nodes: process.env.CUSTOM_NODES_PATH || './comfyui/custom_nodes'
+};
+
+/**
+ * 打开指定的目录
+ * @param dirKey 目录的键名
+ */
+const openDirectory = async (dirKey: string) => {
+  try {
+    const path = directoryPaths[dirKey as keyof typeof directoryPaths];
+    if (!path) {
+      throw new Error('未找到指定目录');
+    }
+    
+    await api.openPath(path);
+    
+    q.notify({
+      type: 'positive',
+      message: `正在打开 ${dirKey} 目录`,
+      position: 'top',
+      timeout: 2000
+    });
+  } catch (error) {
+    console.error('打开目录失败:', error);
+    q.notify({
+      type: 'negative',
+      message: '打开目录失败，请检查系统设置',
+      position: 'top'
+    });
+  }
+};
+
+/**
+ * 打开自定义路径
+ */
+const openCustomPath = async () => {
+  if (!customPath.value) return;
+  
+  try {
+    await api.openPath(customPath.value);
+    
+    q.notify({
+      type: 'positive',
+      message: `正在打开自定义路径: ${customPath.value}`,
+      position: 'top',
+      timeout: 2000
+    });
+  } catch (error) {
+    console.error('打开目录失败:', error);
+    q.notify({
+      type: 'negative',
+      message: '打开目录失败，请检查路径是否正确',
+      position: 'top'
+    });
+  }
+};
 </script>
 
 <style scoped>

@@ -280,6 +280,10 @@ const api = {
   // 添加删除单条下载历史记录的API方法
   deleteDownloadHistoryItem: (id: string) => 
     superagent.post(`${API_BASE_URL}/models/download-history/delete`).send({ id }).use(debug),
+
+  // 添加打开路径的API方法
+  openPath: (path: string) => 
+    superagent.get(`${API_BASE_URL}/system/open-path`).query({ path }).use(debug),
 };
 
 export default api;  // 只有一个默认导出 
