@@ -14,33 +14,36 @@
       <ComfyUIStatus />
     </div>
     
-    <!-- 首页内容区 -->
-    <div class="row q-col-gutter-md q-mt-md">
-      <div class="col-12">
-        <q-card class="dashboard-card">
-          <q-card-section>
-            <h5 class="q-mt-sm q-mb-xs">欢迎使用 ComfyUI 管理器</h5>
-            <p>通过侧边栏导航来管理您的 ComfyUI 环境，或点击"探索发现"查看最新的模型和工作流。</p>
-          </q-card-section>
-          <q-card-actions>
-            <q-btn flat color="primary" to="/discovery">
-              前往探索发现页面
-            </q-btn>
-          </q-card-actions>
-        </q-card>
-      </div>
-    </div>
+    <!-- 网络环境组件 -->
+    <NetworkEnvironment />
+    
+    <!-- 文件夹访问组件 -->
+    <FolderAccess />
+    
+    <!-- 资源包安装组件 -->
+    <PackageInstall />
+    
+    <!-- 底部支持链接 -->
+    <SupportLinks />
   </q-page>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
 import ComfyUIStatus from '../components/ComfyUIStatus.vue';
+import NetworkEnvironment from '../components/NetworkEnvironment.vue';
+import FolderAccess from '../components/FolderAccess.vue';
+import PackageInstall from '../components/PackageInstall.vue';
+import SupportLinks from '../components/SupportLinks.vue';
 
 export default defineComponent({
   name: 'IndexPage',
   components: {
-    ComfyUIStatus
+    ComfyUIStatus,
+    NetworkEnvironment,
+    FolderAccess,
+    PackageInstall,
+    SupportLinks
   }
 });
 </script>
@@ -59,10 +62,5 @@ export default defineComponent({
 
 .dashboard-container {
   margin-top: 30px;
-}
-
-h5 {
-  font-weight: 500;
-  color: #555;
 }
 </style>
