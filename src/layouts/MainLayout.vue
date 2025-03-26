@@ -38,6 +38,13 @@
           <q-item-section>首页</q-item-section>
         </q-item>
 
+        <q-item clickable to="/discovery">
+          <q-item-section avatar>
+            <q-icon name="sym_o_explore" />
+          </q-item-section>
+          <q-item-section>探索发现</q-item-section>
+        </q-item>
+
         <q-item clickable to="/models">
           <q-item-section avatar>
             <q-icon name="sym_o_database" />

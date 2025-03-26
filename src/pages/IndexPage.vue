@@ -14,67 +14,33 @@
       <ComfyUIStatus />
     </div>
     
-    <!-- 标签页区域 -->
-    <div class="q-mt-md">
-      <q-tabs
-        v-model="tab"
-        class="text-primary"
-        active-color="primary"
-        indicator-color="primary"
-        align="justify"
-      >
-        <q-tab name="latestModels" label="最新模型" />
-        <q-tab name="hotModels" label="最火模型" />
-        <q-tab name="latestWorkflows" label="最新工作流" />
-        <q-tab name="hotWorkflows" label="最火工作流" />
-      </q-tabs>
-
-      <q-separator />
-
-      <q-tab-panels v-model="tab" animated>
-        <q-tab-panel name="latestModels">
-          <LatestModels />
-        </q-tab-panel>
-
-        <q-tab-panel name="hotModels">
-          <HotModels />
-        </q-tab-panel>
-
-        <q-tab-panel name="latestWorkflows">
-          <LatestWorkflows />
-        </q-tab-panel>
-
-        <q-tab-panel name="hotWorkflows">
-          <HotWorkflows />
-        </q-tab-panel>
-      </q-tab-panels>
+    <!-- 首页内容区 -->
+    <div class="row q-col-gutter-md q-mt-md">
+      <div class="col-12">
+        <q-card class="dashboard-card">
+          <q-card-section>
+            <h5 class="q-mt-sm q-mb-xs">欢迎使用 ComfyUI 管理器</h5>
+            <p>通过侧边栏导航来管理您的 ComfyUI 环境，或点击"探索发现"查看最新的模型和工作流。</p>
+          </q-card-section>
+          <q-card-actions>
+            <q-btn flat color="primary" to="/discovery">
+              前往探索发现页面
+            </q-btn>
+          </q-card-actions>
+        </q-card>
+      </div>
     </div>
   </q-page>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent } from 'vue';
 import ComfyUIStatus from '../components/ComfyUIStatus.vue';
-import LatestModels from '../components/models/LatestModels.vue';
-import HotModels from '../components/models/HotModels.vue';
-import LatestWorkflows from '../components/workflows/LatestWorkflows.vue';
-import HotWorkflows from '../components/workflows/HotWorkflows.vue';
 
 export default defineComponent({
   name: 'IndexPage',
   components: {
-    ComfyUIStatus,
-    LatestModels,
-    HotModels,
-    LatestWorkflows,
-    HotWorkflows
-  },
-  setup() {
-    const tab = ref('latestModels');
-    
-    return {
-      tab
-    };
+    ComfyUIStatus
   }
 });
 </script>

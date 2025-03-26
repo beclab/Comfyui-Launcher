@@ -38,7 +38,8 @@ const routes: RouteRecordRaw[] = [
       { 
         path: 'python-dependencies',
         component: () => import('pages/PythonDependenciesPage.vue'),
-      }
+      },
+      { path: 'discovery', component: () => import('pages/DiscoveryPage.vue') },
     ],
   },
 ];

@@ -7,12 +7,22 @@ interface ApiData {
 
 // 从配置中获取API地址
 const getApiBaseUrl = () => {
+  // 打印环境变量便于调试
+  console.log('当前环境:', import.meta.env.DEV ? '开发环境' : '生产环境');
+  
   // 使用动态配置或回退到默认值
   if (window.APP_CONFIG && window.APP_CONFIG.apiBaseUrl) {
     return `${window.APP_CONFIG.apiBaseUrl}/api`;
   }
-  // 开发环境回退
-  return 'http://localhost:3000/api';
+  
+  // 根据环境选择回退地址
+  // 开发环境使用localhost
+  if (import.meta.env.DEV) {
+    return 'http://localhost:3000/api';
+  }
+  
+  // 生产环境使用当前网站地址
+  return `${window.location.origin}/api`;
 };
 
 const API_BASE_URL = getApiBaseUrl();
