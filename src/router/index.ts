@@ -40,6 +40,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/PythonDependenciesPage.vue'),
       },
       { path: 'discovery', component: () => import('pages/DiscoveryPage.vue') },
+      { path: 'network-config', component: () => import('pages/NetworkConfigPage.vue') },
     ],
   },
 ];

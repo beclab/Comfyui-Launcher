@@ -294,6 +294,22 @@ const api = {
   // 添加打开路径的API方法
   openPath: (path: string) => 
     superagent.get(`${API_BASE_URL}/system/open-path`).query({ path }).use(debug),
+
+  // 添加网络配置相关API方法
+  getNetworkConfig: () => 
+    superagent.get(`${API_BASE_URL}/system/network-config`).use(debug),
+  
+  getNetworkStatus: () => 
+    superagent.get(`${API_BASE_URL}/system/network-status`).use(debug),
+  
+  setGithubProxy: (githubProxy: string) => 
+    superagent.post(`${API_BASE_URL}/system/github-proxy`).send({ githubProxy }).use(debug),
+  
+  setPipSource: (pipUrl: string) => 
+    superagent.post(`${API_BASE_URL}/system/pip-source`).send({ pipUrl }).use(debug),
+  
+  setHuggingfaceEndpoint: (hfEndpoint: string) => 
+    superagent.post(`${API_BASE_URL}/system/huggingface-endpoint`).send({ hfEndpoint }).use(debug),
 };
 
 export default api;  // 只有一个默认导出 

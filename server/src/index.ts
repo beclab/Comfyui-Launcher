@@ -101,6 +101,12 @@ router.get('/api/civitai/hot-workflows', (ctx) => civitaiController.getHotWorkfl
 
 // 系统相关路由
 router.get('/api/system/open-path', systemController.openPath.bind(systemController));
+// 新增的网络状态检查和代理配置路由
+router.get('/api/system/network-status', systemController.checkNetworkStatus.bind(systemController));
+router.get('/api/system/network-config', systemController.getNetworkConfig.bind(systemController));
+router.post('/api/system/pip-source', systemController.configurePipSource.bind(systemController));
+router.post('/api/system/huggingface-endpoint', systemController.configureHuggingFaceEndpoint.bind(systemController));
+router.post('/api/system/github-proxy', systemController.configureGithubProxy.bind(systemController));
 
 // 使用路由
 app.use(router.routes());

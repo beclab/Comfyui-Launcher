@@ -79,6 +79,19 @@
           </q-item-section>
           <q-item-section>关于</q-item-section>
         </q-item>
+
+        <q-item 
+          to="/network-config" 
+          exact 
+          clickable 
+          v-ripple
+          active-class="active-menu-link"
+        >
+          <q-item-section avatar>
+            <q-icon name="settings_ethernet" />
+          </q-item-section>
+          <q-item-section>网络配置</q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
