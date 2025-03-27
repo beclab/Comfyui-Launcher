@@ -3,14 +3,11 @@
     grid
     :columns="2"
     :column-gap="32"
-    :label="t('base.package_install')"
+    :label="t('base.resource_pack')"
   >
     <div v-for="pkg in packages" :key="pkg.name" class="col-12 col-md-6">
       <package-install-item
-        :name="pkg.name"
-        :description="pkg.description"
-        :has-menu="pkg.hasMenu"
-        :menu-options="pkg.menuOptions"
+        :package="pkg"
         @on-download-click="downloadPackage"
         @on-menu-click="downloadOption"
       />
@@ -22,49 +19,37 @@
 import PackageInstallItem from 'components/package/PackageInstallItem.vue';
 import CardContainer from 'components/base/CardContainer.vue';
 import { useI18n } from 'vue-i18n';
-
-interface Package {
-  name: string;
-  description: string;
-  hasMenu: boolean;
-  menuOptions?: string[];
-}
+import { PackageInstall } from 'src/types/contants';
 
 const { t } = useI18n();
-const packages = [
+const packages : PackageInstall[] = [
   {
-    name: '最低模型包',
-    description: 'SD1.5 4G SDXL base-model...等',
-    hasMenu: true,
-    menuOptions: ['模型', '扩展'],
+    name: t('package.essential_models_pack'),
+    description: t('package.essential_models_pack_desc'),
+    menuOptions: [t('package.essential')],
+    icon: 'essential_model.png',
+    installed: false
   },
   {
-    name: 'ControlNet模型包',
-    description: 'controllllnet-models',
-    hasMenu: false,
+    name: t('package.controlNet_models_pack'),
+    description: t('package.controlNet_models_pack_desc'),
+    icon: 'control_net_model.png',
+    installed: true,
   },
-] as Package[];
+];
 
-function downloadPackage(pkg: Package) {
-  if (!pkg.hasMenu) {
+function downloadPackage(pkg: PackageInstall) {
+  if (!pkg.installed) {
     console.log('下载包:', pkg.name);
     // 实现下载逻辑
   }
 }
 
-function downloadOption(pkg: Package, option: string) {
+function downloadOption(pkg: PackageInstall, option: string) {
   console.log('下载选项:', pkg.name, option);
   // 实现选项下载逻辑
 }
 </script>
 
 <style scoped>
-.package-card {
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.package-card:hover {
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-}
 </style>

@@ -2,8 +2,8 @@
   <div class="folder-item">
     <div class="row justify-start items-center q-py-sm">
       <q-img class="folder-img" :src="getRequireImage('folder.svg')">
-<!--        TODO -->
-        <template v-slot:loading> </template>
+        <!--        TODO -->
+        <template v-slot:loading></template>
       </q-img>
       <div class="column justify-center q-ml-sm">
         <span class="folder-name text-body1 text-ink-1">{{ name }}</span>
@@ -66,11 +66,11 @@ function onOpen() {
   padding: 10px 0;
 
   .folder-img {
-    width: 40px;
-    height: 40px;
+    width: 39px;
+    height: 31px;
   }
 
-  .folder-name{
+  .folder-name {
     display: -webkit-box;
     width: 206px;
     -webkit-box-orient: vertical;
@@ -79,7 +79,7 @@ function onOpen() {
     text-overflow: ellipsis;
   }
 
-  .folder-path{
+  .folder-path {
     display: flex;
     height: 32px;
     padding: 8px 12px;
