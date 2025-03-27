@@ -12,6 +12,10 @@
 // to match your app's branding.
 // Tip: Use the "Theme Builder" on Quasar's documentation website.
 
+@import '@bytetrade/ui/lib/styles/quasar.variables.sass';
+@import '@bytetrade/ui/lib/styles/quasar.popup.scss';
+@import '@bytetrade/ui/lib/styles/quasar.btn.scss';
+
 $primary   : #1976D2;
 $secondary : #26A69A;
 $accent    : #9C27B0;
@@ -23,3 +27,9 @@ $positive  : #21BA45;
 $negative  : #C10015;
 $info      : #31CCEC;
 $warning   : #F2C037;
+
+.launcher-global-ok-button {
+  background: $orange-default;
+  color: white;
+}
+

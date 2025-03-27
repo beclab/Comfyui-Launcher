@@ -1,7 +1,7 @@
 <template>
   <q-page class="q-pa-md">
     <!-- 顶部标题区域 -->
-    <!-- 
+    <!--
     <div class="text-center q-mb-md">
       <img src="~assets/comfyui-logo.png" style="width: 120px; height: auto" alt="ComfyUI Logo">
       <h4 class="q-mt-sm q-mb-none">ComfyUI 管理器</h4>
@@ -13,39 +13,28 @@
     <div class="q-mb-lg">
       <ComfyUIStatus />
     </div>
-    
+
     <!-- 网络环境组件 -->
     <NetworkEnvironment />
-    
+
     <!-- 文件夹访问组件 -->
     <FolderAccess />
-    
+
     <!-- 资源包安装组件 -->
     <PackageInstall />
-    
+
     <!-- 底部支持链接 -->
     <SupportLinks />
   </q-page>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script lang="ts" setup>
 import ComfyUIStatus from '../components/ComfyUIStatus.vue';
-import NetworkEnvironment from '../components/NetworkEnvironment.vue';
-import FolderAccess from '../components/FolderAccess.vue';
+import NetworkEnvironment from '../components/network/NetworkEnvironment.vue';
+import FolderAccess from '../components/folder/FolderAccess.vue';
 import PackageInstall from '../components/PackageInstall.vue';
 import SupportLinks from '../components/SupportLinks.vue';
 
-export default defineComponent({
-  name: 'IndexPage',
-  components: {
-    ComfyUIStatus,
-    NetworkEnvironment,
-    FolderAccess,
-    PackageInstall,
-    SupportLinks
-  }
-});
 </script>
 
 <style scoped>

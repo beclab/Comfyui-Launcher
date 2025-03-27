@@ -1,11 +1,9 @@
 import { route } from 'quasar/wrappers';
 import {
-  createMemoryHistory,
   createRouter,
-  createWebHashHistory,
-  createWebHistory,
+  createWebHistory
 } from 'vue-router';
-import { RouteRecordRaw } from 'vue-router';
+import routes from './routes';
 
 // import routesConfig from './routes';
 
@@ -25,30 +23,9 @@ import { RouteRecordRaw } from 'vue-router';
  * 更多信息参见: https://router.vuejs.org/guide/essentials/history-mode.html#html5-history-mode
  */
 
-const routes: RouteRecordRaw[] = [
-  {
-    path: '/',
-    component: () => import('layouts/MainLayout.vue'),
-    children: [
-      { path: '', component: () => import('pages/IndexPage.vue') },
-      { path: 'about', component: () => import('pages/AboutPage.vue') },
-      { path: 'models', component: () => import('pages/ModelsPage.vue') },
-      { path: 'plugins', component: () => import('pages/PluginsPage.vue') },
-      { path: 'reset', component: () => import('pages/ResetPage.vue') },
-      { 
-        path: 'python-dependencies',
-        component: () => import('pages/PythonDependenciesPage.vue'),
-      },
-      { path: 'discovery', component: () => import('pages/DiscoveryPage.vue') },
-      { path: 'network-config', component: () => import('pages/NetworkConfigPage.vue') },
-    ],
-  },
-];
+
 
 export default route(function (/* { store, ssrContext } */) {
-  const createHistory = process.env.SERVER
-    ? createMemoryHistory
-    : (process.env.VUE_ROUTER_MODE === 'history' ? createWebHistory : createWebHashHistory);
 
   const Router = createRouter({
     scrollBehavior: () => ({ left: 0, top: 0 }),
@@ -57,7 +34,7 @@ export default route(function (/* { store, ssrContext } */) {
     // Leave this as is and make changes in quasar.conf.js instead!
     // quasar.conf.js -> build -> vueRouterMode
     // quasar.conf.js -> build -> publicPath
-    history: createHistory(process.env.VUE_ROUTER_BASE),
+    history: createWebHistory(process.env.VUE_ROUTER_BASE),
   });
 
   return Router;
