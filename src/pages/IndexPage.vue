@@ -15,13 +15,13 @@
     </div>
 
     <!-- 网络环境组件 -->
-    <NetworkEnvironment />
+    <network-environment-panel />
 
     <!-- 文件夹访问组件 -->
-    <FolderAccess />
+    <folder-access-panel />
 
     <!-- 资源包安装组件 -->
-    <PackageInstall />
+    <package-install-panel />
 
     <!-- 底部支持链接 -->
     <SupportLinks />
@@ -30,10 +30,10 @@
 
 <script lang="ts" setup>
 import ComfyUIStatus from '../components/ComfyUIStatus.vue';
-import NetworkEnvironment from '../components/network/NetworkEnvironment.vue';
-import FolderAccess from '../components/folder/FolderAccess.vue';
-import PackageInstall from '../components/PackageInstall.vue';
 import SupportLinks from '../components/SupportLinks.vue';
+import FolderAccessPanel from 'components/folder/FolderAccessPanel.vue';
+import PackageInstallPanel from 'components/package/PackageInstallPanel.vue';
+import NetworkEnvironmentPanel from '../components/network/NetworkEnvironmentPanel.vue';
 
 </script>
 

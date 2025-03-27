@@ -1,31 +1,19 @@
 <template>
-  <card-container>
-    <template v-slot:header>
-      <div class="text-h6">{{ t('base.folder')}}</div>
-    </template>
-
-    <template v-slot:default>
-      <div class="grid-container card-content-y">
-        <div
-          v-for="folder in folders"
-          :key="folder.name"
-        >
-          <model-directory
-            :name="folder.name"
-            :path="folder.path"
-            :used="folder.used"
-            :available="folder.available"
-            @open="openFolder"
-          />
-        </div>
-      </div>
-
-    </template>
+  <card-container grid :label="t('base.folder')">
+    <div v-for="folder in folders" :key="folder.name">
+      <folder-access-item
+        :name="folder.name"
+        :path="folder.path"
+        :used="folder.used"
+        :available="folder.available"
+        @open="openFolder"
+      />
+    </div>
   </card-container>
 </template>
 
 <script lang="ts" setup>
-import ModelDirectory from 'components/folder/ModelDirectory.vue';
+import FolderAccessItem from 'components/folder/FolderAccessItem.vue';
 import CardContainer from 'components/base/CardContainer.vue';
 import { useI18n } from 'vue-i18n';
 
@@ -70,11 +58,4 @@ function openFolder(path: string) {
 }
 </script>
 
-<style lang="scss" scoped>
-.grid-container {
-  display: grid;
-  box-sizing: border-box;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px 44px;
-}
-</style>
+<style lang="scss" scoped></style>
