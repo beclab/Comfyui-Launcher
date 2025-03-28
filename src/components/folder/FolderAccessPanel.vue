@@ -1,5 +1,5 @@
 <template>
-  <card-container grid :label="t('base.folder')">
+  <card-container grid :title="t('base.folder')">
     <div v-for="folder in folders" :key="folder.name">
       <folder-access-item
         :name="folder.name"

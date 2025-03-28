@@ -98,12 +98,17 @@ import { useMenuStore } from 'stores/menu';
 import { useI18n } from 'vue-i18n';
 import RouteEnums from 'src/router/routeEnums';
 import { useRouter } from 'vue-router';
+import { useNetworkStore } from 'stores/network';
 
 const menuStore = useMenuStore();
+const networkStore = useNetworkStore()
 const leftDrawerOpen = ref(false);
 const isInIframe = ref(false);
 const router = useRouter();
 const { t } = useI18n();
+
+//init
+networkStore.init();
 
 // function toggleLeftDrawer() {
 //   leftDrawerOpen.value = !leftDrawerOpen.value;

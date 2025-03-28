@@ -3,7 +3,7 @@
     grid
     :columns="2"
     :column-gap="32"
-    :label="t('base.resource_pack')"
+    :title="t('base.resource_pack')"
   >
     <div v-for="pkg in packages" :key="pkg.name" class="col-12 col-md-6">
       <package-install-item

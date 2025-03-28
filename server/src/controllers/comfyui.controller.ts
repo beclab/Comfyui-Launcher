@@ -34,7 +34,7 @@ export class ComfyUIController {
     this.getLogs = this.getLogs.bind(this);
     this.resetComfyUI = this.resetComfyUI.bind(this);
     this.getResetLogs = this.getResetLogs.bind(this);
-    
+
     // 初始化时检查ComfyUI是否已经运行
     this.checkIfComfyUIRunning();
   }
@@ -64,18 +64,18 @@ export class ComfyUIController {
   // 获取ComfyUI状态
   async getStatus(ctx: Context): Promise<void> {
     logger.info('[API] 接收到状态请求，时间:' + new Date().toISOString());
-    
+
     logger.info('[API] 获取ComfyUI状态请求');
-    
+
     // 通过网络端口检查是否运行
     const running = await isComfyUIRunning();
     const uptime = this.startTime ? this.getUptime() : null;
-    
+
     logger.info(`[API] ComfyUI当前状态: ${running ? '运行中' : '已停止'}`);
     if (running) {
       logger.info(`[API] 已运行时间: ${uptime}`);
     }
-    
+
     ctx.body = {
       running,
       pid: this.comfyPid,
@@ -95,13 +95,13 @@ export class ComfyUIController {
   private addLog(message: string, isError: boolean = false): void {
     const timestamp = new Date().toISOString();
     const logEntry = `[${timestamp}] ${isError ? 'ERROR: ' : ''}${message}`;
-    
+
     // 添加到日志数组并保持大小限制
     this.recentLogs.push(logEntry);
     if (this.recentLogs.length > this.maxLogEntries) {
       this.recentLogs.shift(); // 移除最旧的日志
     }
-    
+
     // 同时记录到系统日志
     if (isError) {
       logger.error(message);
@@ -115,18 +115,18 @@ export class ComfyUIController {
     const timestamp = new Date().toISOString();
     const logEntry = `[${timestamp}] ${isError ? 'ERROR: ' : ''}${message}`;
     this.resetLogs.push(logEntry);
-    
+
     // 同时记录到系统日志
     if (isError) {
       logger.error(message);
     } else {
       logger.info(message);
     }
-    
+
     // 将日志写入文件
     this.writeResetLogToFile(logEntry);
   }
-  
+
   // 将重置日志写入文件
   private writeResetLogToFile(logEntry: string): void {
     try {
@@ -134,7 +134,7 @@ export class ComfyUIController {
       if (!fs.existsSync(RESET_LOG_PATH)) {
         fs.mkdirSync(RESET_LOG_PATH, { recursive: true });
       }
-      
+
       // 追加写入日志
       fs.appendFileSync(RESET_LOG_FILE, logEntry + '\n');
     } catch (error) {
@@ -147,7 +147,7 @@ export class ComfyUIController {
     logger.info('[API] 收到启动ComfyUI请求');
     this.recentLogs = []; // 清除之前的日志
     this.addLog('收到启动ComfyUI请求');
-    
+
     // 首先检查是否已经在运行
     const running = await isComfyUIRunning();
     if (running) {
@@ -159,25 +159,25 @@ export class ComfyUIController {
       };
       return;
     }
-    
+
     try {
       // 启动ComfyUI进程
       this.addLog('尝试启动ComfyUI进程...');
       this.addLog(`执行命令: bash ${path.resolve('/runner-scripts/entrypoint.sh')}`);
-      
+
       this.comfyProcess = spawn('bash', ['/runner-scripts/entrypoint.sh'], {
         detached: false, // 进程不分离，随主进程退出而退出
         stdio: ['ignore', 'pipe', 'pipe'] // 忽略stdin，捕获stdout和stderr
       });
-      
+
       this.startTime = new Date();
-      
+
       // 捕获输出
       if (this.comfyProcess.stdout) {
         this.comfyProcess.stdout.on('data', (data) => {
           const output = data.toString().trim();
           this.addLog(`[ComfyUI] ${output}`);
-          
+
           // 尝试从输出中捕获实际的ComfyUI进程ID
           const match = output.match(/ComfyUI.*启动.*pid[:\s]+(\d+)/i);
           if (match && match[1]) {
@@ -186,19 +186,19 @@ export class ComfyUIController {
           }
         });
       }
-      
+
       if (this.comfyProcess.stderr) {
         this.comfyProcess.stderr.on('data', (data) => {
           const errorMsg = data.toString().trim();
           this.addLog(`[ComfyUI-Error] ${errorMsg}`, true);
         });
       }
-      
+
       // 监听进程退出
       this.comfyProcess.on('exit', (code, signal) => {
         this.addLog(`启动脚本进程已退出，退出码: ${code}, 信号: ${signal}`);
         this.comfyProcess = null;
-        
+
         // 检查ComfyUI是否仍在运行
         this.checkIfComfyUIRunning().then(async () => {
           const stillRunning = await isComfyUIRunning();
@@ -208,22 +208,22 @@ export class ComfyUIController {
           }
         });
       });
-      
+
       // 监听错误
       this.comfyProcess.on('error', (err) => {
         this.addLog(`启动脚本进程错误: ${err.message}`, true);
         this.comfyProcess = null;
       });
-      
+
       // 等待一段时间确保进程启动成功
       let retries = 0;
       const maxRetries = 10;
       let comfyStarted = false;
-      
+
       while (retries < maxRetries && !comfyStarted) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         comfyStarted = await isComfyUIRunning();
-        
+
         if (comfyStarted) {
           // 获取真正的ComfyUI进程ID
           if (!this.comfyPid) {
@@ -236,11 +236,11 @@ export class ComfyUIController {
           }
           break;
         }
-        
+
         retries++;
         this.addLog(`等待ComfyUI启动，尝试 ${retries}/${maxRetries}`);
       }
-      
+
       if (comfyStarted) {
         this.addLog('ComfyUI启动成功');
         ctx.body = {
@@ -256,7 +256,7 @@ export class ComfyUIController {
           message: 'ComfyUI启动失败或超时',
           logs: this.recentLogs // 返回日志信息
         };
-        
+
         // 尝试清理启动脚本进程
         if (this.comfyProcess && this.comfyProcess.kill) {
           this.comfyProcess.kill();
@@ -279,7 +279,7 @@ export class ComfyUIController {
   // 停止ComfyUI
   async stopComfyUI(ctx: Context): Promise<void> {
     logger.info('[API] 收到停止ComfyUI请求');
-    
+
     try {
       // 首先检查是否真的在运行
       const running = await isComfyUIRunning();
@@ -290,15 +290,15 @@ export class ComfyUIController {
         ctx.body = { success: true, message: 'ComfyUI已经停止' };
         return;
       }
-      
+
       logger.info('[API] 尝试停止ComfyUI进程...');
-      
+
       // 优先使用通用方法终止
       await this.killComfyUIGeneric();
-      
+
       // 等待足够时间让进程完全终止
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // 最终检查
       const finalCheck = await isComfyUIRunning();
       if (!finalCheck) {
@@ -311,7 +311,7 @@ export class ComfyUIController {
         logger.warn('[API] 首次尝试未能完全停止ComfyUI，使用强制终止');
         await execPromise('pkill -9 -f python').catch(() => {});
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         const lastCheck = await isComfyUIRunning();
         if (!lastCheck) {
           logger.info('[API] ComfyUI在强制终止后已停止');
@@ -331,17 +331,17 @@ export class ComfyUIController {
       ctx.body = { success: false, error: '停止ComfyUI时发生错误' };
     }
   }
-  
+
   // 使用通用方法终止ComfyUI
   private async killComfyUIGeneric(): Promise<void> {
     try {
       // 首先找出大型Python进程（可能是ComfyUI）
       const { stdout } = await execPromise("ps aux | grep python | grep -v grep | awk '{if($6>100000) print $2}'");
       const pids = stdout.trim().split('\n').filter((pid: string) => pid);
-      
+
       if (pids.length > 0) {
         logger.info(`[API] 找到可能的ComfyUI进程: ${pids.join(', ')}`);
-        
+
         // 逐个终止找到的进程
         for (const pid of pids) {
           try {
@@ -356,21 +356,21 @@ export class ComfyUIController {
     } catch (e: unknown) {
       logger.error(`[API] 查找ComfyUI进程失败: ${e}`);
     }
-    
+
     // 后备方案：使用通用命令
     const cmd = 'pkill -9 -f "python"';
     logger.info(`[API] 使用后备终止命令: ${cmd}`);
     await execPromise(cmd).catch((e: unknown) => logger.warn(`[API] 后备终止失败: ${e}`));
   }
-  
+
   // 获取运行时间
   private getUptime(): string {
     if (!this.startTime) return '0秒';
-    
+
     const now = new Date();
     const diffMs = now.getTime() - this.startTime.getTime();
     const diffSecs = Math.floor(diffMs / 1000);
-    
+
     if (diffSecs < 60) {
       return `${diffSecs}秒`;
     } else if (diffSecs < 3600) {
@@ -389,7 +389,7 @@ export class ComfyUIController {
     logger.info('[API] 收到重置ComfyUI请求');
     // 清空重置日志
     this.resetLogs = [];
-    
+
     // 同时清空日志文件
     try {
       if (!fs.existsSync(RESET_LOG_PATH)) {
@@ -399,10 +399,10 @@ export class ComfyUIController {
     } catch (error) {
       logger.error(`清空重置日志文件失败: ${error instanceof Error ? error.message : String(error)}`);
     }
-    
+
     this.addResetLog('收到重置ComfyUI到初始状态的请求');
     this.addLog('收到重置ComfyUI到初始状态的请求');
-    
+
     try {
       // 首先检查ComfyUI是否在运行，如果是则停止它
       const running = await isComfyUIRunning();
@@ -411,7 +411,7 @@ export class ComfyUIController {
         this.addLog('ComfyUI正在运行，将先停止服务');
         await this.killComfyUIGeneric();
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
+
         const stillRunning = await isComfyUIRunning();
         if (stillRunning) {
           this.addResetLog('无法停止ComfyUI，重置操作中止', true);
@@ -419,14 +419,14 @@ export class ComfyUIController {
           ctx.body = { success: false, message: '无法停止ComfyUI，重置操作中止' };
           return;
         }
-        
+
         this.comfyPid = null;
         this.startTime = null;
       }
-      
+
       // 开始重置操作
       this.addResetLog('开始重置ComfyUI到初始状态...');
-      
+
       // 1. 清空cache路径
       if (cachePath && fs.existsSync(cachePath)) {
         this.addResetLog(`清空cache路径: ${cachePath}`);
@@ -434,31 +434,31 @@ export class ComfyUIController {
       } else {
         this.addResetLog(`cache路径不存在: ${cachePath}`, true);
       }
-      
+
       // 2. 清空COMFYUI_PATH下除models外的所有内容
       const comfyuiPath = paths.comfyui;
       if (comfyuiPath && fs.existsSync(comfyuiPath)) {
         this.addResetLog(`清理ComfyUI路径(保留models、output和数据目录): ${comfyuiPath}`);
-        
+
         // 检查数据目录是否在comfyuiPath内
         const dataDir = config.dataDir;
         const dataDirRelative = dataDir && path.relative(comfyuiPath, dataDir);
         const isDataDirInComfyUI = dataDirRelative && !dataDirRelative.startsWith('..') && !path.isAbsolute(dataDirRelative);
-        
+
         if (isDataDirInComfyUI) {
           this.addResetLog(`数据目录(${dataDir})位于ComfyUI目录内，将保留此目录`);
         }
-        
+
         const entries = fs.readdirSync(comfyuiPath, { withFileTypes: true });
-        
+
         for (const entry of entries) {
           // 跳过models、output和数据目录
-          if (entry.name === 'models' || entry.name === 'output' || 
+          if (entry.name === 'models' || entry.name === 'output' ||
               (isDataDirInComfyUI && entry.name === path.basename(dataDir))) {
             this.addResetLog(`保留${entry.name}目录`);
             continue;
           }
-          
+
           const fullPath = path.join(comfyuiPath, entry.name);
           if (entry.isDirectory()) {
             this.addResetLog(`删除目录: ${entry.name}`);
@@ -471,24 +471,24 @@ export class ComfyUIController {
       } else {
         this.addResetLog(`ComfyUI路径不存在: ${comfyuiPath}`, true);
       }
-      
+
       // 3. 尝试执行恢复脚本，仅在失败时才重启Pod
       try {
         this.addResetLog('尝试执行恢复脚本...');
-        
+
         // 首先尝试执行恢复脚本
         try {
           await execPromise('chmod +x /runner-scripts/up-version-cp.sh');
           this.addResetLog('已赋予脚本执行权限');
-          
+
           const { stdout: upVersionOutput } = await execPromise('sh /runner-scripts/up-version-cp.sh');
           this.addResetLog(`执行up-version-cp.sh脚本结果: ${upVersionOutput.trim() || '完成'}`);
-          
+
           const { stdout: rsyncOutput } = await execPromise('rsync -av --update /runner-scripts/ /root/runner-scripts/');
           this.addResetLog(`同步runner-scripts目录结果: ${rsyncOutput.trim().split('\n')[0]}...`);
-          
+
           this.addResetLog('恢复脚本执行成功，无需重启Pod');
-          
+
         } catch (scriptError) {
           // 恢复脚本执行失败，尝试重启Pod
           const errorMsg = scriptError instanceof Error ? scriptError.message : String(scriptError);
@@ -500,18 +500,18 @@ export class ComfyUIController {
         this.addResetLog(`执行恢复/重启操作时出错: ${errorMsg}`, true);
         // 继续执行，不中断整个重置过程
       }
-      
+
       this.addResetLog('ComfyUI重置完成');
       ctx.body = {
         success: true,
         message: 'ComfyUI已成功重置到初始状态'
       };
-      
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.addResetLog(`重置ComfyUI时发生错误: ${errorMessage}`, true);
       logger.error(`[API] 重置ComfyUI时发生错误: ${errorMessage}`);
-      
+
       ctx.status = 500;
       ctx.body = {
         success: false,
@@ -520,18 +520,18 @@ export class ComfyUIController {
       };
     }
   }
-  
+
   // 辅助方法：清空目录
   private async clearDirectory(dirPath: string, removeDir: boolean = false): Promise<void> {
     if (!fs.existsSync(dirPath)) {
       return;
     }
-    
+
     const entries = fs.readdirSync(dirPath, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name);
-      
+
       if (entry.isDirectory()) {
         await this.clearDirectory(fullPath, true);
       } else {
@@ -543,7 +543,7 @@ export class ComfyUIController {
         }
       }
     }
-    
+
     // 如果需要，删除目录本身
     if (removeDir) {
       try {
@@ -557,7 +557,7 @@ export class ComfyUIController {
   // 添加获取重置日志的新API方法
   async getResetLogs(ctx: Context): Promise<void> {
     logger.info('[API] 收到获取ComfyUI重置日志请求');
-    
+
     // 如果内存中没有日志，尝试从文件读取
     if (this.resetLogs.length === 0) {
       try {
@@ -571,7 +571,7 @@ export class ComfyUIController {
         logger.error(`读取重置日志文件失败: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
-    
+
     ctx.body = {
       logs: this.resetLogs
     };
@@ -583,23 +583,23 @@ export const isComfyUIRunning = (): Promise<boolean> => {
   return new Promise((resolve) => {
     const socket = new net.Socket();
     const timeout = 1000;
-    
+
     socket.setTimeout(timeout);
     socket.on('connect', () => {
       socket.destroy();
       resolve(true);
     });
-    
+
     socket.on('timeout', () => {
       socket.destroy();
       resolve(false);
     });
-    
+
     socket.on('error', () => {
       socket.destroy();
       resolve(false);
     });
-    
+
     socket.connect(config.comfyui.port, 'localhost');
   });
 };
@@ -610,7 +610,7 @@ const getNotRunningHtml = () => {
   <!DOCTYPE html>
   <html>
   <head>
-    <title>ComfyUI 未启动</title>
+    <title>ComfyUI is unavailable</title>
     <meta charset="utf-8">
     <style>
       body {
@@ -620,7 +620,7 @@ const getNotRunningHtml = () => {
         align-items: center;
         height: 100vh;
         margin: 0;
-        background-color: #f5f5f5;
+        background-color: #ffffff;
       }
       .container {
         text-align: center;
@@ -628,15 +628,21 @@ const getNotRunningHtml = () => {
         background-color: white;
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 400px;
+        width: 100%;
       }
       h1 {
-        color: #e74c3c;
+        color: #000000;
+        font-size: 24px;
+        margin-bottom: 1rem;
       }
       p {
-        margin: 1rem 0;
+        color: #6c757d;
+        font-size: 14px;
+        margin: 0.5rem 0;
       }
       .retry-btn {
-        background-color: #3498db;
+        background-color: #007bff;
         color: white;
         border: none;
         padding: 10px 20px;
@@ -646,21 +652,22 @@ const getNotRunningHtml = () => {
         margin-top: 1rem;
       }
       .retry-btn:hover {
-        background-color: #2980b9;
+        background-color: #0056b3;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>ComfyUI 未启动</h1>
-      <p>ComfyUI 服务目前未运行或无法访问。</p>
-      <p>请确保 ComfyUI 服务已启动并正在监听端口 ${config.comfyui.port}。</p>
-      <button class="retry-btn" onclick="window.location.reload()">重试</button>
+      <h1>ComfyUI is unavailable</h1>
+      <p>The ComfyUI service is currently not running or cannot be accessed.</p>
+      <p>Please contact your Olares administrator.</p>
+      <button class="retry-btn" onclick="window.location.reload()">Retry</button>
     </div>
   </body>
   </html>
   `;
 };
+
 
 // 创建代理服务器
 export const createComfyUIProxy = () => {
@@ -668,7 +675,7 @@ export const createComfyUIProxy = () => {
     target: `http://localhost:${config.comfyui.port}`,
     ws: true,
   });
-  
+
   // 添加错误处理
   proxy.on('error', (err, req, res) => {
     console.error('代理请求出错:', err);
@@ -677,10 +684,10 @@ export const createComfyUIProxy = () => {
       res.end('代理请求出错');
     }
   });
-  
+
   const server = http.createServer(async (req, res) => {
     const comfyRunning = await isComfyUIRunning();
-    
+
     if (comfyRunning) {
       proxy.web(req, res);
     } else {
@@ -688,17 +695,17 @@ export const createComfyUIProxy = () => {
       res.end(getNotRunningHtml());
     }
   });
-  
+
   // 处理WebSocket连接
   server.on('upgrade', async (req, socket, head) => {
     const comfyRunning = await isComfyUIRunning();
-    
+
     if (comfyRunning) {
       proxy.ws(req, socket, head);
     } else {
       socket.end('HTTP/1.1 503 Service Unavailable\r\n\r\n');
     }
   });
-  
+
   return server;
-}; 
+};

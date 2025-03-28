@@ -2,7 +2,21 @@
   <div class="card-container full-width q-mb-lg">
     <div class="card-header full-width q-px-xl q-py-lg">
       <slot name="header">
-        <div class="text-h6">{{ label }}</div>
+        <div class="row justify-between">
+          <slot name="header-start">
+            <div class="text-h6">{{ title }}</div>
+          </slot>
+          <slot name="header-end">
+            <q-btn
+              class="btn-size-sm text-grey-8"
+              :class="label ? '' : 'btn-no-text'"
+              :label="label"
+              :icon="icon"
+              outline
+              @click="emit('onIconClick')"
+            />
+          </slot>
+        </div>
       </slot>
     </div>
 
@@ -19,7 +33,7 @@
       class="full-width"
     >
       <slot>
-        <p>这里是默认内容区域。</p>
+        <p></p>
       </slot>
     </div>
   </div>
@@ -27,9 +41,17 @@
 
 <script setup lang="ts">
 defineProps({
-  label: {
+  title: {
     type: String,
     default: '',
+  },
+  icon: {
+    type: String,
+    required: false,
+  },
+  label: {
+    type: String,
+    required: false,
   },
   borderLess: {
     type: Boolean,
@@ -52,6 +74,8 @@ defineProps({
     default: 44,
   },
 });
+
+const emit = defineEmits(['onIconClick'])
 </script>
 
 <style scoped lang="scss">

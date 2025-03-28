@@ -5,8 +5,6 @@ export default {
     intact: 'Intact',
     folder: 'Folder',
     network: 'Network',
-    working: 'Working',
-    timeout: 'Timeout',
     resource_pack: 'Resource Pack',
     installed: 'Installed',
     download: 'Download',
@@ -21,6 +19,14 @@ export default {
     click_to_view: 'Click to view the log.',
     confirm: 'Confirm',
     cancel: 'Cancel',
+    test: 'Test',
+    unknown: 'Unknown'
+  },
+  network: {
+    working: 'Working',
+    timeout: 'Timeout',
+    testing: 'Testing',
+    choose_a_base_url: 'Choose a base URL'
   },
   menu: {
     navigation_menu: 'Navigation Menu',

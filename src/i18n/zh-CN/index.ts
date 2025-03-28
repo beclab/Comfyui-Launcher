@@ -4,8 +4,6 @@ export default {
     intact: '完整',
     folder: '文件夹',
     network: '网络环境',
-    working: '可访问',
-    timeout: '不可访问',
     resource_pack: '资源包安装',
     installed: '已安装',
     download: '下载',
@@ -20,6 +18,14 @@ export default {
     click_to_view: '点击查看日志',
     confirm: '确认',
     cancel: '取消',
+    test: '测试',
+    unknown: '未知',
+  },
+  network: {
+    working: '可访问',
+    timeout: '访问超时',
+    testing: '检测中',
+    choose_a_base_url: '选择访问的 URL 地址'
   },
   menu: {
     navigation_menu: '导航菜单',
