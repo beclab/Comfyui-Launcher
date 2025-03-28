@@ -10,6 +10,7 @@
 
 
 const { configure } = require('quasar/wrappers');
+const commonjs = require('@rollup/plugin-commonjs');
 
 
 module.exports = configure(function (/* ctx */) {
@@ -43,6 +44,7 @@ module.exports = configure(function (/* ctx */) {
       'roboto-font', // optional, you are not bound to it
       'material-icons', // optional, you are not bound to it
       'material-symbols-outlined', // 添加Material Symbols轮廓图标
+      'material-symbols-rounded',
     ],
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
@@ -79,7 +81,10 @@ module.exports = configure(function (/* ctx */) {
           eslint: {
             lintCommand: 'eslint "./**/*.{js,ts,mjs,cjs,vue}"'
           }
-        }, { server: false }]
+        }, { server: false }],
+        commonjs({
+          include: ['node_modules/@bytetrade'],
+        })
       ]
     },
 

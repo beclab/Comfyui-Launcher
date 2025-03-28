@@ -1,10 +1,7 @@
 <template>
   <div class="package-install-item row justify-between items-center">
     <div class="package-install-content row">
-      <q-img
-        class="package-install-img"
-        :src="getRequireImage(package.icon)"
-      />
+      <q-img class="package-install-img" :src="getRequireImage(package.icon)" />
       <div class="package-install-text column justify-start q-px-md">
         <div class="row justify-start">
           <div class="text-body2 text-ink-1">{{ package.name }}</div>
@@ -18,21 +15,27 @@
           </div>
 
           <div
-            v-if="!package.installed"
-            class="package-install-menu-uninstall q-ml-xs text-overline text-negative"
+            class="package-install-menu q-ml-xs text-overline"
+            :class="
+              package.installed
+                ? 'bg-green-alpha text-positive'
+                : 'bg-red-alpha text-negative'
+            "
           >
-            {{ t('base.missing') }}
+            {{ package.installed ? t('base.intact') : t('base.missing') }}
           </div>
         </div>
 
-        <div class="text-body2 text-ink-3 package-install-desc">{{ package.description }}</div>
+        <div class="text-body2 text-ink-3 package-install-desc">
+          {{ package.description }}
+        </div>
       </div>
     </div>
 
     <q-btn
-      :class="package.installed ? 'text-positive' : 'text-info'"
+      :class="package.installed ? 'text-positive' : 'text-light-blue-default'"
       :label="package.installed ? t('base.installed') : t('base.download')"
-      class="btn-size-md"
+      class="btn-size-md text-body1"
       outline
       no-caps
     />
@@ -79,11 +82,6 @@ const emit = defineEmits(['onDownloadClick', 'onMenuClick']);
         padding: 4px 8px;
       }
 
-      .package-install-menu-uninstall {
-        @extend .package-install-menu;
-        background: $red-alpha;
-      }
-
       .package-install-desc {
         overflow: hidden;
         text-overflow: ellipsis;
@@ -91,7 +89,6 @@ const emit = defineEmits(['onDownloadClick', 'onMenuClick']);
         -webkit-line-clamp: 1;
         -webkit-box-orient: vertical;
       }
-
     }
   }
 }

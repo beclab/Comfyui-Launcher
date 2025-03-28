@@ -1,13 +1,22 @@
 export default {
   base: {
+    comfyui : 'ComfyUI',
     missing: 'Missing',
+    intact: 'Intact',
     folder: 'Folder',
     network: 'Network',
-    accessible: 'Accessible',
-    inaccessible: 'Inaccessible',
+    working: 'Working',
+    timeout: 'Timeout',
     resource_pack: 'Resource Pack',
     installed: 'Installed',
     download: 'Download',
+    start: 'start',
+    open: 'open',
+    stop: 'stop',
+    view_log: 'View log',
+    erase_and_restore: 'Erase and Restore',
+    running: 'running',
+    stopped: 'stopped'
   },
   menu: {
     navigation_menu: 'Navigation Menu',

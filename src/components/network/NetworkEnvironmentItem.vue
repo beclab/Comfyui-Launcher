@@ -12,12 +12,12 @@
     <div class="row justify-end items-center">
       <div class="row items-center q-pa-xs">
         <div
-          :class="available ? 'bg-green-default' : 'bg-yellow-default'"
+          :class="available ? 'bg-green-default' : 'bg-red-default'"
           class="network-indicator q-mr-xs"
         />
       </div>
       <div class="text-body2 text-ink-2">
-        {{ available ? t('base.accessible') : t('base.inaccessible') }}
+        {{ available ? t('base.working') : t('base.timeout') }}
       </div>
     </div>
   </div>
