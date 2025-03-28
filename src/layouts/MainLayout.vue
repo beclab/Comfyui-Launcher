@@ -1,6 +1,5 @@
 <template>
-  <q-layout view="hHh lpR fFf">
-
+  <q-layout view="hHh lpR fFf" class="main-layout">
     <q-drawer
       v-model="leftDrawerOpen"
       show-if-above
@@ -19,81 +18,81 @@
         :show-theme-toggle="false"
         @select="onMenuChange"
       />
-<!--      <q-list class="custom-menu">-->
-<!--        <q-item-label header>导航菜单</q-item-label>-->
+      <!--      <q-list class="custom-menu">-->
+      <!--        <q-item-label header>导航菜单</q-item-label>-->
 
-<!--        <q-item clickable to="/" exact>-->
-<!--          <q-item-section avatar>-->
-<!--            <q-icon name="sym_o_home" />-->
-<!--          </q-item-section>-->
-<!--          <q-item-section>首页</q-item-section>-->
-<!--        </q-item>-->
+      <!--        <q-item clickable to="/" exact>-->
+      <!--          <q-item-section avatar>-->
+      <!--            <q-icon name="sym_o_home" />-->
+      <!--          </q-item-section>-->
+      <!--          <q-item-section>首页</q-item-section>-->
+      <!--        </q-item>-->
 
-<!--        <q-item clickable to="/discovery">-->
-<!--          <q-item-section avatar>-->
-<!--            <q-icon name="sym_o_explore" />-->
-<!--          </q-item-section>-->
-<!--          <q-item-section>探索发现</q-item-section>-->
-<!--        </q-item>-->
+      <!--        <q-item clickable to="/discovery">-->
+      <!--          <q-item-section avatar>-->
+      <!--            <q-icon name="sym_o_explore" />-->
+      <!--          </q-item-section>-->
+      <!--          <q-item-section>探索发现</q-item-section>-->
+      <!--        </q-item>-->
 
-<!--        <q-item clickable to="/models">-->
-<!--          <q-item-section avatar>-->
-<!--            <q-icon name="sym_o_database" />-->
-<!--          </q-item-section>-->
-<!--          <q-item-section>模型管理</q-item-section>-->
-<!--        </q-item>-->
+      <!--        <q-item clickable to="/models">-->
+      <!--          <q-item-section avatar>-->
+      <!--            <q-icon name="sym_o_database" />-->
+      <!--          </q-item-section>-->
+      <!--          <q-item-section>模型管理</q-item-section>-->
+      <!--        </q-item>-->
 
-<!--        <q-item clickable to="/plugins">-->
-<!--          <q-item-section avatar>-->
-<!--            <q-icon name="sym_o_extension" />-->
-<!--          </q-item-section>-->
-<!--          <q-item-section>插件管理</q-item-section>-->
-<!--        </q-item>-->
+      <!--        <q-item clickable to="/plugins">-->
+      <!--          <q-item-section avatar>-->
+      <!--            <q-icon name="sym_o_extension" />-->
+      <!--          </q-item-section>-->
+      <!--          <q-item-section>插件管理</q-item-section>-->
+      <!--        </q-item>-->
 
-<!--        <q-item clickable to="/python-dependencies">-->
-<!--          <q-item-section avatar>-->
-<!--            <q-icon name="sym_o_code" />-->
-<!--          </q-item-section>-->
-<!--          <q-item-section>python依赖管理</q-item-section>-->
-<!--        </q-item>-->
+      <!--        <q-item clickable to="/python-dependencies">-->
+      <!--          <q-item-section avatar>-->
+      <!--            <q-icon name="sym_o_code" />-->
+      <!--          </q-item-section>-->
+      <!--          <q-item-section>python依赖管理</q-item-section>-->
+      <!--        </q-item>-->
 
-<!--        <q-item clickable to="/reset">-->
-<!--          <q-item-section avatar>-->
-<!--            <q-icon name="sym_o_restart_alt" />-->
-<!--          </q-item-section>-->
-<!--          <q-item-section>还原初始状态</q-item-section>-->
-<!--        </q-item>-->
+      <!--        <q-item clickable to="/reset">-->
+      <!--          <q-item-section avatar>-->
+      <!--            <q-icon name="sym_o_restart_alt" />-->
+      <!--          </q-item-section>-->
+      <!--          <q-item-section>还原初始状态</q-item-section>-->
+      <!--        </q-item>-->
 
-<!--        <q-item clickable to="/about">-->
-<!--          <q-item-section avatar>-->
-<!--            <q-icon name="sym_o_info" />-->
-<!--          </q-item-section>-->
-<!--          <q-item-section>关于</q-item-section>-->
-<!--        </q-item>-->
+      <!--        <q-item clickable to="/about">-->
+      <!--          <q-item-section avatar>-->
+      <!--            <q-icon name="sym_o_info" />-->
+      <!--          </q-item-section>-->
+      <!--          <q-item-section>关于</q-item-section>-->
+      <!--        </q-item>-->
 
-<!--        <q-item-->
-<!--          to="/network-config"-->
-<!--          exact-->
-<!--          clickable-->
-<!--          v-ripple-->
-<!--          active-class="active-menu-link"-->
-<!--        >-->
-<!--          <q-item-section avatar>-->
-<!--            <q-icon name="settings_ethernet" />-->
-<!--          </q-item-section>-->
-<!--          <q-item-section>网络配置</q-item-section>-->
-<!--        </q-item>-->
-<!--      </q-list>-->
+      <!--        <q-item-->
+      <!--          to="/network-config"-->
+      <!--          exact-->
+      <!--          clickable-->
+      <!--          v-ripple-->
+      <!--          active-class="active-menu-link"-->
+      <!--        >-->
+      <!--          <q-item-section avatar>-->
+      <!--            <q-icon name="settings_ethernet" />-->
+      <!--          </q-item-section>-->
+      <!--          <q-item-section>网络配置</q-item-section>-->
+      <!--        </q-item>-->
+      <!--      </q-list>-->
     </q-drawer>
 
     <q-page-container>
-      <router-view style="padding: 56px 44px 0 44px"/>
+      <router-view style="padding: 56px 44px 0 44px" />
     </q-page-container>
   </q-layout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import CustomMenu from 'components/base/Menu/CustomMenu.vue';
 import { useMenuStore } from 'stores/menu';
 import { useI18n } from 'vue-i18n';
@@ -168,37 +167,18 @@ onMounted(() => {
     leftDrawerOpen.value = true;
   }
 });
+
+watch(
+  () => menuStore.currentMenu,
+  () => {
+    router.push({ name: menuStore.currentMenu });
+  }
+);
 </script>
 
 <style lang="scss" scoped>
-.my-active-link {
+.main-layout ::v-deep(.my-active-link) {
   color: $blue-default !important;
   background-color: $blue-soft !important;
 }
-
-//.custom-menu .q-item__section--avatar {
-//  padding-right: 8px; /* 减少右侧内边距 */
-//  min-width: 36px; /* 减小图标区域的最小宽度 */
-//}
-//
-//.custom-menu .q-item__section--side {
-//  padding-right: 8px; /* 如果有侧边区域也减少内边距 */
-//}
-//
-///* 减少菜单项之间的间距 */
-//.custom-menu .q-item {
-//  min-height: 40px; /* 减小每个项目的最小高度 */
-//  padding: 4px 16px; /* 减少上下内边距 */
-//}
-//
-///* 减少标题的下方间距 */
-//.custom-menu .q-item-label.q-item-label--header {
-//  padding: 8px 16px 4px; /* 减少下方内边距 */
-//  min-height: auto;
-//}
-//
-///* 让文字垂直居中对齐 */
-//.custom-menu .q-item__section--main {
-//  padding: 4px 0; /* 减少内边距 */
-//}
 </style>

@@ -93,96 +93,40 @@
       </div>
     </div>
 
-    <!-- 添加日志显示区域 -->
-    <q-card class="q-mt-md log-container">
-      <q-expansion-item
-        v-model="logsExpanded"
-        icon="report_problem"
-        label="ComfyUI 启动日志"
-        header-class="bg-red-1 text-red-9"
-        expand-icon-class="text-red-9"
-        default-opened
-      >
-        <q-card>
-          <q-card-section>
-            <div class="text-subtitle2 q-mb-sm">
-              启动过程中发生错误，请查看以下日志信息：
-            </div>
-            <q-scroll-area style="height: 300px" class="bg-grey-1">
-              <div class="q-pa-sm log-content">
-                <div
-                  v-for="(log, index) in logs"
-                  :key="index"
-                  :class="{ 'log-error': log.includes('ERROR') }"
-                >
-                  {{ log }}
-                </div>
-                <div
-                  v-if="logs.length === 0"
-                  class="text-grey-6 text-center q-pa-md"
-                >
-                  正在加载日志...
-                </div>
-              </div>
-            </q-scroll-area>
-            <div class="row justify-end q-mt-md">
-              <q-btn
-                flat
-                dense
-                color="primary"
-                icon="refresh"
-                @click="fetchLogs"
-                label="刷新日志"
-              />
-              <q-btn
-                flat
-                dense
-                color="negative"
-                icon="close"
-                @click="showLogs = false"
-                label="关闭"
-              />
-            </div>
-          </q-card-section>
-        </q-card>
-      </q-expansion-item>
-    </q-card>
+    <div class="warning-bg row justify-start q-px-md q-py-xs bg-red-soft">
+      <q-icon name="sym_r_error" size="16px" color="negative" />
+      <div class="text-body3 text-negative q-ml-sm">
+        <span>{{ t('base.startup_error') }}</span>
+        <span
+          style="text-decoration: underline"
+          class="cursor-pointer"
+          @click="openLogDialog"
+        >
+          {{ t('base.click_to_view') }}
+        </span>
+      </div>
+    </div>
 
-    <!-- 自定义确认对话框 -->
-    <q-dialog v-model="showConfirmDialog" persistent>
-      <q-card>
-        <q-card-section class="row items-center">
-          <q-avatar icon="warning" color="warning" text-color="white" />
-          <span class="q-ml-sm">缺少基础模型</span>
-        </q-card-section>
-
-        <q-card-section>
-          您尚未安装所有必要的基础模型，这可能导致ComfyUI无法正常生成图像。是否继续启动？
-        </q-card-section>
-
-        <q-card-actions align="right">
-          <q-btn flat label="去安装模型" color="primary" @click="goToModels" />
-          <q-btn
-            flat
-            label="仍然启动"
-            color="negative"
-            @click="confirmStartComfyUI"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <q-separator
+      class="bg-separator full-width q-mt-xl"
+      style="margin-bottom: 44px"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { modelsApi, Model } from '../api';
-import api from '../api';
-import { useQuasar } from 'quasar';
-import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import BtPopup from 'components/base/BtPopup.vue';
 import BtPopupItem from 'components/base/BtPopupItem.vue';
+import ComfyUILogDialog from 'components/dialog/ComfyUILogDialog.vue';
+import ModelMissingDialog from 'components/dialog/ModelMissingDialog.vue';
+import ConfirmRestoreDialog from 'components/dialog/ConfirmRestoreDialog.vue';
+import RestoreWarningDialog from 'components/dialog/RestoreWarningDialog.vue';
+import BtPopup from 'components/base/BtPopup.vue';
+import { useLogStore } from 'stores/logs';
+import { modelsApi, Model } from '../api';
+import { useI18n } from 'vue-i18n';
+import { useQuasar } from 'quasar';
+import api from '../api';
 
 // 定义模型接口
 interface EssentialModel {
@@ -207,7 +151,6 @@ interface ConfyuiMenu {
 
 const { t } = useI18n();
 const $q = useQuasar();
-const router = useRouter();
 const isConnected = ref(false);
 const models = ref<Model[]>([]);
 const isStarting = ref(false);
@@ -233,19 +176,21 @@ const confyuiMenus = ref<ConfyuiMenu[]>([
 const essentialModels = ref<EssentialModel[]>([]);
 const installedModels = ref<InstalledModel[]>([]);
 
-// 添加对话框控制变量
-const showConfirmDialog = ref(false);
-
-// 添加日志相关变量
-const showLogs = ref(false);
-const logsExpanded = ref(true);
-const logs = ref<string[]>([]);
+const logStore = useLogStore();
 const openLogDialog = () => {
-  //log
-}
+  $q.dialog({
+    component: ComfyUILogDialog,
+  });
+};
 const resetComfyui = () => {
-  //log
-}
+  $q.dialog({
+    component: RestoreWarningDialog,
+  }).onOk(() => {
+    $q.dialog({
+      component: ConfirmRestoreDialog,
+    });
+  });
+};
 
 const checkConnection = async () => {
   try {
@@ -260,21 +205,6 @@ const checkConnection = async () => {
   } catch (error) {
     isConnected.value = false;
     console.error('连接 ComfyUI 失败:', error);
-  }
-};
-
-// 获取ComfyUI日志
-const fetchLogs = async () => {
-  try {
-    const response = await api.getLogs();
-    if (response && response.body && response.body.logs) {
-      logs.value = response.body.logs;
-    } else {
-      logs.value = ['无法获取日志数据'];
-    }
-  } catch (error) {
-    console.error('获取日志失败:', error);
-    logs.value = ['获取日志失败，请稍后重试'];
   }
 };
 
@@ -314,31 +244,26 @@ const checkAndStartComfyUI = async () => {
   const allEssentialModelsInstalled = await checkEssentialModels();
 
   if (!allEssentialModelsInstalled) {
-    // 显示自定义对话框
-    showConfirmDialog.value = true;
+    $q.dialog({
+      component: ModelMissingDialog,
+    })
+      .onOk(() => {
+        //Do Nothing
+      })
+      .onCancel(() => {
+        startComfyUI();
+      });
   } else {
     // 所有基础模型已安装，直接启动
     startComfyUI();
   }
 };
 
-// 确认启动ComfyUI
-const confirmStartComfyUI = () => {
-  showConfirmDialog.value = false;
-  startComfyUI();
-};
-
-// 前往模型页面
-const goToModels = () => {
-  showConfirmDialog.value = false;
-  router.push('/models');
-};
-
 // 启动 ComfyUI
 const startComfyUI = async () => {
   try {
     isStarting.value = true;
-    showLogs.value = false; // 重置日志显示状态
+    logStore.showLogs = false; // 重置日志显示状态
 
     const response = await api.startComfyUI();
 
@@ -368,14 +293,12 @@ const startComfyUI = async () => {
       // 确保无论如何都能显示日志区域
       if (response?.body?.logs && response.body.logs.length > 0) {
         console.log('收到日志数据，长度:', response.body.logs.length);
-        logs.value = response.body.logs;
-        showLogs.value = true;
-        logsExpanded.value = true; // 确保日志区域展开
+        logStore.logs = response.body.logs;
+        logStore.showLogs = true;
       } else {
         // 否则尝试获取日志
-        await fetchLogs();
-        showLogs.value = true;
-        logsExpanded.value = true; // 确保日志区域展开
+        await logStore.fetchLogs();
+        logStore.showLogs = true;
       }
     }
   } catch (error) {
@@ -387,9 +310,8 @@ const startComfyUI = async () => {
     console.error('启动 ComfyUI 失败:', error);
 
     // 启动异常时尝试获取日志
-    await fetchLogs();
-    showLogs.value = true;
-    logsExpanded.value = true; // 确保日志区域展开
+    await logStore.fetchLogs();
+    logStore.showLogs = true;
   }
 };
 
@@ -481,36 +403,17 @@ onUnmounted(() => {
       }
     }
   }
+
+  .status-panel-btn {
+    width: 96px;
+    height: 32px;
+    border-radius: 8px;
+    padding: 0 !important;
+    text-transform: capitalize;
+  }
 }
 
-.status-panel-btn {
-  width: 96px;
-  height: 32px;
-  border-radius: 8px;
-  padding: 0 !important;
-  text-transform: capitalize;
-}
-
-/* 保留日志相关样式 */
-.log-container {
-  border-left: 4px solid #f44336;
-  margin-top: 15px;
-}
-
-.log-content {
-  font-family: monospace;
-  white-space: pre-wrap;
-  word-break: break-all;
-  line-height: 1.5;
-}
-
-.log-error {
-  color: #f44336;
-  font-weight: bold;
-}
-
-/* 添加深色风格的按钮样式 */
-.dark-style {
-  border: 1px solid currentColor;
+.warning-bg {
+  border-radius: 12px;
 }
 </style>

@@ -10,12 +10,10 @@
     -->
 
     <!-- 状态控制区域 -->
-    <div class="q-mb-lg">
-      <ComfyUIStatus />
-    </div>
+    <comfy-u-i-status/>
 
     <!-- 网络环境组件 -->
-    <network-environment-panel />
+    <network-environment-panel/>
 
     <!-- 文件夹访问组件 -->
     <folder-access-panel />

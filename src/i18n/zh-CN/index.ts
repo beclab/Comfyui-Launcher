@@ -15,7 +15,11 @@ export default {
     view_log: '查看日志',
     erase_and_restore: '抹掉并还原',
     running: '运行中',
-    stopped: '已停止'
+    stopped: '已停止',
+    startup_error: '启动过程中发生错误. ',
+    click_to_view: '点击查看日志',
+    confirm: '确认',
+    cancel: '取消',
   },
   menu: {
     navigation_menu: '导航菜单',
@@ -32,5 +36,25 @@ export default {
     essential_models_pack_desc: '包含ComfyUI常见工作流所需的基础模型。',
     controlNet_models_pack: 'ControlNet模型包',
     controlNet_models_pack_desc: '包含ControlNet插件相关的所有模型。',
-  }
+  },
+  dialog: {
+    comfyui_log: 'ComfyUl Log',
+    essential_models_missing: '必要模型缺失',
+    essential_models_missing_desc:
+      '一些必要的模型缺失。ComfyUI 可能无法正确生成图像。您是否希望继续启动？',
+    remember_choice: '记住我的选择，并在未来跳过此确认',
+    start_anyway: '仍然启动',
+    download_models: '下载模型',
+    erase_and_restore_title: '确认清除并恢复',
+    erase_and_restore_desc: '您确定要恢复 ComfyUI 吗？这将会：',
+    erase_and_restore_point1: '清除所有用户设置',
+    erase_and_restore_point2: '删除所有已安装的插件',
+    erase_and_restore_point3: '重置所有工作流和项目',
+    erase_and_restore_point4: '但已下载的模型将保持不变',
+    erase_and_restore_confirm: '清除并恢复',
+    irreversible_warning_title: '确认清除并恢复',
+    irreversible_warning_desc:
+      '此操作不可逆。如果您确实想继续，请在下方输入 CONFIRM。如果您只是遇到临时问题，请考虑重新启动 ComfyUI，而不是恢复。',
+    confirm_placeholder: '请输入“CONFIRM”以继续此操作。',
+  },
 };

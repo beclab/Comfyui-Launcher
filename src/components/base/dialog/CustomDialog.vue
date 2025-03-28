@@ -17,17 +17,20 @@
         @close="onCancel"
       />
 
-      <div class="dialog-content">
+      <div
+        class="dialog-content"
+        :style="{ marginBottom: !ok && !cancel ? '0' : '32px' }"
+      >
         <slot />
       </div>
 
       <dialog-footer
         :ok="ok"
+        :skip="skip"
         :cancel="cancel"
         :okStyle="okStyle"
         :loading="okLoading"
         :platform="platform"
-        :skip="skip"
         :okDisabled="okDisabled"
         :okClass="okClass"
         @onCancel="onCancel"
@@ -52,20 +55,20 @@ import DialogFooter from './DialogFooter.vue';
 import { Platform, Size } from './type';
 
 interface Props {
-  platform: Platform;
+  platform?: Platform;
   size: Size;
   title: string;
-  icon: string;
+  icon?: string;
   ok: string | boolean;
-  okStyle: object;
-  okClass: string;
+  okStyle?: object;
+  okClass?: string;
   cancel: string | boolean;
-  okLoading: string | boolean;
-  skip: string | boolean;
-  fullWidth: boolean;
-  fullHeight: boolean;
-  okDisabled: boolean;
-  noRouteDismiss: boolean;
+  okLoading?: string | boolean;
+  skip?: string | boolean;
+  fullWidth?: boolean;
+  fullHeight?: boolean;
+  okDisabled?: boolean;
+  noRouteDismiss?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
