@@ -34,16 +34,20 @@ import { useI18n } from 'vue-i18n';
 import RouteEnums from 'src/router/routeEnums';
 import { useRouter } from 'vue-router';
 import { useNetworkStore } from 'stores/network';
+import { useEssentialModelStore } from 'stores/essentialModel';
+
+const { t } = useI18n();
+const router = useRouter();
+const isInIframe = ref(false);
+const leftDrawerOpen = ref(false);
 
 const menuStore = useMenuStore();
 const networkStore = useNetworkStore();
-const leftDrawerOpen = ref(false);
-const isInIframe = ref(false);
-const router = useRouter();
-const { t } = useI18n();
+const essentialModelStore = useEssentialModelStore();
 
 //init
 networkStore.init();
+essentialModelStore.fetchEssentialModels();
 
 // function toggleLeftDrawer() {
 //   leftDrawerOpen.value = !leftDrawerOpen.value;

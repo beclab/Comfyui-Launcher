@@ -18,25 +18,31 @@
 <script lang="ts" setup>
 import PackageInstallItem from 'components/package/PackageInstallItem.vue';
 import CardContainer from 'components/base/CardContainer.vue';
+import { useEssentialModelStore } from 'stores/essentialModel';
 import { PackageInstall } from 'src/types/contants';
 import { useI18n } from 'vue-i18n';
+import { computed } from 'vue';
 
 const { t } = useI18n();
-const packages : PackageInstall[] = [
-  {
-    name: t('package.essential_models_pack'),
-    description: t('package.essential_models_pack_desc'),
-    menuOptions: [t('package.essential')],
-    icon: 'essential_model.png',
-    installed: false
-  },
-  {
-    name: t('package.controlNet_models_pack'),
-    description: t('package.controlNet_models_pack_desc'),
-    icon: 'control_net_model.png',
-    installed: true,
-  },
-];
+const essentialModelStore = useEssentialModelStore();
+const packages = computed(() => {
+  return [
+    {
+      icon: 'essential_model.png',
+      name: t('package.essential_models_pack'),
+      description: t('package.essential_models_pack_desc'),
+      menuOptions: [t('package.essential')],
+      installed: essentialModelStore.allEssentialModelsInstalled,
+    },
+    {
+      icon: 'control_net_model.png',
+      name: t('package.controlNet_models_pack'),
+      description: t('package.controlNet_models_pack_desc'),
+      menuOptions: [],
+      installed: true,
+    },
+  ];
+});
 
 function downloadPackage(pkg: PackageInstall) {
   if (!pkg.installed) {
@@ -51,5 +57,4 @@ function downloadOption(pkg: PackageInstall, option: string) {
 }
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
