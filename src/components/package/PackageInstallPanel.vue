@@ -18,8 +18,8 @@
 <script lang="ts" setup>
 import PackageInstallItem from 'components/package/PackageInstallItem.vue';
 import CardContainer from 'components/base/CardContainer.vue';
-import { useI18n } from 'vue-i18n';
 import { PackageInstall } from 'src/types/contants';
+import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 const packages : PackageInstall[] = [

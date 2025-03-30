@@ -1,5 +1,8 @@
 <template>
-  <q-page class="q-pa-md">    
+  <q-page class="my-page-container">
+
+    <title-view :title="t('menu.inspiration_discovery')" />
+
     <!-- 标签页区域 -->
     <div class="q-mt-md">
       <q-tabs
@@ -44,9 +47,12 @@ import LatestModels from '../components/models/LatestModels.vue';
 import HotModels from '../components/models/HotModels.vue';
 import LatestWorkflows from '../components/workflows/LatestWorkflows.vue';
 import HotWorkflows from '../components/workflows/HotWorkflows.vue';
+import TitleView from 'components/base/TitleView.vue';
+import { useI18n } from 'vue-i18n';
 
 // 设置当前激活的标签页
 const tab = ref('latestModels');
+const { t } = useI18n();
 </script>
 
 <style scoped>
@@ -95,4 +101,4 @@ h1 {
   margin: 0;
   color: #666;
 }
-</style> 
+</style>

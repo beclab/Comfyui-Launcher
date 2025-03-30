@@ -1,6 +1,6 @@
 <template>
-  <q-page padding>
-    <div class="text-h4 q-mb-lg">网络配置</div>
+  <q-page class="my-page-container">
+    <title-view :title="t('menu.network_configuration')" />
 
     <div v-if="networkStore.loading" class="text-center q-pa-lg">
       <q-spinner size="3em" color="primary" />
@@ -29,9 +29,11 @@
 import { useNetworkStore } from 'stores/network';
 import { NetworkType } from 'src/types/contants';
 import NetworkConfigItem from 'components/network/NetworkConfigItem.vue';
+import TitleView from 'components/base/TitleView.vue';
+import { useI18n } from 'vue-i18n';
 
 const networkStore = useNetworkStore();
-
+const { t } = useI18n();
 </script>
 
 <style scoped></style>

@@ -1,7 +1,9 @@
 <template>
-  <q-page padding>
+  <q-page class="my-page-container">
+    <title-view :title="t('menu.plugin_management')" :line="true" />
+
     <table-page :tab-array="tabArray" v-model="activeTab">
-      <template v-slot:header-end> </template>
+      <template v-slot:header-end></template>
 
       <template v-slot:page-1>
         <div v-if="activeTab === 'plugins'">
@@ -107,8 +109,8 @@
                 <template v-slot:append>
                   <q-icon name="public" />
                   <q-tooltip
-                    >选择GitHub代理可以帮助在网络受限环境中更顺畅地安装插件</q-tooltip
-                  >
+                    >选择GitHub代理可以帮助在网络受限环境中更顺畅地安装插件
+                  </q-tooltip>
                 </template>
               </q-select>
             </div>
@@ -150,12 +152,12 @@
                       </q-avatar>
                     </q-item-section>
                     <q-item-section>
-                      <q-item-label class="text-weight-bold">{{
-                        plugin.name
-                      }}</q-item-label>
+                      <q-item-label class="text-weight-bold"
+                        >{{ plugin.name }}
+                      </q-item-label>
                       <q-item-label caption
-                        >作者: {{ plugin.author }}</q-item-label
-                      >
+                        >作者: {{ plugin.author }}
+                      </q-item-label>
                     </q-item-section>
                     <q-item-section side>
                       <div class="row items-center">
@@ -224,9 +226,9 @@
                       @click="togglePluginState(plugin)"
                       :loading="pluginStateChanging[plugin.id]"
                     >
-                      <q-tooltip>{{
-                        plugin.disabled ? '启用' : '禁用'
-                      }}</q-tooltip>
+                      <q-tooltip
+                        >{{ plugin.disabled ? '启用' : '禁用' }}
+                      </q-tooltip>
                     </q-btn>
                     <q-btn
                       flat
@@ -426,15 +428,17 @@
           <q-item>
             <q-item-section>
               <q-item-label caption>插件</q-item-label>
-              <q-item-label>{{
-                selectedOperation?.pluginName || selectedOperation?.pluginId
-              }}</q-item-label>
+              <q-item-label
+                >{{
+                  selectedOperation?.pluginName || selectedOperation?.pluginId
+                }}
+              </q-item-label>
             </q-item-section>
             <q-item-section>
               <q-item-label caption>操作类型</q-item-label>
-              <q-item-label>{{
-                getOperationName(selectedOperation?.type)
-              }}</q-item-label>
+              <q-item-label
+                >{{ getOperationName(selectedOperation?.type) }}
+              </q-item-label>
             </q-item-section>
             <q-item-section>
               <q-item-label caption>状态</q-item-label>
@@ -451,15 +455,19 @@
             </q-item-section>
             <q-item-section>
               <q-item-label caption>开始时间</q-item-label>
-              <q-item-label>{{
-                selectedOperation ? formatTime(selectedOperation.startTime) : ''
-              }}</q-item-label>
+              <q-item-label
+                >{{
+                  selectedOperation
+                    ? formatTime(selectedOperation.startTime)
+                    : ''
+                }}
+              </q-item-label>
             </q-item-section>
             <q-item-section v-if="selectedOperation?.endTime">
               <q-item-label caption>结束时间</q-item-label>
-              <q-item-label>{{
-                formatTime(selectedOperation.endTime)
-              }}</q-item-label>
+              <q-item-label
+                >{{ formatTime(selectedOperation.endTime) }}
+              </q-item-label>
             </q-item-section>
           </q-item>
         </q-card-section>
@@ -589,18 +597,18 @@
             <q-item v-if="selectedPlugin.installedOn">
               <q-item-section>
                 <q-item-label caption>安装日期</q-item-label>
-                <q-item-label>{{
-                  new Date(selectedPlugin.installedOn).toLocaleString()
-                }}</q-item-label>
+                <q-item-label
+                  >{{ new Date(selectedPlugin.installedOn).toLocaleString() }}
+                </q-item-label>
               </q-item-section>
             </q-item>
 
             <q-item>
               <q-item-section>
                 <q-item-label caption>安装方式</q-item-label>
-                <q-item-label>{{
-                  selectedPlugin.install_type || 'Git Clone'
-                }}</q-item-label>
+                <q-item-label
+                  >{{ selectedPlugin.install_type || 'Git Clone' }}
+                </q-item-label>
               </q-item-section>
             </q-item>
 
@@ -641,8 +649,11 @@ import { useQuasar, debounce } from 'quasar';
 import { QTableColumn } from 'quasar';
 import api from 'src/api';
 import { TabProps } from 'src/types/contants';
+import TitleView from 'components/base/TitleView.vue';
+import { useI18n } from 'vue-i18n';
 
 const $q = useQuasar();
+const { t } = useI18n();
 
 // 插件类型定义
 interface Plugin {

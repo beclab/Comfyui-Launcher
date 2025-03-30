@@ -32,3 +32,10 @@ export interface TabProps {
   key: string;
   label: string;
 }
+
+export interface FolderProps {
+  name: string;
+  path: string;
+  used: string | null;
+  available: string | null;
+}

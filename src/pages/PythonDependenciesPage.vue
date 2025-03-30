@@ -1,26 +1,25 @@
 <template>
-  <q-page padding>
-    <div class="q-pa-md">
-      <h4 class="q-mb-md">Python依赖库管理</h4>
+  <q-page class="my-page-container">
+    <title-view :title="t('menu.environment_management')" :line="true" />
 
-      <!-- 错误信息展示区域 -->
-      <q-card v-if="errorMessage" class="q-mb-md bg-red-1">
-        <q-card-section>
-          <div class="text-h6 text-negative">安装错误</div>
-          <pre class="error-message">{{ errorMessage }}</pre>
-          <div
-            v-if="errorMessage.includes('Internal Server Error')"
-            class="q-mt-md"
-          >
-            <p class="text-negative">服务器内部错误可能是由以下原因导致：</p>
-            <ul class="q-ml-md">
-              <li>Python环境配置问题 - 可能是虚拟环境或系统环境配置有误</li>
-              <li>权限问题 - 当前用户可能没有安装包的权限</li>
-              <li>网络问题 - 无法连接到PyPI源</li>
-              <li>依赖冲突 - 可能与已安装的其他包存在版本冲突</li>
-            </ul>
-            <p>如需安装Python包：</p>
-            <pre class="suggestion-code">
+    <!-- 错误信息展示区域 -->
+    <q-card v-if="errorMessage" class="q-mb-md bg-red-1">
+      <q-card-section>
+        <div class="text-h6 text-negative">安装错误</div>
+        <pre class="error-message">{{ errorMessage }}</pre>
+        <div
+          v-if="errorMessage.includes('Internal Server Error')"
+          class="q-mt-md"
+        >
+          <p class="text-negative">服务器内部错误可能是由以下原因导致：</p>
+          <ul class="q-ml-md">
+            <li>Python环境配置问题 - 可能是虚拟环境或系统环境配置有误</li>
+            <li>权限问题 - 当前用户可能没有安装包的权限</li>
+            <li>网络问题 - 无法连接到PyPI源</li>
+            <li>依赖冲突 - 可能与已安装的其他包存在版本冲突</li>
+          </ul>
+          <p>如需安装Python包：</p>
+          <pre class="suggestion-code">
 # 使用虚拟环境：
 python -m venv myenv
 source myenv/bin/activate  # Windows上使用: myenv\Scripts\activate
@@ -28,353 +27,344 @@ pip install 包名
 
 # 使用用户级安装：
 pip install --user 包名</pre
-            >
-          </div>
-        </q-card-section>
-        <q-card-actions align="right">
-          <q-btn
-            flat
-            color="negative"
-            icon="close"
-            label="关闭"
-            @click="errorMessage = ''"
-          />
-        </q-card-actions>
-      </q-card>
+          >
+        </div>
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn
+          flat
+          color="negative"
+          icon="close"
+          label="关闭"
+          @click="errorMessage = ''"
+        />
+      </q-card-actions>
+    </q-card>
 
+    <table-page :tab-array="tabArray" v-model="activeTab">
+      <template v-slot:header-end></template>
 
-      <table-page :tab-array="tabArray" v-model="activeTab">
-        <template v-slot:header-end></template>
-
-        <template v-slot:page-1>
-          <!-- 源地址配置 -->
-          <q-card class="q-mb-md">
-            <q-card-section>
-              <div class="text-h6">依赖库源配置</div>
-              <div class="q-gutter-md">
-                <q-input
-                  v-model="pipSource"
-                  label="PIP源地址"
-                  outlined
-                  :loading="sourceSaving"
-                >
-                  <template v-slot:append>
-                    <q-btn
-                      round
-                      dense
-                      flat
-                      icon="save"
-                      @click="savePipSource"
-                      :loading="sourceSaving"
-                    />
-                    <q-btn
-                      round
-                      dense
-                      flat
-                      icon="refresh"
-                      @click="resetToDefaultSource"
-                      :loading="sourceSaving"
-                    />
-                  </template>
-                </q-input>
-                <div class="text-caption">
-                  常用源：
-                  <a
-                    href="#"
-                    @click.prevent="selectSource('https://pypi.org/simple')"
-                    >官方源</a
-                  >
-                  |
-                  <a
-                    href="#"
-                    @click.prevent="
-                      selectSource('https://pypi.tuna.tsinghua.edu.cn/simple')
-                    "
-                    >清华源</a
-                  >
-                  |
-                  <a
-                    href="#"
-                    @click.prevent="
-                      selectSource('https://mirrors.aliyun.com/pypi/simple')
-                    "
-                    >阿里源</a
-                  >
-                </div>
-              </div>
-            </q-card-section>
-          </q-card>
-
-          <!-- 已安装的依赖库 -->
-          <q-card>
-            <q-card-section>
-              <div class="text-h6">已安装的依赖库</div>
-              <div class="q-gutter-sm q-mb-md">
-                <q-input
-                  v-model="searchPackage"
-                  outlined
-                  dense
-                  label="搜索库"
-                  class="q-mr-sm"
-                  style="max-width: 300px"
-                >
-                  <template v-slot:append>
-                    <q-icon name="search" />
-                  </template>
-                </q-input>
-                <q-btn
-                  color="primary"
-                  icon="refresh"
-                  label="刷新"
-                  @click="loadInstalledPackages"
-                  :loading="loading"
-                />
-              </div>
-
-              <q-table
-                :rows="filteredPackages"
-                :columns="packagesColumns"
-                row-key="name"
-                :loading="loading"
-                :pagination="{ rowsPerPage: 15 }"
+      <template v-slot:page-1>
+        <!-- 源地址配置 -->
+        <q-card class="q-mb-md">
+          <q-card-section>
+            <div class="text-h6">依赖库源配置</div>
+            <div class="q-gutter-md">
+              <q-input
+                v-model="pipSource"
+                label="PIP源地址"
+                outlined
+                :loading="sourceSaving"
               >
-                <template v-slot:top-right>
+                <template v-slot:append>
                   <q-btn
-                    color="primary"
-                    icon="add"
-                    label="安装新库"
-                    @click="showInstallDialog = true"
+                    round
+                    dense
+                    flat
+                    icon="save"
+                    @click="savePipSource"
+                    :loading="sourceSaving"
+                  />
+                  <q-btn
+                    round
+                    dense
+                    flat
+                    icon="refresh"
+                    @click="resetToDefaultSource"
+                    :loading="sourceSaving"
                   />
                 </template>
-                <template v-slot:body-cell-actions="props">
-                  <q-td :props="props">
-                    <q-btn
-                      flat
-                      round
-                      dense
-                      icon="delete"
-                      color="negative"
-                      @click="confirmUninstall(props.row)"
-                    />
-                    <q-btn
-                      flat
-                      round
-                      dense
-                      icon="upgrade"
-                      color="primary"
-                      @click="upgradePackage(props.row)"
-                    />
-                  </q-td>
-                </template>
-              </q-table>
-            </q-card-section>
-          </q-card>
-        </template>
+              </q-input>
+              <div class="text-caption">
+                常用源：
+                <a
+                  href="#"
+                  @click.prevent="selectSource('https://pypi.org/simple')"
+                  >官方源</a
+                >
+                |
+                <a
+                  href="#"
+                  @click.prevent="
+                    selectSource('https://pypi.tuna.tsinghua.edu.cn/simple')
+                  "
+                  >清华源</a
+                >
+                |
+                <a
+                  href="#"
+                  @click.prevent="
+                    selectSource('https://mirrors.aliyun.com/pypi/simple')
+                  "
+                  >阿里源</a
+                >
+              </div>
+            </div>
+          </q-card-section>
+        </q-card>
 
-        <template v-slot:page-2>
-          <q-card>
-            <q-card-section>
-              <div class="text-h6">插件依赖分析</div>
+        <!-- 已安装的依赖库 -->
+        <q-card>
+          <q-card-section>
+            <div class="text-h6">已安装的依赖库</div>
+            <div class="q-gutter-sm q-mb-md">
+              <q-input
+                v-model="searchPackage"
+                outlined
+                dense
+                label="搜索库"
+                class="q-mr-sm"
+                style="max-width: 300px"
+              >
+                <template v-slot:append>
+                  <q-icon name="search" />
+                </template>
+              </q-input>
               <q-btn
                 color="primary"
                 icon="refresh"
-                label="分析插件依赖"
-                @click="analyzePluginDependencies"
-                :loading="analyzingDeps"
-                class="q-mb-md"
+                label="刷新"
+                @click="loadInstalledPackages"
+                :loading="loading"
               />
+            </div>
 
-              <div class="q-pa-none">
-                <q-list bordered separator class="rounded-borders">
-                  <q-expansion-item
-                    v-for="plugin in pluginDependencies"
-                    :key="plugin.plugin"
-                    expand-separator
-                    :icon="
-                      plugin.missingDeps.length
-                        ? 'error_outline'
-                        : 'check_circle'
-                    "
-                    :label="plugin.plugin"
-                    :caption="
-                      plugin.missingDeps.length ? '缺少依赖' : '依赖满足'
-                    "
-                    :header-class="
-                      plugin.missingDeps.length ? 'bg-red-1' : 'bg-green-1'
-                    "
-                  >
-                    <template v-slot:header-right>
-                      <q-chip
-                        :color="
-                          plugin.missingDeps.length ? 'negative' : 'positive'
-                        "
-                        text-color="white"
-                        :label="
-                          plugin.missingDeps.length ? '缺少依赖' : '依赖满足'
-                        "
-                        class="q-mr-md"
-                      />
-                    </template>
-
-                    <q-card>
-                      <q-card-section>
-                        <div class="row items-center q-mb-md">
-                          <div class="text-subtitle1 col">依赖库列表</div>
-                          <div
-                            class="col-auto"
-                            v-if="plugin.missingDeps.length"
-                          >
-                            <q-btn
-                              color="primary"
-                              label="一键修复所有依赖"
-                              icon="build"
-                              @click="fixDependencies(plugin)"
-                              :loading="fixingDeps[plugin.plugin]"
-                            />
-                          </div>
-                        </div>
-                        <q-list separator>
-                          <q-item
-                            v-for="dep in plugin.dependencies"
-                            :key="dep.name"
-                            class="q-py-md"
-                          >
-                            <q-item-section avatar>
-                              <q-icon
-                                :name="
-                                  dep.missing
-                                    ? 'error'
-                                    : dep.versionMismatch
-                                    ? 'warning'
-                                    : 'check_circle'
-                                "
-                                :color="
-                                  dep.missing
-                                    ? 'negative'
-                                    : dep.versionMismatch
-                                    ? 'warning'
-                                    : 'positive'
-                                "
-                                size="md"
-                              />
-                            </q-item-section>
-                            <q-item-section>
-                              <q-item-label class="text-weight-bold text-body1"
-                                >{{ dep.name }}
-                              </q-item-label>
-                              <q-item-label caption v-if="dep.version">
-                                <span class="text-body2"
-                                  >版本要求: {{ dep.version }}</span
-                                >
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side>
-                              <q-badge
-                                :color="
-                                  dep.missing
-                                    ? 'negative'
-                                    : dep.versionMismatch
-                                    ? 'warning'
-                                    : 'positive'
-                                "
-                                :label="
-                                  dep.missing
-                                    ? '缺失'
-                                    : dep.versionMismatch
-                                    ? '版本不匹配'
-                                    : '已安装'
-                                "
-                                class="q-px-sm q-py-xs text-body2"
-                              />
-                            </q-item-section>
-                            <q-item-section side v-if="dep.missing">
-                              <q-btn
-                                color="primary"
-                                label="安装"
-                                size="sm"
-                                @click.stop="
-                                  installMissingDependency(
-                                    plugin.plugin,
-                                    dep.name,
-                                    dep.version
-                                  )
-                                "
-                                :loading="installingDep[dep.name]"
-                              />
-                            </q-item-section>
-                          </q-item>
-                        </q-list>
-                      </q-card-section>
-                    </q-card>
-                  </q-expansion-item>
-                </q-list>
-              </div>
-            </q-card-section>
-          </q-card>
-        </template>
-      </table-page>
-
-      <!-- 安装库对话框 -->
-      <q-dialog v-model="showInstallDialog">
-        <q-card style="min-width: 400px">
-          <q-card-section>
-            <div class="text-h6">安装新库</div>
+            <q-table
+              :rows="filteredPackages"
+              :columns="packagesColumns"
+              row-key="name"
+              :loading="loading"
+              :pagination="{ rowsPerPage: 15 }"
+            >
+              <template v-slot:top-right>
+                <q-btn
+                  color="primary"
+                  icon="add"
+                  label="安装新库"
+                  @click="showInstallDialog = true"
+                />
+              </template>
+              <template v-slot:body-cell-actions="props">
+                <q-td :props="props">
+                  <q-btn
+                    flat
+                    round
+                    dense
+                    icon="delete"
+                    color="negative"
+                    @click="confirmUninstall(props.row)"
+                  />
+                  <q-btn
+                    flat
+                    round
+                    dense
+                    icon="upgrade"
+                    color="primary"
+                    @click="upgradePackage(props.row)"
+                  />
+                </q-td>
+              </template>
+            </q-table>
           </q-card-section>
-
-          <q-card-section>
-            <q-input
-              v-model="packageToInstall"
-              label="库名称"
-              outlined
-              autofocus
-            />
-            <q-input
-              v-model="packageVersion"
-              label="版本 (可选)"
-              outlined
-              class="q-mt-sm"
-              hint="例如: ==1.0.0, >=2.0.0, 留空安装最新版本"
-            />
-          </q-card-section>
-
-          <q-card-actions align="right">
-            <q-btn flat label="取消" color="primary" v-close-popup />
-            <q-btn
-              label="安装"
-              color="primary"
-              @click="installPackage"
-              :loading="installing"
-            />
-          </q-card-actions>
         </q-card>
-      </q-dialog>
+      </template>
 
-      <!-- 确认卸载对话框 -->
-      <q-dialog v-model="showUninstallDialog">
+      <template v-slot:page-2>
         <q-card>
           <q-card-section>
-            <div class="text-h6">确认卸载</div>
-          </q-card-section>
-
-          <q-card-section>
-            确定要卸载
-            <strong>{{ packageToUninstall.name }}</strong>
-            吗？这可能会影响依赖该库的插件。
-          </q-card-section>
-
-          <q-card-actions align="right">
-            <q-btn flat label="取消" color="primary" v-close-popup />
+            <div class="text-h6">插件依赖分析</div>
             <q-btn
-              flat
-              label="卸载"
-              color="negative"
-              @click="uninstallPackage"
-              :loading="uninstalling"
+              color="primary"
+              icon="refresh"
+              label="分析插件依赖"
+              @click="analyzePluginDependencies"
+              :loading="analyzingDeps"
+              class="q-mb-md"
             />
-          </q-card-actions>
+
+            <div class="q-pa-none">
+              <q-list bordered separator class="rounded-borders">
+                <q-expansion-item
+                  v-for="plugin in pluginDependencies"
+                  :key="plugin.plugin"
+                  expand-separator
+                  :icon="
+                    plugin.missingDeps.length ? 'error_outline' : 'check_circle'
+                  "
+                  :label="plugin.plugin"
+                  :caption="plugin.missingDeps.length ? '缺少依赖' : '依赖满足'"
+                  :header-class="
+                    plugin.missingDeps.length ? 'bg-red-1' : 'bg-green-1'
+                  "
+                >
+                  <template v-slot:header-right>
+                    <q-chip
+                      :color="
+                        plugin.missingDeps.length ? 'negative' : 'positive'
+                      "
+                      text-color="white"
+                      :label="
+                        plugin.missingDeps.length ? '缺少依赖' : '依赖满足'
+                      "
+                      class="q-mr-md"
+                    />
+                  </template>
+
+                  <q-card>
+                    <q-card-section>
+                      <div class="row items-center q-mb-md">
+                        <div class="text-subtitle1 col">依赖库列表</div>
+                        <div class="col-auto" v-if="plugin.missingDeps.length">
+                          <q-btn
+                            color="primary"
+                            label="一键修复所有依赖"
+                            icon="build"
+                            @click="fixDependencies(plugin)"
+                            :loading="fixingDeps[plugin.plugin]"
+                          />
+                        </div>
+                      </div>
+                      <q-list separator>
+                        <q-item
+                          v-for="dep in plugin.dependencies"
+                          :key="dep.name"
+                          class="q-py-md"
+                        >
+                          <q-item-section avatar>
+                            <q-icon
+                              :name="
+                                dep.missing
+                                  ? 'error'
+                                  : dep.versionMismatch
+                                  ? 'warning'
+                                  : 'check_circle'
+                              "
+                              :color="
+                                dep.missing
+                                  ? 'negative'
+                                  : dep.versionMismatch
+                                  ? 'warning'
+                                  : 'positive'
+                              "
+                              size="md"
+                            />
+                          </q-item-section>
+                          <q-item-section>
+                            <q-item-label class="text-weight-bold text-body1"
+                              >{{ dep.name }}
+                            </q-item-label>
+                            <q-item-label caption v-if="dep.version">
+                              <span class="text-body2"
+                                >版本要求: {{ dep.version }}</span
+                              >
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side>
+                            <q-badge
+                              :color="
+                                dep.missing
+                                  ? 'negative'
+                                  : dep.versionMismatch
+                                  ? 'warning'
+                                  : 'positive'
+                              "
+                              :label="
+                                dep.missing
+                                  ? '缺失'
+                                  : dep.versionMismatch
+                                  ? '版本不匹配'
+                                  : '已安装'
+                              "
+                              class="q-px-sm q-py-xs text-body2"
+                            />
+                          </q-item-section>
+                          <q-item-section side v-if="dep.missing">
+                            <q-btn
+                              color="primary"
+                              label="安装"
+                              size="sm"
+                              @click.stop="
+                                installMissingDependency(
+                                  plugin.plugin,
+                                  dep.name,
+                                  dep.version
+                                )
+                              "
+                              :loading="installingDep[dep.name]"
+                            />
+                          </q-item-section>
+                        </q-item>
+                      </q-list>
+                    </q-card-section>
+                  </q-card>
+                </q-expansion-item>
+              </q-list>
+            </div>
+          </q-card-section>
         </q-card>
-      </q-dialog>
-    </div>
+      </template>
+    </table-page>
+
+    <!-- 安装库对话框 -->
+    <q-dialog v-model="showInstallDialog">
+      <q-card style="min-width: 400px">
+        <q-card-section>
+          <div class="text-h6">安装新库</div>
+        </q-card-section>
+
+        <q-card-section>
+          <q-input
+            v-model="packageToInstall"
+            label="库名称"
+            outlined
+            autofocus
+          />
+          <q-input
+            v-model="packageVersion"
+            label="版本 (可选)"
+            outlined
+            class="q-mt-sm"
+            hint="例如: ==1.0.0, >=2.0.0, 留空安装最新版本"
+          />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="取消" color="primary" v-close-popup />
+          <q-btn
+            label="安装"
+            color="primary"
+            @click="installPackage"
+            :loading="installing"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- 确认卸载对话框 -->
+    <q-dialog v-model="showUninstallDialog">
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">确认卸载</div>
+        </q-card-section>
+
+        <q-card-section>
+          确定要卸载
+          <strong>{{ packageToUninstall.name }}</strong>
+          吗？这可能会影响依赖该库的插件。
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="取消" color="primary" v-close-popup />
+          <q-btn
+            flat
+            label="卸载"
+            color="negative"
+            @click="uninstallPackage"
+            :loading="uninstalling"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 <script lang="ts" setup>
@@ -391,8 +381,11 @@ import {
 } from 'src/api';
 import TablePage from 'components/base/TablePage.vue';
 import { TabProps } from 'src/types/contants';
+import TitleView from 'components/base/TitleView.vue';
+import { useI18n } from 'vue-i18n';
 
 const $q = useQuasar();
+const { t } = useI18n();
 
 // 选项卡
 const activeTab = ref('deps');

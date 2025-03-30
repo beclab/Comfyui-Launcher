@@ -31,11 +31,11 @@ export default {
   menu: {
     navigation_menu: 'Navigation Menu',
     home: 'Home',
-    model_management: 'Model Management',
-    environment_management: 'Environment Management',
-    plugin_management: 'Plugin Management',
-    network_configuration: 'Network Configuration',
-    inspiration_discovery: 'Inspiration Discovery',
+    model_management: 'Models',
+    environment_management: 'Environment',
+    plugin_management: 'Plugins',
+    network_configuration: 'Network',
+    inspiration_discovery: 'Discovery',
   },
   package: {
     essential: 'Essential',

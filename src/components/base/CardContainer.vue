@@ -8,11 +8,12 @@
           </slot>
           <slot name="header-end">
             <q-btn
+              outline
+              :icon="icon"
+              :label="label"
+              v-if="label || icon"
               class="btn-size-sm text-grey-8"
               :class="label ? '' : 'btn-no-text'"
-              :label="label"
-              :icon="icon"
-              outline
               @click="emit('onIconClick')"
             />
           </slot>
@@ -75,7 +76,7 @@ defineProps({
   },
 });
 
-const emit = defineEmits(['onIconClick'])
+const emit = defineEmits(['onIconClick']);
 </script>
 
 <style scoped lang="scss">
