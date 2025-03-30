@@ -23,7 +23,7 @@ export const useNetworkStore = defineStore('network', {
     },
   },
   actions: {
-    async init(){
+    async init() {
       this.getNetworkConfig(NetworkType.GITHUB);
       this.getNetworkConfig(NetworkType.PYPI);
       this.getNetworkConfig(NetworkType.HUGGING_FACE);
@@ -81,7 +81,6 @@ export const useNetworkStore = defineStore('network', {
       config.status = available ? NetworkStatus.WORKING : NetworkStatus.TIMEOUT;
     },
     async fetchNetworkConfig() {
-
       try {
         this.loading = true;
         const response = await api.get('system/network-config');
@@ -110,6 +109,8 @@ export const useNetworkStore = defineStore('network', {
         types.forEach((type) => {
           this.setNetworkConfigStatus(type, null);
         });
+
+        await new Promise((resolve) => setTimeout(resolve, 500))
 
         const response = await api.get('system/network-status');
 

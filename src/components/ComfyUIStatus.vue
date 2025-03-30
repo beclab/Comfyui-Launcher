@@ -86,7 +86,7 @@
               v-close-popup
               icon="sym_r_refresh"
               :title="t('base.erase_and_restore')"
-              @on-item-click="resetComfyui"
+              @on-item-click="openResetDialog"
             />
           </bt-popup>
         </q-btn>
@@ -111,11 +111,100 @@
       class="bg-separator full-width q-mt-xl"
       style="margin-bottom: 44px"
     />
+
+    <!-- 重置进度对话框 -->
+    <q-dialog v-model="showResetProgress" persistent>
+      <q-card style="min-width: 550px; max-width: 80vw">
+        <q-card-section>
+          <div class="text-h6">正在还原...</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <div class="log-container q-mb-md">
+            <div
+              v-for="(log, index) in resetLogs"
+              :key="index"
+              class="log-entry"
+            >
+              {{ log }}
+            </div>
+            <div ref="logEnd"></div>
+          </div>
+
+          <q-spinner v-if="isResetting" color="primary" size="2em" />
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <!-- 重置完成对话框 -->
+    <q-dialog v-model="showResetComplete" persistent>
+      <q-card>
+        <q-card-section class="row items-center">
+          <q-avatar icon="check_circle" color="positive" text-color="white" />
+          <span class="q-ml-sm">还原操作已完成！</span>
+        </q-card-section>
+
+        <q-card-section>
+          <p>ComfyUI已被成功还原至初始状态。</p>
+          <p>建议重启应用以确保所有更改生效。</p>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="返回主页" color="primary" to="/" />
+          <q-btn label="重启应用" color="positive" @click="restartApp" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- 上次重置日志对话框 -->
+    <q-dialog v-model="showLogDialog" persistent>
+      <q-card style="min-width: 550px; max-width: 80vw">
+        <q-card-section class="row items-center">
+          <div class="text-h6">上次重置操作日志</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <div class="log-container q-mb-md" v-if="resetLogs.length > 0">
+            <div
+              v-for="(log, index) in resetLogs"
+              :key="index"
+              class="log-entry"
+            >
+              {{ log }}
+            </div>
+            <div ref="logEnd"></div>
+          </div>
+          <div v-else class="text-center text-grey">
+            <q-icon name="info" size="2rem" />
+            <p>没有找到重置日志记录</p>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="关闭" color="primary" v-close-popup />
+          <q-btn
+            label="刷新"
+            color="primary"
+            @click="fetchResetLogs"
+            :loading="isLoading"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import {
+  ref,
+  computed,
+  onMounted,
+  onUnmounted,
+  nextTick,
+  onBeforeUnmount,
+} from 'vue';
 import BtPopupItem from 'components/base/BtPopupItem.vue';
 import ComfyUILogDialog from 'components/dialog/ComfyUILogDialog.vue';
 import ModelMissingDialog from 'components/dialog/ModelMissingDialog.vue';
@@ -182,15 +271,114 @@ const openLogDialog = () => {
     component: ComfyUILogDialog,
   });
 };
-const resetComfyui = () => {
+const openResetDialog = () => {
   $q.dialog({
     component: RestoreWarningDialog,
   }).onOk(() => {
     $q.dialog({
       component: ConfirmRestoreDialog,
+    }).onOk(() => {
+      resetComfyUI();
     });
   });
 };
+
+const showResetProgress = ref(false);
+const showResetComplete = ref(false);
+const resetLogs = ref<string[]>([]);
+const isResetting = ref(false);
+const logEnd = ref(null);
+const showLogDialog = ref(false);
+const isLoading = ref(false);
+// 日志轮询间隔ID
+let logsIntervalId: any = null;
+
+// 滚动到日志底部
+const scrollToBottom = async () => {
+  await nextTick();
+  if (logEnd.value) {
+    logEnd.value.scrollIntoView({ behavior: 'smooth' });
+  }
+};
+
+// 获取重置日志
+const fetchResetLogs = async () => {
+  isLoading.value = true;
+  try {
+    const response = await api.getResetLogs();
+    if (response && response.body && response.body.logs) {
+      resetLogs.value = response.body.logs;
+      scrollToBottom();
+    }
+  } catch (error) {
+    console.error('获取重置日志失败:', error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// 显示上次重置日志
+const showLastResetLogs = async () => {
+  resetLogs.value = [];
+  showLogDialog.value = true;
+  await fetchResetLogs();
+};
+
+// 重置ComfyUI
+const resetComfyUI = async () => {
+  showResetProgress.value = true;
+  resetLogs.value = ['开始还原操作，请稍候...'];
+  isResetting.value = true;
+
+  try {
+    // 调用重置API
+    const response = await api.resetComfyUI();
+
+    // 开始轮询日志
+    logsIntervalId = setInterval(fetchResetLogs, 1000);
+
+    // 等待重置完成
+    if (response.body && response.body.success) {
+      // 再获取一次最终日志
+      await fetchResetLogs();
+
+      // 显示完成对话框
+      isResetting.value = false;
+      setTimeout(() => {
+        showResetProgress.value = false;
+        showResetComplete.value = true;
+      }, 1000);
+    } else {
+      resetLogs.value.push(
+        '重置操作失败: ' + (response.body?.message || '未知错误')
+      );
+      isResetting.value = false;
+    }
+  } catch (error : any) {
+    resetLogs.value.push('重置操作出错: ' + (error.message || '未知错误'));
+    isResetting.value = false;
+  }
+};
+
+// 重启应用
+const restartApp = async () => {
+  try {
+    await api.restartApp();
+    // 应用会重启，页面将会刷新
+  } catch (error) {
+    console.error('重启应用失败:', error);
+    // 如果API调用失败，手动刷新页面
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 1000);
+  }
+};
+
+onBeforeUnmount(() => {
+  if (logsIntervalId) {
+    clearInterval(logsIntervalId);
+  }
+});
 
 const checkConnection = async () => {
   try {
@@ -415,5 +603,26 @@ onUnmounted(() => {
 
 .warning-bg {
   border-radius: 12px;
+}
+
+.reset-card {
+  max-width: 600px;
+  width: 100%;
+}
+
+.log-container {
+  max-height: 400px;
+  overflow-y: auto;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.log-entry {
+  margin-bottom: 3px;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 </style>

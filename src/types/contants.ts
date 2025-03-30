@@ -11,7 +11,7 @@ export interface NetworkConfig {
   icon: string;
   type: NetworkType;
   status: NetworkStatus;
-  apiEndpoint : string;
+  apiEndpoint: string;
   savingKey: string;
 }
 
@@ -26,4 +26,9 @@ export enum NetworkStatus {
   TIMEOUT = 'timeout',
   SAVING = 'saving',
   REQUESTING = 'requesting',
+}
+
+export interface TabProps {
+  key: string;
+  label: string;
 }
