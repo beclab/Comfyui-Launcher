@@ -125,4 +125,10 @@ watch(
   color: $blue-default !important;
   background-color: $blue-soft !important;
 }
+
+.main-layout {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
 </style>

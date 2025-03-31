@@ -1,5 +1,13 @@
 // app global css in SCSS form
+.my-page-scroll {
+  height: 100vh;
+
+  .my-page-content {
+    margin: 56px 44px 44px 44px;
+    width: calc(100% - 88px);
+  }
+}
+
 .my-page-container {
   padding: 56px 44px 0 44px;
-  height: 100vh;
 }

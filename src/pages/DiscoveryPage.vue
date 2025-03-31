@@ -56,10 +56,6 @@ const { t } = useI18n();
 </script>
 
 <style scoped>
-.q-page {
-  padding: 20px;
-}
-
 h1 {
   margin-bottom: 20px;
 }
