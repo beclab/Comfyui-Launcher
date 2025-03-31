@@ -33,6 +33,14 @@ const packages = computed(() => {
       description: t('package.essential_models_pack_desc'),
       menuOptions: [t('package.essential')],
       installed: essentialModelStore.allEssentialModelsInstalled,
+      loading:
+        essentialModelStore.isDownloading &&
+        !!essentialModelStore.downloadTaskId &&
+        !essentialModelStore.installing,
+      disabled:
+        essentialModelStore.isDownloading ||
+        essentialModelStore.allEssentialModelsInstalled,
+      key: 'essential',
     },
     {
       icon: 'control_net_model.png',
@@ -40,6 +48,9 @@ const packages = computed(() => {
       description: t('package.controlNet_models_pack_desc'),
       menuOptions: [],
       installed: true,
+      loading: false,
+      disabled: true,
+      key: 'controlNet',
     },
   ];
 });
@@ -47,7 +58,10 @@ const packages = computed(() => {
 function downloadPackage(pkg: PackageInstall) {
   if (!pkg.installed) {
     console.log('下载包:', pkg.name);
-    // 实现下载逻辑
+    if (pkg.key == 'essential') {
+      essentialModelStore.downloadEssentialModels();
+    } else {
+    }
   }
 }
 

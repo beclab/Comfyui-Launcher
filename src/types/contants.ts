@@ -4,6 +4,9 @@ export interface PackageInstall {
   description: string;
   installed: boolean;
   menuOptions?: string[];
+  disabled: boolean;
+  loading: boolean;
+  key: string;
 }
 
 export interface NetworkConfig {
@@ -38,4 +41,11 @@ export interface FolderProps {
   path: string;
   used: string | null;
   available: string | null;
+}
+
+export interface SelectorProps {
+  label: string;
+  value: string;
+  disable: boolean;
+  showLabel: boolean;
 }

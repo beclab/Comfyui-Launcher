@@ -476,7 +476,7 @@ const loadPipSource = async () => {
   try {
     const source = await getPipSource();
     pipSource.value = source;
-  } catch (error) {
+  } catch (error: any) {
     $q.notify({
       color: 'negative',
       message: '加载PIP源地址失败: ' + error.message,
@@ -495,7 +495,7 @@ const savePipSource = async () => {
       message: 'PIP源地址已更新',
       icon: 'check',
     });
-  } catch (error) {
+  } catch (error: any) {
     $q.notify({
       color: 'negative',
       message: '保存PIP源地址失败: ' + error.message,
@@ -513,7 +513,7 @@ const resetToDefaultSource = () => {
 };
 
 // 选择预设源
-const selectSource = (source) => {
+const selectSource = (source: any) => {
   pipSource.value = source;
 };
 
@@ -522,7 +522,7 @@ const loadInstalledPackages = async () => {
   loading.value = true;
   try {
     installedPackages.value = await getInstalledPackages();
-  } catch (error) {
+  } catch (error: any) {
     $q.notify({
       color: 'negative',
       message: '加载已安装库失败: ' + error.message,
@@ -565,7 +565,7 @@ const installPackage = async () => {
 
     // 重新加载已安装的包
     await loadInstalledPackages();
-  } catch (error) {
+  } catch (error: any) {
     // 增强错误处理，优先获取error字段
     if (error.response) {
       // 有响应但状态码不是2xx
@@ -597,7 +597,7 @@ const installPackage = async () => {
 };
 
 // 确认卸载对话框
-const confirmUninstall = (pkg) => {
+const confirmUninstall = (pkg: any) => {
   packageToUninstall.value = pkg;
   showUninstallDialog.value = true;
 };
@@ -618,7 +618,7 @@ const uninstallPackage = async () => {
 
     // 重新加载已安装的包
     await loadInstalledPackages();
-  } catch (error) {
+  } catch (error: any) {
     $q.notify({
       color: 'negative',
       message: '卸载失败: ' + error.message,
@@ -630,7 +630,7 @@ const uninstallPackage = async () => {
 };
 
 // 升级包
-const upgradePackage = async (pkg) => {
+const upgradePackage = async (pkg: any) => {
   installing.value = true;
   errorMessage.value = ''; // 清除之前的错误信息
 
@@ -645,7 +645,7 @@ const upgradePackage = async (pkg) => {
 
     // 重新加载已安装的包
     await loadInstalledPackages();
-  } catch (error) {
+  } catch (error: any) {
     // 增强错误处理，优先获取error字段
     if (error.response) {
       // 有响应但状态码不是2xx
@@ -693,7 +693,7 @@ const analyzePluginDependencies = async () => {
 };
 
 // 修复依赖
-const fixDependencies = async (plugin) => {
+const fixDependencies = async (plugin: any) => {
   fixingDeps[plugin.plugin] = true;
   errorMessage.value = ''; // 清除之前的错误信息
 
@@ -708,7 +708,7 @@ const fixDependencies = async (plugin) => {
 
     // 重新加载已安装的包和分析依赖
     await Promise.all([loadInstalledPackages(), analyzePluginDependencies()]);
-  } catch (error) {
+  } catch (error: any) {
     // 增强错误处理，优先获取error字段
     if (error.response) {
       // 有响应但状态码不是2xx
@@ -742,7 +742,11 @@ const fixDependencies = async (plugin) => {
 };
 
 // 安装单个依赖
-const installMissingDependency = async (pluginName, depName, depVersion) => {
+const installMissingDependency = async (
+  pluginName: any,
+  depName: any,
+  depVersion: any
+) => {
   installingDep[depName] = true;
   errorMessage.value = ''; // 清除之前的错误信息
 
@@ -760,7 +764,7 @@ const installMissingDependency = async (pluginName, depName, depVersion) => {
     await analyzePluginDependencies();
     // 更新已安装的包列表
     await loadInstalledPackages();
-  } catch (error) {
+  } catch (error: any) {
     // 增强错误处理，优先获取error字段
     if (error.response) {
       // 有响应但状态码不是2xx

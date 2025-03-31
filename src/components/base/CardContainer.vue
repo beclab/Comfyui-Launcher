@@ -60,7 +60,7 @@ defineProps({
   },
   grid: {
     type: Boolean,
-    default: true,
+    default: false,
   },
   columns: {
     type: Number,

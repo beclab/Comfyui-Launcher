@@ -35,9 +35,12 @@
     <q-btn
       :class="package.installed ? 'text-positive' : 'text-light-blue-default'"
       :label="package.installed ? t('base.installed') : t('base.download')"
+      :loading="package.loading"
+      :disabled="package.disabled"
       class="btn-size-md text-body1"
       outline
       no-caps
+      @click="emit('onDownloadClick')"
     />
   </div>
 </template>

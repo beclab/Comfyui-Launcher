@@ -20,19 +20,7 @@
       </div>
     </template>
     <template v-slot:default>
-      <q-input outlined dense v-model="networkUrl" placeholder="">
-        <template v-slot:append>
-          <q-btn
-            flat
-            round
-            icon="check"
-            size="sm"
-            @click="networkStore.saveConfig(config, networkUrl)"
-          >
-            <q-tooltip>保存</q-tooltip>
-          </q-btn>
-        </template>
-      </q-input>
+      <bt-selector v-model="networkUrl" :options="array" />
     </template>
   </card-container>
 </template>
@@ -40,10 +28,15 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import CardContainer from 'components/base/CardContainer.vue';
-import { NetworkConfig, NetworkStatus } from 'src/types/contants';
+import {
+  NetworkConfig,
+  NetworkStatus,
+  SelectorProps,
+} from 'src/types/contants';
 import { getRequireImage } from 'src/utils/imageUtils';
 import { computed, onMounted, PropType, ref } from 'vue';
 import { useNetworkStore } from 'stores/network';
+import BtSelector from 'components/base/BtSelector.vue';
 
 const props = defineProps({
   config: {
@@ -51,7 +44,7 @@ const props = defineProps({
     required: true,
   },
   array: {
-    type: Object as PropType<string[]>,
+    type: Object as PropType<SelectorProps[]>,
     default: [] as string[],
   },
 });

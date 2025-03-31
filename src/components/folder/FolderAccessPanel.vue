@@ -16,31 +16,31 @@ const { t } = useI18n();
 const folders: FolderProps[] = [
   {
     name: '根目录',
-    path: process.env.COMFYUI_PATH || './comfyui',
+    path: process.env.COMFYUI_PATH || '/Files/External/ai/comfyui/ComfyUI/',
     used: null,
     available: null,
   },
   {
     name: '插件目录',
-    path: process.env.CUSTOM_NODES_PATH || './comfyui/custom_nodes',
+    path: process.env.CUSTOM_NODES_PATH || '/Files/External/ai/comfyui/ComfyUI/custom_nodes/',
     used: null,
     available: null,
   },
   {
     name: '模型目录',
-    path: process.env.MODELS_PATH || './comfyui/models',
+    path: process.env.MODELS_PATH || '/Files/External/ai/model/',
     used: null,
     available: null,
   },
   {
     name: '输出目录',
-    path: process.env.OUTPUT_PATH || './comfyui/output',
+    path: process.env.OUTPUT_PATH || '/Files/External/ai/output/comfyui/',
     used: null,
     available: null,
   },
   {
     name: '输入目录',
-    path: '',
+    path: process.env.INPUT_PATH || '/Files/External/ai/comfyui/ComfyUI/input/',
     used: null,
     available: null,
   },

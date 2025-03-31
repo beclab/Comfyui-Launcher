@@ -1,41 +1,13 @@
 <template>
   <q-card class="q-mb-lg">
     <q-card-section>
-      <div class="row items-center q-mb-md">
-        <div class="col-auto">
-          <q-select
-            v-model="essentialModelStore.downloadSource"
-            :options="essentialModelStore.downloadSourceOptions"
-            label="下载源"
-            dense
-            outlined
-            style="min-width: 180px"
-            class="q-mr-md"
-          />
-          <q-btn
-            color="primary"
-            icon="download"
-            label="安装基础模型"
-            @click="essentialModelStore.downloadEssentialModels"
-            :loading="
-              essentialModelStore.isDownloading &&
-              !!essentialModelStore.downloadTaskId &&
-              !essentialModelStore.installing
-            "
-            :disable="
-              essentialModelStore.isDownloading ||
-              essentialModelStore.allEssentialModelsInstalled
-            "
-          />
-        </div>
-      </div>
-
       <!-- 基础模型下载进度显示 - 合并的统一布局 -->
-      <div
-        v-if="
+<!--      v-if="
           essentialModelStore.isDownloading &&
           essentialModelStore.downloadTaskId
-        "
+        "-->
+      <div
+
         class="download-progress-panel"
       >
         <div class="progress-header">
@@ -67,7 +39,7 @@
             <q-chip size="sm" outline
               >{{
                 essentialModelStore.currentModel
-                  ? essentialModelStore.getModelTypeName(currentModel.type)
+                  ? essentialModelStore.getModelTypeName(essentialModelStore.currentModel.type)
                   : ''
               }}
             </q-chip>
@@ -99,7 +71,7 @@
                 >文件大小:
                 {{
                   essentialModelStore.formatFileSize(
-                    currentDownloadState.totalBytes
+                    essentialModelStore.currentDownloadState.totalBytes
                   )
                 }}</span
               >
@@ -110,7 +82,7 @@
                 >已下载:
                 {{
                   essentialModelStore.formatFileSize(
-                    currentDownloadState.downloadedBytes
+                    essentialModelStore.currentDownloadState.downloadedBytes
                   )
                 }}</span
               >
@@ -120,7 +92,9 @@
               <span
                 >下载速度:
                 {{
-                  essentialModelStore.formatSpeed(currentDownloadState.speed)
+                  essentialModelStore.formatSpeed(
+                    essentialModelStore.currentDownloadState.speed
+                  )
                 }}</span
               >
             </div>

@@ -8,6 +8,8 @@ import {
   InstalledModel,
   ModelDownloadProgress,
 } from 'src/types/models';
+import { useNetworkStore } from 'stores/network';
+import { NetworkType } from 'src/types/contants';
 
 interface EssentialModelState {
   isLoading: boolean;
@@ -20,8 +22,6 @@ interface EssentialModelState {
   downloadProgress: ModelDownloadProgress;
   downloadPollingInterval: ReturnType<typeof setInterval> | null;
   currentDownloadState: CurrentDownloadState;
-  downloadSource: string;
-  downloadSourceOptions: string[];
 }
 
 const defaultDownloadState: CurrentDownloadState = {
@@ -50,8 +50,6 @@ export const useEssentialModelStore = defineStore('essentialModel', {
       downloadProgress: {},
       downloadPollingInterval: null,
       currentDownloadState: defaultDownloadState,
-      downloadSource: 'HuggingFace中国镜像站',
-      downloadSourceOptions: ['HuggingFace中国镜像站', 'HuggingFace官方'],
     } as EssentialModelState;
   },
   getters: {
@@ -210,8 +208,12 @@ export const useEssentialModelStore = defineStore('essentialModel', {
         // this.isLoading = true;
 
         // 根据选择的下载源确定API参数
-        const source =
-          this.downloadSource === 'HuggingFace官方' ? 'hf' : 'mirror';
+        const networkStore = useNetworkStore();
+        const huggingFaceUrl = networkStore.getNetworkConfig(
+          NetworkType.HUGGING_FACE
+        ).url;
+        console.log('使用下载源:', huggingFaceUrl);
+        const source = huggingFaceUrl.includes('mirror') ? 'mirror' : 'hf';
         console.log('使用下载源:', source);
 
         const response = await api.post('models/download-essential', {

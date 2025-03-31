@@ -10,16 +10,45 @@
     <template v-else>
       <network-config-item
         :config="networkStore.getNetworkConfig(NetworkType.GITHUB)"
-        :array="['http://gh.proxy.com/']"
+        :array="[
+          { label: '官方源', value: 'http://github.com/' },
+          { label: '代理源', value: 'http://gh.proxy.com/' },
+        ]"
       />
 
       <network-config-item
         :config="networkStore.getNetworkConfig(NetworkType.PYPI)"
-        :array="['https://pypi.tuna.tsinghua.edu.cn']"
+        :array="[
+          {
+            label: '官方源',
+            value: 'https://pypi.org/simple',
+          },
+          {
+            label: '清华源',
+            value: 'https://pypi.tuna.tsinghua.edu.cn',
+          },
+          {
+            label: '阿里源',
+            value: 'https://mirrors.aliyun.com/pypi/simple',
+          },
+          {
+            label: 'Olares源',
+            value: 'https://pypi.joinolares.cn/root/olares3/+simple/',
+          },
+        ]"
       />
       <network-config-item
         :config="networkStore.getNetworkConfig(NetworkType.HUGGING_FACE)"
-        :array="['https://huggingface.co/']"
+        :array="[
+          {
+            label: '官方源',
+            value: 'https://huggingface.co/',
+          },
+          {
+            label: '中国镜像源',
+            value: 'https://hf-mirror.com/',
+          },
+        ]"
       />
     </template>
   </q-page>

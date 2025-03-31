@@ -10,8 +10,8 @@
 
         <div class="row text-body2 text-ink-2">
           <!--        TODO -->
-          <div v-if="used" class="q-mr-md">已安装: {{ folder.used }}</div>
-          <div v-if="available">可用: {{ folder.available }}</div>
+          <div v-if="folder.used" class="q-mr-md">已安装: {{ folder.used }}</div>
+          <div v-if="folder.available">可用: {{ folder.available }}</div>
         </div>
       </div>
     </div>
@@ -52,7 +52,7 @@ const props = defineProps({
 
 const $q = useQuasar();
 
-const openDirectory = async (dirKey: string) => {
+const openDirectory = async () => {
   try {
     if (!props.folder.path) {
       throw new Error('未找到指定目录');
@@ -62,7 +62,7 @@ const openDirectory = async (dirKey: string) => {
 
     $q.notify({
       type: 'positive',
-      message: `正在打开 ${dirKey} 目录`,
+      message: `正在打开 ${props.folder.path} 目录`,
       position: 'top',
       timeout: 2000,
     });
