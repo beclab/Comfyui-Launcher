@@ -2,12 +2,11 @@
   <q-card class="q-mb-lg">
     <q-card-section>
       <!-- 基础模型下载进度显示 - 合并的统一布局 -->
-<!--      v-if="
+      <div
+        v-if="
           essentialModelStore.isDownloading &&
           essentialModelStore.downloadTaskId
-        "-->
-      <div
-
+        "
         class="download-progress-panel"
       >
         <div class="progress-header">
@@ -39,7 +38,9 @@
             <q-chip size="sm" outline
               >{{
                 essentialModelStore.currentModel
-                  ? essentialModelStore.getModelTypeName(essentialModelStore.currentModel.type)
+                  ? essentialModelStore.getModelTypeName(
+                      essentialModelStore.currentModel.type
+                    )
                   : ''
               }}
             </q-chip>

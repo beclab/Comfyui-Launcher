@@ -30,7 +30,7 @@
             :style="{ marginTop: `${index === 0 ? '0' : '4px'}` }"
             @click="onItemClick(item)"
           >
-            {{ selected.showLabel ? selected.label : selected.value }}
+            {{ item.showLabel ? item.label : item.value }}
           </div>
         </template>
       </div>
