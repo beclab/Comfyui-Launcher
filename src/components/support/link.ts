@@ -4,7 +4,7 @@ export const LinkReference = {
   discord: 'https://discord.com/invite/BzfqrgQPDK',
   twitter: 'https://x.com/Olares_OS',
   medium: 'https://olares.medium.com/',
-  olares: 'https://github.com/beclab/Olares',
+  olares: 'https://olares.cn/',
 };
 
 export interface SupportIconProps {
@@ -44,8 +44,8 @@ export const discordIcon: SupportIconWithLabel = {
 };
 
 export const olaresIcon: SupportIconProps = {
-  icon: 'support/github-circle.svg',
-  active: 'support/github-circle2.svg',
+  icon: 'support/olares-circle.svg',
+  active: 'support/olares-circle2.svg',
   link: LinkReference.olares,
 };
 

@@ -90,7 +90,6 @@ const onItemClick = (item: SelectorProps) => {
 .selected-root {
   border: 1px solid #e4e4e7;
   border-radius: 8px;
-  padding: 8px 12px;
   height: 36px;
   width: var(--selectedWidth);
   color: #000000;

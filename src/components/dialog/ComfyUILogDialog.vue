@@ -2,7 +2,7 @@
   <custom-dialog
     ref="customRef"
     :size="Size.LARGE"
-    :title="t('base.comfyui_log')"
+    :title="t('dialog.comfyui_log')"
     :ok="false"
     :cancel="false"
   >
