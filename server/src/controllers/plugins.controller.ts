@@ -6,6 +6,7 @@ import * as path from 'path';
 import { exec, execSync } from 'child_process';
 import * as util from 'util';
 import * as os from 'os';
+import logger, { i18nLogger } from '../utils/logger';
 
 // 将exec转换为Promise
 const execPromise = util.promisify(exec);
@@ -34,11 +35,14 @@ interface PluginOperationHistory {
   pluginId: string;                    // 插件ID
   pluginName?: string;                 // 插件名称
   type: 'install' | 'uninstall' | 'disable' | 'enable'; // 操作类型
+  typeText?: string;                   // 操作类型的本地化文本
   startTime: number;                   // 操作开始时间戳
   endTime?: number;                    // 操作结束时间戳
   status: 'running' | 'success' | 'failed'; // 操作状态
+  statusText?: string;                 // 状态的本地化文本
   logs: string[];                      // 详细日志
   result?: string;                     // 最终结果描述
+  resultLocalized?: string;            // 本地化的结果描述
   githubProxy?: string;                // GitHub代理URL (如果使用)
 }
 
@@ -1178,42 +1182,48 @@ export class PluginsController {
 
   // 获取特定操作的详细日志
   async getOperationLogs(ctx: Context): Promise<void> {
-    const { taskId } = ctx.params;
-    
     try {
-      // 首先尝试从当前任务获取
-      if (taskProgressMap[taskId] && taskProgressMap[taskId].logs) {
+      const taskId = ctx.params.taskId;
+      if (!taskId) {
+        ctx.status = 400;
         ctx.body = {
-          success: true,
-          logs: taskProgressMap[taskId].logs
+          success: false,
+          message: 'Task ID is required'
         };
         return;
       }
       
-      // 如果当前任务没有或已完成，从历史记录中获取
-      const historyItem = operationHistory.find(item => item.id === taskId);
-      if (historyItem) {
+      // 加载历史记录
+      const history = await this.loadPluginHistory();
+      
+      // 查找特定任务
+      const task = history.find(item => item.id === taskId);
+      
+      if (!task) {
+        ctx.status = 404;
         ctx.body = {
-          success: true,
-          logs: historyItem.logs,
-          status: historyItem.status,
-          result: historyItem.result
+          success: false,
+          message: 'Task not found'
         };
         return;
       }
       
-      // 找不到任务记录
-      ctx.status = 404;
+      // 获取客户端首选语言
+      const locale = this.getClientLocale(ctx) || i18nLogger.getLocale();
+      
+      // 翻译日志
+      const translatedLogs = this.translateLogs(task.logs || [], locale);
+      
       ctx.body = {
-        success: false,
-        message: '找不到该任务的日志'
+        success: true,
+        logs: translatedLogs
       };
     } catch (error) {
-      console.error(`[API] 获取操作日志失败: ${error}`);
+      logger.error(`获取操作日志失败: ${error instanceof Error ? error.message : String(error)}`);
       ctx.status = 500;
       ctx.body = {
         success: false,
-        message: `获取操作日志失败: ${error instanceof Error ? error.message : '未知错误'}`
+        message: 'Failed to get operation logs'
       };
     }
   }
@@ -1352,5 +1362,463 @@ export class PluginsController {
   public async getInstalledPluginsForPython(): Promise<any[]> {
     const installedPlugins = this.getInstalledPlugins();
     return installedPlugins;
+  }
+
+  // 获取插件历史记录 - 添加本地化支持
+  public async getPluginHistory(ctx: Context): Promise<void> {
+    try {
+      // 获取客户端首选语言并添加详细日志
+      const locale = this.getClientLocale(ctx) || i18nLogger.getLocale();
+      console.log(`[国际化调试] 请求语言参数: ${ctx.query.lang}`);
+      console.log(`[国际化调试] 解析后的locale: ${locale}`);
+      console.log(`[国际化调试] 当前i18n默认语言: ${i18nLogger.getLocale()}`);
+      
+      // 加载历史记录
+      const history = await this.loadPluginHistory();
+      console.log(`[国际化调试] 历史记录数量: ${history.length}`);
+      
+      // 本地化历史记录前添加示例日志
+      if (history.length > 0) {
+        console.log(`[国际化调试] 第一条历史记录的原始类型: ${history[0].type}`);
+        console.log(`[国际化调试] 类型翻译key: ${this.translateOperationType(history[0].type, locale)}`);
+      }
+      
+      // 本地化历史记录
+      const localizedHistory = history.map(item => {
+        const localizedItem = { ...item };
+        
+        // 翻译操作类型
+        localizedItem.typeText = this.translateOperationType(item.type, locale);
+        
+        // 翻译状态
+        localizedItem.statusText = this.translateStatus(item.status, locale);
+        
+        // 尝试本地化结果消息
+        if (item.result) {
+          localizedItem.resultLocalized = this.translateResult(item.result, locale);
+        }
+        
+        return localizedItem;
+      });
+      
+      // 添加响应示例日志
+      if (localizedHistory.length > 0) {
+        console.log(`[国际化调试] 本地化后第一条记录的typeText: ${localizedHistory[0].typeText}`);
+        console.log(`[国际化调试] 本地化后第一条记录的statusText: ${localizedHistory[0].statusText}`);
+        console.log(`[国际化调试] 本地化后第一条记录的resultLocalized: ${localizedHistory[0].resultLocalized}`);
+      }
+      
+      ctx.body = {
+        success: true,
+        history: localizedHistory
+      };
+    } catch (error) {
+      logger.error(`获取插件历史失败: ${error instanceof Error ? error.message : String(error)}`);
+      ctx.status = 500;
+      ctx.body = {
+        success: false,
+        message: i18nLogger.translate('plugins.history.error', { lng: this.getClientLocale(ctx) })
+      };
+    }
+  }
+  
+  // 清除插件历史记录
+  public async clearPluginHistory(ctx: Context): Promise<void> {
+    try {
+      const locale = this.getClientLocale(ctx) || i18nLogger.getLocale();
+      
+      // 清空历史记录文件
+      await require('fs').promises.writeFile(
+        HISTORY_FILE_PATH,
+        JSON.stringify([])
+      );
+      
+      ctx.body = {
+        success: true,
+        message: i18nLogger.translate('plugins.history.cleared', { lng: locale })
+      };
+    } catch (error) {
+      logger.error(`清除插件历史失败: ${error instanceof Error ? error.message : String(error)}`);
+      ctx.status = 500;
+      ctx.body = {
+        success: false,
+        message: i18nLogger.translate('plugins.history.clear_error', { lng: this.getClientLocale(ctx) })
+      };
+    }
+  }
+  
+  // 删除特定的插件历史记录
+  public async deletePluginHistoryItem(ctx: Context): Promise<void> {
+    const { id } = ctx.request.body as { id?: string };
+    const locale = this.getClientLocale(ctx) || i18nLogger.getLocale();
+    
+    if (!id) {
+      ctx.status = 400;
+      ctx.body = {
+        success: false,
+        message: i18nLogger.translate('plugins.history.id_required', { lng: locale })
+      };
+      return;
+    }
+    
+    try {
+      // 读取历史记录
+      const history = await this.loadPluginHistory();
+      
+      // 查找并删除记录
+      const index = history.findIndex(item => item.id === id);
+      
+      if (index !== -1) {
+        const deletedItem = history[index];
+        history.splice(index, 1);
+        
+        // 保存更新后的历史记录
+        await require('fs').promises.writeFile(
+          HISTORY_FILE_PATH,
+          JSON.stringify(history)
+        );
+        
+        ctx.body = {
+          success: true,
+          message: i18nLogger.translate('plugins.history.item_deleted', { 
+            lng: locale,
+            name: deletedItem.pluginName || deletedItem.pluginId
+          })
+        };
+      } else {
+        ctx.status = 404;
+        ctx.body = {
+          success: false,
+          message: i18nLogger.translate('plugins.history.item_not_found', { 
+            lng: locale,
+            id 
+          })
+        };
+      }
+    } catch (error) {
+      logger.error(`删除插件历史记录失败: ${error instanceof Error ? error.message : String(error)}`);
+      ctx.status = 500;
+      ctx.body = {
+        success: false,
+        message: i18nLogger.translate('plugins.history.delete_error', { lng: locale })
+      };
+    }
+  }
+  
+  // 获取客户端首选语言
+  private getClientLocale(ctx: Context): string | undefined {
+    // 从查询参数获取
+    if (ctx.query.lang && typeof ctx.query.lang === 'string') {
+      console.log(`[国际化调试] 从查询参数获取语言: ${ctx.query.lang}`);
+      return ctx.query.lang;
+    }
+    
+    // 从Accept-Language头获取
+    const acceptLanguage = ctx.get('Accept-Language');
+    if (acceptLanguage) {
+      const lang = acceptLanguage.split(',')[0].split(';')[0].split('-')[0];
+      console.log(`[国际化调试] 从Accept-Language获取语言: ${lang}`);
+      return lang;
+    }
+    
+    console.log('[国际化调试] 未找到语言参数，使用默认语言');
+    return undefined;
+  }
+  
+  // 翻译操作类型
+  private translateOperationType(type: string, locale: string): string {
+    // 直接对应的翻译映射，避免使用i18n中间层
+    const translations: Record<string, Record<string, string>> = {
+      'install': {
+        'en': 'Install',
+        'zh': '安装',
+        'ja': 'インストール',
+        'ko': '설치'
+      },
+      'uninstall': {
+        'en': 'Uninstall',
+        'zh': '卸载',
+        'ja': 'アンインストール',
+        'ko': '제거'
+      },
+      'enable': {
+        'en': 'Enable',
+        'zh': '启用',
+        'ja': '有効化',
+        'ko': '활성화'
+      },
+      'disable': {
+        'en': 'Disable',
+        'zh': '禁用',
+        'ja': '無効化',
+        'ko': '비活性化'
+      }
+    };
+    
+    // 如果有对应语言的直接翻译，使用它
+    if (translations[type] && translations[type][locale]) {
+      return translations[type][locale];
+    }
+    
+    // 否则尝试使用i18n
+    const keyMap: Record<string, string> = {
+      'install': 'plugins.operation.install',
+      'uninstall': 'plugins.operation.uninstall',
+      'enable': 'plugins.operation.enable',
+      'disable': 'plugins.operation.disable'
+    };
+    
+    const key = keyMap[type] || 'plugins.operation.unknown';
+    
+    try {
+      return i18nLogger.translate(key, { lng: locale });
+    } catch (error) {
+      // 如果没有匹配的翻译，返回英文备用翻译
+      if (translations[type] && translations[type]['en']) {
+        return translations[type]['en'];
+      }
+      
+      // 最后的后备
+      return type.charAt(0).toUpperCase() + type.slice(1);
+    }
+  }
+  
+  // 翻译状态
+  private translateStatus(status: string, locale: string): string {
+    // 直接翻译映射
+    const translations: Record<string, Record<string, string>> = {
+      'running': {
+        'en': 'Running',
+        'zh': '进行中',
+        'ja': '実行中',
+        'ko': '실행 중'
+      },
+      'success': {
+        'en': 'Success',
+        'zh': '成功',
+        'ja': '成功',
+        'ko': '성공'
+      },
+      'failed': {
+        'en': 'Failed',
+        'zh': '失败',
+        'ja': '失敗',
+        'ko': '실패'
+      }
+    };
+    
+    // 如果有对应语言的直接翻译，使用它
+    if (translations[status] && translations[status][locale]) {
+      return translations[status][locale];
+    }
+    
+    // 否则尝试使用i18n
+    const keyMap: Record<string, string> = {
+      'running': 'plugins.status.running',
+      'success': 'plugins.status.success',
+      'failed': 'plugins.status.failed'
+    };
+    
+    const key = keyMap[status] || 'plugins.status.unknown';
+    
+    try {
+      return i18nLogger.translate(key, { lng: locale });
+    } catch (error) {
+      // 如果没有匹配的翻译，返回英文备用翻译
+      if (translations[status] && translations[status]['en']) {
+        return translations[status]['en'];
+      }
+      
+      // 最后的后备
+      return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+  }
+  
+  // 翻译结果信息
+  private translateResult(result: string, locale: string): string {
+    // 直接翻译映射，与其他翻译方法一致
+    const translations: Record<string, Record<string, string>> = {
+      'install_completed': {
+        'en': 'Installation completed on {{date}}',
+        'zh': '安装完成于 {{date}}',
+        'ja': 'インストールが完了しました {{date}}',
+        'ko': '설치 완료 {{date}}'
+      },
+      'uninstall_completed': {
+        'en': 'Uninstalled on {{date}}',
+        'zh': '卸载完成于 {{date}}',
+        'ja': 'アンインストールが完了しました {{date}}',
+        'ko': '제거 완료 {{date}}'
+      },
+      'enable_completed': {
+        'en': 'Enabled on {{date}}',
+        'zh': '启用完成于 {{date}}',
+        'ja': '有効化しました {{date}}',
+        'ko': '활성화 완료 {{date}}'
+      },
+      'disable_completed': {
+        'en': 'Disabled on {{date}}',
+        'zh': '禁用完成于 {{date}}',
+        'ja': '無効化しました {{date}}',
+        'ko': '비활성화 완료 {{date}}'
+      },
+      'operation_failed': {
+        'en': 'Operation failed: {{message}}',
+        'zh': '操作失败: {{message}}',
+        'ja': '操作に失敗しました: {{message}}',
+        'ko': '작업 실패: {{message}}'
+      }
+    };
+    
+    // 提取日期时间或错误消息
+    let type = '';
+    let params: Record<string, string> = {};
+    
+    if (result.includes('安装完成于')) {
+      type = 'install_completed';
+      const dateMatch = result.match(/安装完成于\s+(.*)/);
+      params.date = dateMatch ? dateMatch[1] : '';
+    } else if (result.includes('卸载完成于')) {
+      type = 'uninstall_completed';
+      const dateMatch = result.match(/卸载完成于\s+(.*)/);
+      params.date = dateMatch ? dateMatch[1] : '';
+    } else if (result.includes('启用完成于')) {
+      type = 'enable_completed';
+      const dateMatch = result.match(/启用完成于\s+(.*)/);
+      params.date = dateMatch ? dateMatch[1] : '';
+    } else if (result.includes('禁用完成于')) {
+      type = 'disable_completed';
+      const dateMatch = result.match(/禁用完成于\s+(.*)/);
+      params.date = dateMatch ? dateMatch[1] : '';
+    } else if (result.includes('失败') || result.includes('错误')) {
+      type = 'operation_failed';
+      params.message = result;
+    } else {
+      // 无法匹配已知模式，返回原始结果
+      return result;
+    }
+    
+    // 如果有对应语言的直接翻译，使用它
+    if (translations[type] && translations[type][locale]) {
+      let translatedText = translations[type][locale];
+      
+      // 替换参数
+      Object.keys(params).forEach(key => {
+        translatedText = translatedText.replace(`{{${key}}}`, params[key]);
+      });
+      
+      return translatedText;
+    }
+    
+    // 尝试使用i18n
+    try {
+      return i18nLogger.translate(`plugins.result.${type}`, { 
+        lng: locale, 
+        ...params 
+      });
+    } catch (error) {
+      // 如果无法翻译，返回英文备用
+      if (translations[type] && translations[type]['en']) {
+        let translatedText = translations[type]['en'];
+        
+        // 替换参数
+        Object.keys(params).forEach(key => {
+          translatedText = translatedText.replace(`{{${key}}}`, params[key]);
+        });
+        
+        return translatedText;
+      }
+      
+      // 最后的后备，返回原始结果
+      return result;
+    }
+  }
+
+  // 加载插件历史记录（辅助方法）
+  private async loadPluginHistory(): Promise<PluginOperationHistory[]> {
+    try {
+      if (await this.fileExists(HISTORY_FILE_PATH)) {
+        const data = await require('fs').promises.readFile(HISTORY_FILE_PATH, 'utf8');
+        return JSON.parse(data);
+      }
+      return [];
+    } catch (error) {
+      logger.error(`加载插件历史记录失败: ${error instanceof Error ? error.message : String(error)}`);
+      return [];
+    }
+  }
+  
+  // 检查文件是否存在（辅助方法）
+  private async fileExists(filePath: string): Promise<boolean> {
+    try {
+      await require('fs').promises.access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // 添加日志翻译方法
+  private translateLogs(logs: string[], locale: string): string[] {
+    // 如果是中文，不需要翻译
+    if (locale === 'zh') {
+      return logs;
+    }
+    
+    // 英文翻译映射
+    const zhToEnMap: Record<string, string> = {
+      '开始安装插件': 'Started installing plugin',
+      '正在查找插件信息': 'Looking for plugin information',
+      '找到插件': 'Found plugin',
+      '准备安装': 'Preparing installation',
+      '正在下载插件': 'Downloading plugin',
+      '执行': 'Executing',
+      'Git错误': 'Git error',
+      '开发环境：跳过依赖安装': 'Development environment: skipping dependency installation',
+      '安装完成于': 'Installation completed on',
+      '开始卸载插件': 'Started uninstalling plugin',
+      '准备卸载': 'Preparing uninstallation',
+      '发现插件在禁用目录中': 'Plugin found in disabled directory',
+      '正在卸载禁用状态的插件': 'Uninstalling disabled plugin',
+      '已删除插件目录': 'Plugin directory deleted',
+      '清理临时文件': 'Cleaning temporary files',
+      '卸载完成于': 'Uninstallation completed on',
+      '正在卸载插件': 'Uninstalling plugin',
+      '已将插件目录备份到': 'Plugin directory backed up to',
+      '备份目录已保留': 'Backup directory preserved',
+      '插件目录不存在': 'Plugin directory does not exist',
+      '卸载失败': 'Uninstallation failed',
+      '开始禁用插件': 'Started disabling plugin',
+      '准备禁用': 'Preparing to disable',
+      '正在移动插件到禁用目录': 'Moving plugin to disabled directory',
+      '禁用完成于': 'Disabling completed on'
+    };
+    
+    // 翻译每一行日志
+    return logs.map(log => {
+      // 时间戳处理
+      const timestampMatch = log.match(/\[(.*?)\]/);
+      let translatedLog = log;
+      
+      if (timestampMatch) {
+        const timestamp = timestampMatch[1];
+        const content = log.replace(/\[.*?\]\s*/, '');
+        
+        // 尝试替换已知中文短语
+        let translatedContent = content;
+        Object.keys(zhToEnMap).forEach(zhText => {
+          if (content.includes(zhText)) {
+            translatedContent = translatedContent.replace(
+              zhText, 
+              zhToEnMap[zhText]
+            );
+          }
+        });
+        
+        translatedLog = `[${timestamp}] ${translatedContent}`;
+      }
+      
+      return translatedLog;
+    });
   }
 } 

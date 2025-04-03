@@ -273,23 +273,23 @@ const api = {
     superagent.post(`${API_BASE_URL}/plugins/history/clear`),
 
   // ComfyUI 重置相关 API
-  resetComfyUI: () => 
-    superagent.post(`${API_BASE_URL}/comfyui/reset`).use(debug),
+  resetComfyUI: (lang?: string) => 
+    superagent.post(`${API_BASE_URL}/comfyui/reset`).send({ lang }).use(debug),
   
-  getResetLogs: () => 
-    superagent.get(`${API_BASE_URL}/comfyui/reset-logs`).use(debug),
+  getResetLogs: (lang?: string) => 
+    superagent.get(`${API_BASE_URL}/comfyui/reset-logs`).query({ lang }).use(debug),
 
-  // 添加获取下载历史记录的API方法
-  getDownloadHistory: () => 
-    superagent.get(`${API_BASE_URL}/models/download-history`).use(debug),
+  // 获取下载历史记录
+  getDownloadHistory: (lang?: string) => 
+    superagent.get(`${API_BASE_URL}/models/download-history`).query({ lang }).use(debug),
 
-  // 添加清除下载历史记录的API方法
-  clearDownloadHistory: () => 
-    superagent.post(`${API_BASE_URL}/models/download-history/clear`).use(debug),
+  // 清空下载历史记录
+  clearDownloadHistory: (lang?: string) => 
+    superagent.post(`${API_BASE_URL}/models/download-history/clear`).query({ lang }).use(debug),
 
-  // 添加删除单条下载历史记录的API方法
-  deleteDownloadHistoryItem: (id: string) => 
-    superagent.post(`${API_BASE_URL}/models/download-history/delete`).send({ id }).use(debug),
+  // 删除单条下载历史记录
+  deleteDownloadHistoryItem: (id: string, lang?: string) => 
+    superagent.post(`${API_BASE_URL}/models/download-history/delete`).send({ id, lang }).use(debug),
 
   // 添加打开路径的API方法
   openPath: (path: string) => 

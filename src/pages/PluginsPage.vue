@@ -244,6 +244,23 @@
             <q-btn color="primary" icon="refresh" label="刷新" @click="fetchHistory" :loading="historyLoading" />
             <q-btn color="negative" icon="delete" label="清除历史" @click="confirmClearHistory" />
           </q-btn-group>
+          
+          <q-select
+            v-model="historyLanguage"
+            :options="languageOptions"
+            outlined
+            dense
+            label="界面语言"
+            class="q-ml-md"
+            style="max-width: 150px"
+            @update:model-value="changeHistoryLanguage"
+            emit-value
+            map-options
+          >
+            <template v-slot:append>
+              <q-icon name="translate" />
+            </template>
+          </q-select>
         </div>
       </div>
 
@@ -282,7 +299,7 @@
                 text-color="white"
                 size="sm"
               >
-                {{ getOperationName(props.row.type) }}
+                {{ getOperationLocalizedName(props.row) }}
               </q-chip>
             </q-td>
           </template>
@@ -296,7 +313,7 @@
                 text-color="white"
                 size="sm"
               >
-                {{ getStatusName(props.row.status) }}
+                {{ getStatusLocalizedName(props.row) }}
               </q-chip>
             </q-td>
           </template>
@@ -726,6 +743,15 @@ const isInitialLoad = ref(true);
 const initialLoadCount = 50; // 初始加载的插件数量
 const loadMoreCount = 50; // 每次加载更多的数量
 const visiblePlugins = ref<Plugin[]>([]);
+
+// 添加语言选择相关状态
+const historyLanguage = ref('zh');
+const languageOptions = [
+  { label: '中文', value: 'zh' },
+  { label: 'English', value: 'en' },
+  { label: '日本語', value: 'ja' },
+  { label: '한국어', value: 'ko' }
+];
 
 // 定义 QTable 列的类型
 const historyColumns: QTableColumn[] = [
@@ -1215,7 +1241,26 @@ const fetchPluginsFromSource = async () => {
 const fetchHistory = async () => {
   historyLoading.value = true;
   try {
-    const response = await api.getOperationHistory();
+    // 确保只传递语言代码作为参数
+    console.log('historyLanguage:', historyLanguage.value);
+    const response = await api.getOperationHistory().query({ lang: historyLanguage.value });
+    
+    // 添加调试输出
+    console.log('API响应数据:', response.body);
+    
+    // 检查第一条记录的国际化字段
+    if (response.body.success && response.body.history.length > 0) {
+      const firstItem = response.body.history[0];
+      console.log('第一条历史记录:', {
+        type: firstItem.type,
+        typeText: firstItem.typeText,
+        status: firstItem.status,
+        statusText: firstItem.statusText,
+        result: firstItem.result,
+        resultLocalized: firstItem.resultLocalized
+      });
+    }
+    
     if (response.body.success) {
       operationHistory.value = response.body.history;
     } else {
@@ -1310,7 +1355,7 @@ const showOperationLogs = async (operation: PluginOperation) => {
   logsDialogVisible.value = true;
   
   try {
-    const response = await api.getOperationLogs(operation.id);
+    const response = await api.getOperationLogs(operation.id).query({ lang: historyLanguage.value });
     if (response.body.success) {
       operationLogs.value = response.body.logs || [];
     } else {
@@ -1340,7 +1385,7 @@ const confirmClearHistory = () => {
 // 清除历史记录
 const clearHistory = async () => {
   try {
-    const response = await api.clearOperationHistory();
+    const response = await api.clearOperationHistory().query({ lang: historyLanguage.value });
     if (response.body.success) {
       operationHistory.value = [];
       $q.notify({
@@ -1397,12 +1442,35 @@ const loadMorePlugins = () => {
   visiblePlugins.value = [...visiblePlugins.value, ...newPlugins];
 };
 
+// 添加切换历史记录语言的函数
+const changeHistoryLanguage = () => {
+  // 重新获取历史记录，使用新的语言设置
+  fetchHistory();
+};
+
 // 监听标签页切换，加载历史记录
 watch(activeTab, (newValue) => {
   if (newValue === 'history' && operationHistory.value.length === 0) {
     fetchHistory();
   }
 });
+
+// 添加这些辅助函数
+const getOperationLocalizedName = (row) => {
+  // 检查typeText是否为翻译键（包含点号）
+  if (row.typeText && !row.typeText.includes('.')) {
+    return row.typeText; // 如果不是翻译键，直接使用
+  }
+  return getOperationName(row.type); // 否则使用本地函数
+};
+
+const getStatusLocalizedName = (row) => {
+  // 检查statusText是否为翻译键（包含点号）
+  if (row.statusText && !row.statusText.includes('.')) {
+    return row.statusText; // 如果不是翻译键，直接使用
+  }
+  return getStatusName(row.status); // 否则使用本地函数
+};
 
 // 初始化
 onMounted(() => {

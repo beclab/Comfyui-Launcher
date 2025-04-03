@@ -1,0 +1,123 @@
+{
+  "user": {
+    "created": "User created successfully: {{username}}",
+    "deleted": "User deleted: {{username}}",
+    "updated": "User updated: {{username}}",
+    "login": {
+      "success": "User login successful: {{username}}",
+      "failed": "Login failed for user: {{username}}"
+    }
+  },
+  "server": {
+    "start": "Server started on port {{port}}",
+    "error": "Server error: {{message}}",
+    "request": "Received {{method}} request to {{path}}",
+    "database": {
+      "connected": "Database connected successfully",
+      "error": "Database connection error: {{message}}"
+    }
+  },
+  "comfyui": {
+    "start": "ComfyUI started successfully",
+    "stop": "ComfyUI stopped",
+    "error": "ComfyUI error: {{message}}",
+    "status": "ComfyUI status: {{status}}",
+    "reset": {
+      "started": "ComfyUI reset process started",
+      "stopping": "Stopping running ComfyUI process",
+      "stop_failed": "Failed to stop ComfyUI process",
+      "cleaning_cache": "Cleaning cache directory: {{path}}",
+      "cache_not_exist": "Cache directory does not exist: {{path}}",
+      "cleaning_path": "Cleaning ComfyUI directory: {{path}}",
+      "keeping_dir": "Keeping directory: {{name}}",
+      "deleting_dir": "Deleting directory: {{name}}",
+      "deleting_file": "Deleting file: {{name}}",
+      "path_not_exist": "ComfyUI path does not exist: {{path}}",
+      "recovery_started": "Starting recovery process",
+      "recovery_completed": "Recovery process completed successfully",
+      "recovery_failed": "Recovery process failed: {{message}}",
+      "reset_completed": "ComfyUI reset completed successfully",
+      "completed": "ComfyUI has been reset to initial state successfully",
+      "failed": "Failed to reset ComfyUI: {{message}}",
+      "no_logs": "No reset logs found",
+      "logs_retrieved": "Retrieved {{count}} reset log entries"
+    }
+  },
+  "models": {
+    "download": {
+      "start": "Started downloading model: {{name}}",
+      "progress": "Model {{name}} download progress: {{progress}}%",
+      "complete": "Model {{name}} download completed",
+      "error": "Error downloading model {{name}}: {{message}}",
+      "cancel": "Download of model {{name}} canceled"
+    },
+    "install": "Installing model: {{name}}",
+    "delete": "Deleted model: {{name}}",
+    "scan": "Scanning for models",
+    "scan_complete": "Model scan complete, found {{count}} models"
+  },
+  "plugins": {
+    "install": {
+      "start": "Started installing plugin: {{name}}",
+      "complete": "Plugin {{name}} installation completed",
+      "error": "Error installing plugin {{name}}: {{message}}"
+    },
+    "uninstall": "Uninstalled plugin: {{name}}",
+    "enable": "Enabled plugin: {{name}}",
+    "disable": "Disabled plugin: {{name}}",
+    "operation": {
+      "install": "Install",
+      "uninstall": "Uninstall", 
+      "enable": "Enable",
+      "disable": "Disable",
+      "unknown": "Unknown operation"
+    },
+    "status": {
+      "running": "Running",
+      "success": "Success",
+      "failed": "Failed",
+      "unknown": "Unknown"
+    },
+    "result": {
+      "install_completed": "Installation completed on {{date}}",
+      "uninstall_completed": "Uninstall completed on {{date}}",
+      "enable_completed": "Enabled on {{date}}",
+      "disable_completed": "Disabled on {{date}}",
+      "operation_failed": "Operation failed: {{message}}"
+    },
+    "history": {
+      "error": "Error retrieving plugin history",
+      "cleared": "Plugin history has been cleared",
+      "clear_error": "Error clearing plugin history",
+      "id_required": "History item ID is required",
+      "item_deleted": "History item for plugin {{name}} has been deleted",
+      "item_not_found": "History item with ID {{id}} was not found",
+      "delete_error": "Error deleting history item"
+    }
+  },
+  "download": {
+    "status": {
+      "success": "Success",
+      "failed": "Failed",
+      "canceled": "Canceled",
+      "downloading": "Downloading",
+      "unknown": "Unknown"
+    },
+    "error_types": {
+      "canceled": "Download was canceled by user",
+      "not_found": "Model file not found",
+      "network": "Network connection error",
+      "permission": "Insufficient permissions",
+      "unknown": "Unknown error"
+    },
+    "history": {
+      "error": "Failed to get download history",
+      "cleared": "History has been cleared successfully",
+      "clear_error": "Failed to clear history",
+      "id_required": "Record ID is required",
+      "item_deleted": "Record {{name}} has been deleted",
+      "item_not_found": "Record with ID {{id}} not found",
+      "delete_error": "Failed to delete record"
+    }
+  }
+} 

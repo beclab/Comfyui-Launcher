@@ -18,6 +18,11 @@ import {
   fixPluginDependencies
 } from './controllers/python.controller';
 import civitaiController from './controllers/civitai.controller';
+// 导入增强的日志记录工具
+import logger, { i18nLogger } from './utils/logger';
+
+// 设置日志语言
+i18nLogger.setLocale('en'); // 修改默认语言为英文
 
 const app = new Koa();
 const router = new Router();
@@ -76,9 +81,10 @@ router.post('/api/plugins/enable', (ctx) => pluginsController.enablePlugin(ctx))
 router.get('/api/plugins/refresh', (ctx) => pluginsController.refreshInstalledPlugins(ctx));
 
 // 插件历史记录相关路由
-router.get('/api/plugins/history', pluginsController.getOperationHistory.bind(pluginsController));
+router.get('/api/plugins/history', pluginsController.getPluginHistory.bind(pluginsController));
 router.get('/api/plugins/logs/:taskId', pluginsController.getOperationLogs.bind(pluginsController));
-router.post('/api/plugins/history/clear', pluginsController.clearOperationHistory.bind(pluginsController));
+router.post('/api/plugins/history/clear', pluginsController.clearPluginHistory.bind(pluginsController));
+router.post('/api/plugins/history/delete', pluginsController.deletePluginHistoryItem.bind(pluginsController));
 
 // Python依赖管理路由
 router.get('/api/python/pip-source', (ctx) => getPipSource(ctx));
@@ -114,17 +120,13 @@ app.use(router.allowedMethods());
 
 // 启动服务器
 const PORT = process.env.PORT || 3000;
-console.log('======= 后端服务器正在启动 =======');
+logger.t('server.start', { port: PORT }); // 使用翻译版本记录日志
 app.listen(PORT, () => {
-  console.log('\n');
-  console.log('==================================');
-  console.log(`ComfyUI管理器服务器已启动，监听端口 ${PORT}`);
-  console.log('==================================');
-  console.log('\n');
+  logger.t('server.start', { port: PORT }); // 使用翻译版本记录日志
 });
 
 // 在适当的位置添加以下代码，例如在主应用程序启动后
 const comfyUIProxyServer = createComfyUIProxy();
 comfyUIProxyServer.listen(config.comfyui.proxyPort, () => {
-  console.log(`ComfyUI代理服务器运行在端口 ${config.comfyui.proxyPort}`);
+  logger.t('server.proxy_start', { port: config.comfyui.proxyPort });
 }); 

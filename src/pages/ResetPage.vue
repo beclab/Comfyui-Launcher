@@ -121,6 +121,19 @@
         </q-card-section>
         
         <q-card-section>
+          <div class="row items-center q-mb-md">
+            <q-select
+              v-model="selectedLanguage"
+              :options="languageOptions"
+              label="日志语言"
+              dense
+              outlined
+              style="width: 150px"
+              class="q-mr-md"
+            />
+            <q-btn label="刷新" color="primary" @click="fetchResetLogs" :loading="isLoading" />
+          </div>
+          
           <div class="log-container q-mb-md" v-if="resetLogs.length > 0">
             <div v-for="(log, index) in resetLogs" :key="index" class="log-entry">
               {{ log }}
@@ -135,7 +148,6 @@
         
         <q-card-actions align="right">
           <q-btn flat label="关闭" color="primary" v-close-popup />
-          <q-btn label="刷新" color="primary" @click="fetchResetLogs" :loading="isLoading" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -159,6 +171,13 @@ export default {
     const showLogDialog = ref(false)
     const isLoading = ref(false)
     
+    // 添加语言选择
+    const selectedLanguage = ref('zh')
+    const languageOptions = [
+      { label: '中文', value: 'zh' },
+      { label: 'English', value: 'en' }
+    ]
+    
     // 日志轮询间隔ID
     let logsIntervalId = null
     
@@ -174,16 +193,22 @@ export default {
     const fetchResetLogs = async () => {
       isLoading.value = true
       try {
-        const response = await api.getResetLogs()
+        // 修复：只传递语言值，而不是整个对象
+        const response = await api.getResetLogs(selectedLanguage.value.value)
         if (response && response.body && response.body.logs) {
           resetLogs.value = response.body.logs
           scrollToBottom()
         }
       } catch (error) {
-        console.error('获取重置日志失败:', error)
+        console.error('Getting reset logs failed:', error)
       } finally {
         isLoading.value = false
       }
+    }
+    
+    // 监听语言变化重新获取日志
+    const watchLanguageChange = async () => {
+      await fetchResetLogs()
     }
     
     // 显示上次重置日志
@@ -197,15 +222,15 @@ export default {
     const resetComfyUI = async () => {
       showConfirmDialog.value = false
       showResetProgress.value = true
-      resetLogs.value = ['开始还原操作，请稍候...']
+      resetLogs.value = ['Starting reset operation, please wait...']
       isResetting.value = true
       
       try {
-        // 调用重置API
-        const response = await api.resetComfyUI()
+        // 修复：只传递语言值，而不是整个对象
+        const response = await api.resetComfyUI(selectedLanguage.value.value)
         
         // 开始轮询日志
-        logsIntervalId = setInterval(fetchResetLogs, 1000)
+        logsIntervalId = setInterval(() => fetchResetLogs(), 1000)
         
         // 等待重置完成
         if (response.body && response.body.success) {
@@ -219,11 +244,11 @@ export default {
             showResetComplete.value = true
           }, 1000)
         } else {
-          resetLogs.value.push('重置操作失败: ' + (response.body?.message || '未知错误'))
+          resetLogs.value.push('Reset operation failed: ' + (response.body?.message || 'Unknown error'))
           isResetting.value = false
         }
       } catch (error) {
-        resetLogs.value.push('重置操作出错: ' + (error.message || '未知错误'))
+        resetLogs.value.push('Reset operation error: ' + (error.message || 'Unknown error'))
         isResetting.value = false
       }
     }
@@ -234,7 +259,7 @@ export default {
         await api.restartApp()
         // 应用会重启，页面将会刷新
       } catch (error) {
-        console.error('重启应用失败:', error)
+        console.error('Failed to restart app:', error)
         // 如果API调用失败，手动刷新页面
         setTimeout(() => {
           window.location.href = '/'
@@ -259,10 +284,13 @@ export default {
       logEnd,
       showLogDialog,
       isLoading,
+      selectedLanguage,
+      languageOptions,
       resetComfyUI,
       showLastResetLogs,
       fetchResetLogs,
-      restartApp
+      restartApp,
+      watchLanguageChange
     }
   }
 }
@@ -288,5 +316,16 @@ export default {
   margin-bottom: 3px;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+/* 添加样式用于语言选择器 */
+.language-selector {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.language-selector .q-select {
+  min-width: 150px;
 }
 </style>

@@ -3,6 +3,18 @@
     <q-card-section class="row items-center justify-between">
       <div class="text-h6">下载历史记录</div>
       <div>
+        <q-select
+          v-model="selectedLanguage"
+          :options="languageOptions"
+          dense
+          outlined
+          emit-value
+          map-options
+          options-dense
+          class="q-mr-md language-selector"
+          style="min-width: 120px"
+          @update:model-value="onLanguageChange"
+        />
         <q-btn flat round color="grey" icon="refresh" @click="refreshHistory" :loading="loading">
           <q-tooltip>刷新历史记录</q-tooltip>
         </q-btn>
@@ -36,7 +48,7 @@
             <q-item-label caption lines="2">
               来源: {{ item.source || '未知' }} | 
               {{ formatDate(item.startTime) }} | 
-              状态: {{ getStatusText(item.status) }}
+              状态: {{ item.statusText || getStatusText(item.status) }}
               <template v-if="item.error">
                 <br />错误信息: {{ item.error }}
               </template>
@@ -67,7 +79,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted } from 'vue';
+import { defineComponent, ref, onMounted, watch } from 'vue';
 import api from '../../api';
 import { useQuasar } from 'quasar';
 
@@ -76,6 +88,7 @@ interface DownloadHistoryItem {
   id: string;
   modelName: string;
   status: 'success' | 'failed' | 'canceled' | 'downloading';
+  statusText?: string; // 添加本地化状态文本
   startTime: number;
   endTime?: number;
   fileSize?: number;
@@ -91,17 +104,39 @@ interface DownloadHistoryItem {
 export default defineComponent({
   name: 'DownloadHistoryCard',
   
-  setup() {
+  props: {
+    preferredLanguage: {
+      type: String,
+      default: 'zh'
+    }
+  },
+  
+  setup(props) {
     const $q = useQuasar();
-    // 使用正确的类型替代 any
     const history = ref<DownloadHistoryItem[]>([]);
     const loading = ref(false);
+    
+    // 使用父组件传递的语言
+    const selectedLanguage = ref(props.preferredLanguage);
+    const languageOptions = [
+      { label: '中文', value: 'zh' },
+      { label: 'English', value: 'en' },
+      { label: '日本語', value: 'ja' },
+      { label: '한국어', value: 'ko' }
+    ];
+    
+    // 语言变更处理函数
+    const onLanguageChange = () => {
+      // 刷新历史记录，使用新选择的语言
+      fetchHistory();
+    };
     
     // 获取下载历史
     const fetchHistory = async () => {
       loading.value = true;
       try {
-        const response = await api.getDownloadHistory();
+        // 添加语言参数到API请求
+        const response = await api.getDownloadHistory(selectedLanguage.value);
         history.value = response.body.history || [];
         // 按时间降序排列
         history.value.sort((a, b) => b.startTime - a.startTime);
@@ -131,7 +166,8 @@ export default defineComponent({
         persistent: true
       }).onOk(async () => {
         try {
-          await api.clearDownloadHistory();
+          // 添加语言参数到API请求
+          await api.clearDownloadHistory(selectedLanguage.value);
           history.value = [];
           $q.notify({
             color: 'positive',
@@ -158,7 +194,8 @@ export default defineComponent({
         persistent: true
       }).onOk(async () => {
         try {
-          await api.deleteDownloadHistoryItem(item.id);
+          // 添加语言参数到API请求
+          await api.deleteDownloadHistoryItem(item.id, selectedLanguage.value);
           // 从列表中移除
           history.value = history.value.filter(record => record.id !== item.id);
           $q.notify({
@@ -258,6 +295,12 @@ export default defineComponent({
       };
     };
     
+    // 监听 preferredLanguage 属性变化
+    watch(() => props.preferredLanguage, (newLang) => {
+      selectedLanguage.value = newLang;
+      fetchHistory();
+    });
+    
     // 组件挂载时获取历史记录
     onMounted(() => {
       fetchHistory();
@@ -266,6 +309,9 @@ export default defineComponent({
     return {
       history,
       loading,
+      selectedLanguage,
+      languageOptions,
+      onLanguageChange,
       refreshHistory,
       confirmClearHistory,
       confirmDeleteItem,
@@ -280,4 +326,11 @@ export default defineComponent({
     };
   }
 });
-</script> 
+</script>
+
+<style scoped>
+.language-selector {
+  display: inline-block;
+  vertical-align: middle;
+}
+</style> 

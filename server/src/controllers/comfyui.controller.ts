@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as net from 'net';
 import * as util from 'util';
 import { logger } from '../utils/logger';
+import { i18nLogger } from '../utils/logger';
 
 // 将exec转换为Promise
 const execPromise = util.promisify(exec);
@@ -111,16 +112,26 @@ export class ComfyUIController {
   }
 
   // 添加一个专门记录重置日志的方法
-  private addResetLog(message: string, isError: boolean = false): void {
+  private addResetLog(message: string, isError: boolean = false, lang?: string): void {
     const timestamp = new Date().toISOString();
-    const logEntry = `[${timestamp}] ${isError ? 'ERROR: ' : ''}${message}`;
+    let logMessage = message;
+    
+    // 如果消息看起来像是翻译键（包含点号但没有空格），尝试翻译它
+    if (message.includes('.') && !message.includes(' ')) {
+      // 使用提供的语言或默认语言
+      const useLang = lang || i18nLogger.getLocale();
+      logMessage = i18nLogger.translate(message, { lng: useLang });
+    }
+    
+    // 创建日志条目
+    const logEntry = `[${timestamp}] ${isError ? 'ERROR: ' : ''}${logMessage}`;
     this.resetLogs.push(logEntry);
     
     // 同时记录到系统日志
     if (isError) {
-      logger.error(message);
+      logger.error(logMessage);
     } else {
-      logger.info(message);
+      logger.info(logMessage);
     }
     
     // 将日志写入文件
@@ -386,7 +397,10 @@ export class ComfyUIController {
 
   // 重置ComfyUI到初始状态
   async resetComfyUI(ctx: Context): Promise<void> {
-    logger.info('[API] 收到重置ComfyUI请求');
+    // 从请求体中获取语言参数，使用类型断言解决类型错误
+    const lang = (ctx.request.body as { lang?: string })?.lang || this.getClientLocale(ctx) || i18nLogger.getLocale();
+    logger.info(`[API] Received reset ComfyUI request (language: ${lang})`);
+    
     // 清空重置日志
     this.resetLogs = [];
     
@@ -397,26 +411,30 @@ export class ComfyUIController {
       }
       fs.writeFileSync(RESET_LOG_FILE, ''); // 清空文件内容
     } catch (error) {
-      logger.error(`清空重置日志文件失败: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`Failed to clear reset log file: ${error instanceof Error ? error.message : String(error)}`);
     }
     
-    this.addResetLog('收到重置ComfyUI到初始状态的请求');
-    this.addLog('收到重置ComfyUI到初始状态的请求');
+    // 使用i18n添加日志
+    const startMessage = i18nLogger.translate('comfyui.reset.started', { lng: lang });
+    this.addResetLog('comfyui.reset.started', false, lang);
+    this.addLog(startMessage);
     
     try {
       // 首先检查ComfyUI是否在运行，如果是则停止它
       const running = await isComfyUIRunning();
       if (running) {
-        this.addResetLog('ComfyUI正在运行，将先停止服务');
-        this.addLog('ComfyUI正在运行，将先停止服务');
+        const stoppingMessage = i18nLogger.translate('comfyui.reset.stopping', { lng: lang });
+        this.addResetLog(stoppingMessage);
+        this.addLog(stoppingMessage);
         await this.killComfyUIGeneric();
         await new Promise(resolve => setTimeout(resolve, 2000));
         
         const stillRunning = await isComfyUIRunning();
         if (stillRunning) {
-          this.addResetLog('无法停止ComfyUI，重置操作中止', true);
+          const stopFailedMessage = i18nLogger.translate('comfyui.reset.stop_failed', { lng: lang });
+          this.addResetLog(stopFailedMessage, true);
           ctx.status = 500;
-          ctx.body = { success: false, message: '无法停止ComfyUI，重置操作中止' };
+          ctx.body = { success: false, message: stopFailedMessage };
           return;
         }
         
@@ -425,20 +443,23 @@ export class ComfyUIController {
       }
       
       // 开始重置操作
-      this.addResetLog('开始重置ComfyUI到初始状态...');
+      this.addResetLog(i18nLogger.translate('comfyui.reset.started', { lng: lang }));
       
       // 1. 清空cache路径
       if (cachePath && fs.existsSync(cachePath)) {
-        this.addResetLog(`清空cache路径: ${cachePath}`);
+        const cleaningCacheMessage = i18nLogger.translate('comfyui.reset.cleaning_cache', { path: cachePath, lng: lang });
+        this.addResetLog(cleaningCacheMessage);
         await this.clearDirectory(cachePath);
       } else {
-        this.addResetLog(`cache路径不存在: ${cachePath}`, true);
+        const cacheNotExistMessage = i18nLogger.translate('comfyui.reset.cache_not_exist', { path: cachePath, lng: lang });
+        this.addResetLog(cacheNotExistMessage, true);
       }
       
       // 2. 清空COMFYUI_PATH下除models外的所有内容
       const comfyuiPath = paths.comfyui;
       if (comfyuiPath && fs.existsSync(comfyuiPath)) {
-        this.addResetLog(`清理ComfyUI路径(保留models、output和数据目录): ${comfyuiPath}`);
+        const cleaningPathMessage = i18nLogger.translate('comfyui.reset.cleaning_path', { path: comfyuiPath, lng: lang });
+        this.addResetLog(cleaningPathMessage);
         
         // 检查数据目录是否在comfyuiPath内
         const dataDir = config.dataDir;
@@ -455,26 +476,31 @@ export class ComfyUIController {
           // 跳过models、output和数据目录
           if (entry.name === 'models' || entry.name === 'output' || 
               (isDataDirInComfyUI && entry.name === path.basename(dataDir))) {
-            this.addResetLog(`保留${entry.name}目录`);
+            const keepingDirMessage = i18nLogger.translate('comfyui.reset.keeping_dir', { name: entry.name, lng: lang });
+            this.addResetLog(keepingDirMessage);
             continue;
           }
           
           const fullPath = path.join(comfyuiPath, entry.name);
           if (entry.isDirectory()) {
-            this.addResetLog(`删除目录: ${entry.name}`);
+            const deletingDirMessage = i18nLogger.translate('comfyui.reset.deleting_dir', { name: entry.name, lng: lang });
+            this.addResetLog(deletingDirMessage);
             await this.clearDirectory(fullPath, true); // 删除整个目录
           } else {
-            this.addResetLog(`删除文件: ${entry.name}`);
+            const deletingFileMessage = i18nLogger.translate('comfyui.reset.deleting_file', { name: entry.name, lng: lang });
+            this.addResetLog(deletingFileMessage);
             fs.unlinkSync(fullPath);
           }
         }
       } else {
-        this.addResetLog(`ComfyUI路径不存在: ${comfyuiPath}`, true);
+        const pathNotExistMessage = i18nLogger.translate('comfyui.reset.path_not_exist', { path: comfyuiPath, lng: lang });
+        this.addResetLog(pathNotExistMessage, true);
       }
       
       // 3. 尝试执行恢复脚本，仅在失败时才重启Pod
       try {
-        this.addResetLog('尝试执行恢复脚本...');
+        const recoveryStartedMessage = i18nLogger.translate('comfyui.reset.recovery_started', { lng: lang });
+        this.addResetLog(recoveryStartedMessage);
         
         // 首先尝试执行恢复脚本
         try {
@@ -487,13 +513,14 @@ export class ComfyUIController {
           const { stdout: rsyncOutput } = await execPromise('rsync -av --update /runner-scripts/ /root/runner-scripts/');
           this.addResetLog(`同步runner-scripts目录结果: ${rsyncOutput.trim().split('\n')[0]}...`);
           
-          this.addResetLog('恢复脚本执行成功，无需重启Pod');
+          const recoveryCompletedMessage = i18nLogger.translate('comfyui.reset.recovery_completed', { lng: lang });
+          this.addResetLog(recoveryCompletedMessage);
           
         } catch (scriptError) {
           // 恢复脚本执行失败，尝试重启Pod
           const errorMsg = scriptError instanceof Error ? scriptError.message : String(scriptError);
-          this.addResetLog(`恢复脚本执行失败: ${errorMsg}，请手工重启Pod`, true);
-
+          const recoveryFailedMessage = i18nLogger.translate('comfyui.reset.recovery_failed', { message: errorMsg, lng: lang });
+          this.addResetLog(recoveryFailedMessage, true);
         }
       } catch (cmdError) {
         const errorMsg = cmdError instanceof Error ? cmdError.message : String(cmdError);
@@ -501,21 +528,26 @@ export class ComfyUIController {
         // 继续执行，不中断整个重置过程
       }
       
-      this.addResetLog('ComfyUI重置完成');
+      const resetCompletedMessage = i18nLogger.translate('comfyui.reset.reset_completed', { lng: lang });
+      this.addResetLog(resetCompletedMessage);
+      
+      // 返回成功响应
+      const successMessage = i18nLogger.translate('comfyui.reset.completed', { lng: lang });
       ctx.body = {
         success: true,
-        message: 'ComfyUI已成功重置到初始状态'
+        message: successMessage
       };
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
+      const failedMessage = i18nLogger.translate('comfyui.reset.failed', { message: errorMessage, lng: lang });
       this.addResetLog(`重置ComfyUI时发生错误: ${errorMessage}`, true);
       logger.error(`[API] 重置ComfyUI时发生错误: ${errorMessage}`);
       
       ctx.status = 500;
       ctx.body = {
         success: false,
-        message: `重置失败: ${errorMessage}`,
+        message: failedMessage,
         logs: this.resetLogs
       };
     }
@@ -554,9 +586,11 @@ export class ComfyUIController {
     }
   }
 
-  // 添加获取重置日志的新API方法
+  // 添加获取重置日志的新API方法 - 添加i18n支持
   async getResetLogs(ctx: Context): Promise<void> {
-    logger.info('[API] 收到获取ComfyUI重置日志请求');
+    // 从查询参数中获取语言
+    const lang = ctx.query.lang as string || this.getClientLocale(ctx) || i18nLogger.getLocale();
+    logger.info(`[API] Received get ComfyUI reset logs request (language: ${lang})`);
     
     // 如果内存中没有日志，尝试从文件读取
     if (this.resetLogs.length === 0) {
@@ -568,13 +602,128 @@ export class ComfyUIController {
           }
         }
       } catch (error) {
-        logger.error(`读取重置日志文件失败: ${error instanceof Error ? error.message : String(error)}`);
+        logger.error(`Failed to read reset log file: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    
+    // 翻译日志内容
+    const translatedLogs = this.resetLogs.map(log => {
+      try {
+        // 尝试提取时间戳和消息部分
+        const matches = log.match(/^\[(.*?)\]\s*(ERROR:\s*)?(.*)$/);
+        if (matches) {
+          const timestamp = matches[1];
+          const isError = !!matches[2];
+          let message = matches[3];
+          
+          // 检查消息是否是翻译键（通常包含点号分隔）
+          if (message.includes('.') && !message.includes(' ')) {
+            // 直接使用i18nLogger.translate进行翻译
+            const translatedMessage = i18nLogger.translate(message, { lng: lang });
+            
+            // 如果翻译结果与原始键相同（可能没有找到翻译），使用基本翻译表
+            if (translatedMessage === message) {
+              // 为各种语言提供基本翻译
+              const basicTranslations: { [key: string]: { [key: string]: string } } = {
+                'en': {
+                  'comfyui.reset.started': 'ComfyUI reset process started',
+                  'comfyui.reset.stopping': 'Stopping running ComfyUI process',
+                  'comfyui.reset.completed': 'ComfyUI has been reset successfully',
+                  'comfyui.reset.stop_failed': 'Failed to stop ComfyUI process',
+                  'comfyui.reset.cleaning_cache': 'Cleaning cache directory',
+                  'comfyui.reset.cache_not_exist': 'Cache directory does not exist',
+                  'comfyui.reset.cleaning_path': 'Cleaning ComfyUI directory',
+                  'comfyui.reset.keeping_dir': 'Keeping directory',
+                  'comfyui.reset.deleting_dir': 'Deleting directory',
+                  'comfyui.reset.deleting_file': 'Deleting file',
+                  'comfyui.reset.path_not_exist': 'ComfyUI path does not exist',
+                  'comfyui.reset.recovery_started': 'Starting recovery process',
+                  'comfyui.reset.recovery_completed': 'Recovery process completed successfully',
+                  'comfyui.reset.recovery_failed': 'Recovery process failed',
+                  'comfyui.reset.reset_completed': 'ComfyUI reset completed successfully',
+                  'comfyui.reset.failed': 'Failed to reset ComfyUI',
+                  'comfyui.reset.no_logs': 'No reset logs found',
+                  'comfyui.reset.logs_retrieved': 'Retrieved reset log entries'
+                },
+                'zh': {
+                  'comfyui.reset.started': 'ComfyUI重置过程已启动',
+                  'comfyui.reset.stopping': '正在停止运行中的ComfyUI进程',
+                  'comfyui.reset.completed': 'ComfyUI已成功重置',
+                  'comfyui.reset.stop_failed': '无法停止ComfyUI进程',
+                  'comfyui.reset.cleaning_cache': '正在清理缓存目录',
+                  'comfyui.reset.cache_not_exist': '缓存目录不存在',
+                  'comfyui.reset.cleaning_path': '正在清理ComfyUI目录',
+                  'comfyui.reset.keeping_dir': '保留目录',
+                  'comfyui.reset.deleting_dir': '删除目录',
+                  'comfyui.reset.deleting_file': '删除文件',
+                  'comfyui.reset.path_not_exist': 'ComfyUI路径不存在',
+                  'comfyui.reset.recovery_started': '开始恢复进程',
+                  'comfyui.reset.recovery_completed': '恢复进程成功完成',
+                  'comfyui.reset.recovery_failed': '恢复进程失败',
+                  'comfyui.reset.reset_completed': 'ComfyUI重置成功完成',
+                  'comfyui.reset.failed': '重置ComfyUI失败',
+                  'comfyui.reset.no_logs': '未找到重置日志',
+                  'comfyui.reset.logs_retrieved': '已检索重置日志条目'
+                }
+              };
+              
+              // 获取当前语言的翻译，如果不存在则使用英文
+              const langTranslations = basicTranslations[lang] || basicTranslations['en'];
+              message = langTranslations[message] || message;
+            } else {
+              message = translatedMessage;
+            }
+          }
+          
+          // 重新构建完整日志条目
+          return `[${timestamp}] ${isError ? 'ERROR: ' : ''}${message}`;
+        }
+        // 如果不匹配格式，保持原样
+        return log;
+      } catch (e) {
+        // 如果处理过程中发生任何错误，返回原始日志
+        return log;
+      }
+    });
+    
+    // 返回本地化消息
+    let message = '';
+    if (translatedLogs.length === 0) {
+      message = i18nLogger.translate('comfyui.reset.no_logs', { lng: lang });
+      // 如果仍然是翻译键，使用硬编码的消息
+      if (message === 'comfyui.reset.no_logs') {
+        message = lang === 'zh' ? '未找到重置日志' : 'No reset logs found';
+      }
+    } else {
+      message = i18nLogger.translate('comfyui.reset.logs_retrieved', { count: translatedLogs.length, lng: lang });
+      // 如果仍然是翻译键，使用硬编码的消息
+      if (message === 'comfyui.reset.logs_retrieved') {
+        message = lang === 'zh' ? `已检索到 ${translatedLogs.length} 条重置日志` : `Retrieved ${translatedLogs.length} reset log entries`;
       }
     }
     
     ctx.body = {
-      logs: this.resetLogs
+      logs: translatedLogs,
+      success: true,
+      message: message
     };
+  }
+
+  // 辅助方法：获取客户端语言
+  private getClientLocale(ctx: Context): string | undefined {
+    // 从查询参数获取
+    if (ctx.query.lang && typeof ctx.query.lang === 'string') {
+      return ctx.query.lang;
+    }
+    
+    // 从Accept-Language头获取
+    const acceptLanguage = ctx.get('Accept-Language');
+    if (acceptLanguage) {
+      const lang = acceptLanguage.split(',')[0].split(';')[0].split('-')[0];
+      return lang;
+    }
+    
+    return undefined;
   }
 }
 

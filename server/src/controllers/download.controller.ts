@@ -4,17 +4,16 @@
 import * as Koa from 'koa';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
-import * as loggerbox from '../utils/logger';
-import { DownloadProgress, EssentialModel } from '../types/models.types';
+import logger, { i18nLogger } from '../utils/logger';
+import { DownloadProgress, EssentialModel, DownloadOptions } from '../types/models.types';
 import { createDownloadProgress, downloadFile } from '../utils/download.utils';
-
-const logger = loggerbox.logger
 
 // 添加下载历史记录接口
 interface DownloadHistoryItem {
   id: string;            // 唯一标识符
   modelName: string;     // 模型名称
   status: 'success' | 'failed' | 'canceled' | 'downloading'; // 下载状态
+  statusText?: string;   // 状态本地化文本
   startTime: number;     // 开始时间戳
   endTime?: number;      // 结束时间戳
   fileSize?: number;     // 文件大小(字节)
@@ -98,7 +97,7 @@ export class DownloadController {
     }
   }
   
-  // 添加下载历史记录
+  // 添加一条下载历史记录
   protected addDownloadHistory(item: DownloadHistoryItem): void {
     // 检查是否存在相同ID的记录
     const existingIndex = this.downloadHistory.findIndex(record => record.id === item.id);
@@ -112,97 +111,227 @@ export class DownloadController {
     }
     
     // 异步保存
-    this.saveDownloadHistory().catch(err => 
-      logger.error(`保存下载历史记录时出错: ${err instanceof Error ? err.message : String(err)}`)
-    );
+    this.saveDownloadHistory().catch(err => {
+      logger.error(`保存下载历史记录失败: ${err instanceof Error ? err.message : String(err)}`);
+    });
   }
   
   // 更新下载历史记录
-  protected updateDownloadHistory(id: string, updates: Partial<DownloadHistoryItem>): void {
-    const existingIndex = this.downloadHistory.findIndex(record => record.id === id);
-    
-    if (existingIndex >= 0) {
-      // 更新现有记录
-      this.downloadHistory[existingIndex] = { 
-        ...this.downloadHistory[existingIndex], 
-        ...updates 
-      };
-      
-      // 异步保存
-      this.saveDownloadHistory().catch(err => 
-        logger.error(`保存更新的下载历史记录时出错: ${err instanceof Error ? err.message : String(err)}`)
-      );
+  protected updateDownloadHistory(id: string, updates: Partial<DownloadHistoryItem>): boolean {
+    const index = this.downloadHistory.findIndex(item => item.id === id);
+    if (index !== -1) {
+      this.downloadHistory[index] = { ...this.downloadHistory[index], ...updates };
+      this.saveDownloadHistory().catch(err => {
+        logger.error(`更新并保存下载历史记录失败: ${err instanceof Error ? err.message : String(err)}`);
+      });
+      return true;
     }
+    return false;
   }
   
-  // 添加API端点获取下载历史记录
+  // 获取下载历史记录API
   public async getDownloadHistory(ctx: Koa.Context): Promise<void> {
-    ctx.body = {
-      success: true,
-      history: this.downloadHistory
-    };
+    try {
+      // 获取客户端首选语言 - 优先从查询参数获取
+      const locale = ctx.query.lang as string || this.getClientLocale(ctx) || i18nLogger.getLocale();
+      
+      logger.info(`Getting download history with locale: ${locale}`);
+      
+      // 本地化历史记录
+      const localizedHistory = this.downloadHistory.map(item => {
+        // 复制原始记录
+        const localizedItem = { ...item };
+        
+        // 翻译状态文本
+        localizedItem.statusText = this.translateStatus(item.status, locale);
+        
+        // 如果有错误信息，尝试翻译
+        if (item.error) {
+          // 尝试找到通用错误消息
+          localizedItem.error = this.translateError(item.error, locale);
+        }
+        
+        return localizedItem;
+      });
+      
+      ctx.body = {
+        success: true,
+        count: localizedHistory.length,
+        history: localizedHistory
+      };
+    } catch (error) {
+      logger.error(`Failed to get download history: ${error instanceof Error ? error.message : String(error)}`);
+      ctx.status = 500;
+      ctx.body = {
+        success: false,
+        message: i18nLogger.translate('download.history.error', { lng: this.getClientLocale(ctx) })
+      };
+    }
   }
   
   // 清除下载历史记录
   public async clearDownloadHistory(ctx: Koa.Context): Promise<void> {
     try {
+      // 正确进行类型断言
+      const body = ctx.request.body as { lang?: string };
+      const locale = body.lang || this.getClientLocale(ctx) || i18nLogger.getLocale();
+      
       this.downloadHistory = [];
       await this.saveDownloadHistory();
       
       ctx.body = {
         success: true,
-        message: '下载历史记录已清除'
+        message: i18nLogger.translate('download.history.cleared', { lng: locale })
       };
     } catch (error) {
+      logger.error(`Failed to clear download history: ${error instanceof Error ? error.message : String(error)}`);
       ctx.status = 500;
       ctx.body = {
         success: false,
-        message: `清除下载历史失败: ${error instanceof Error ? error.message : String(error)}`
+        message: i18nLogger.translate('download.history.clear_error', { lng: this.getClientLocale(ctx) })
       };
     }
   }
   
-  // 删除单条下载历史记录
+  // 删除特定的下载历史记录项
   public async deleteDownloadHistoryItem(ctx: Koa.Context): Promise<void> {
+    // 获取请求中的ID，正确进行类型断言
+    const body = ctx.request.body as { id?: string, lang?: string };
+    const { id, lang } = body;
+    const locale = lang || this.getClientLocale(ctx) || i18nLogger.getLocale();
+    
+    if (!id) {
+      ctx.status = 400;
+      ctx.body = {
+        success: false,
+        message: i18nLogger.translate('download.history.id_required', { lng: locale })
+      };
+      return;
+    }
+    
     try {
-      const { id } = ctx.request.body as { id?: string };
-      
-      if (!id) {
-        ctx.status = 400;
-        ctx.body = { 
-          success: false,
-          message: '缺少历史记录ID' 
-        };
-        return;
-      }
-      
       // 查找并删除记录
       const index = this.downloadHistory.findIndex(item => item.id === id);
-      
-      if (index >= 0) {
+      if (index !== -1) {
+        const deletedItem = this.downloadHistory[index];
         this.downloadHistory.splice(index, 1);
         await this.saveDownloadHistory();
         
         ctx.body = {
           success: true,
-          message: '历史记录已删除'
+          message: i18nLogger.translate('download.history.item_deleted', { 
+            lng: locale,
+            name: deletedItem.modelName
+          })
         };
       } else {
         ctx.status = 404;
         ctx.body = {
           success: false,
-          message: '未找到指定的历史记录'
+          message: i18nLogger.translate('download.history.item_not_found', { 
+            lng: locale,
+            id 
+          })
         };
       }
     } catch (error) {
+      logger.error(`Failed to delete download history item: ${error instanceof Error ? error.message : String(error)}`);
       ctx.status = 500;
       ctx.body = {
         success: false,
-        message: `删除历史记录失败: ${error instanceof Error ? error.message : String(error)}`
+        message: i18nLogger.translate('download.history.delete_error', { lng: locale })
       };
     }
   }
-
+  
+  // 获取客户端首选语言
+  private getClientLocale(ctx: Koa.Context): string | undefined {
+    // 从查询参数获取
+    if (ctx.query.lang && typeof ctx.query.lang === 'string') {
+      return ctx.query.lang;
+    }
+    
+    // 从Accept-Language头获取
+    const acceptLanguage = ctx.get('Accept-Language');
+    if (acceptLanguage) {
+      const lang = acceptLanguage.split(',')[0].split(';')[0].split('-')[0];
+      return lang;
+    }
+    
+    return undefined;
+  }
+  
+  // 翻译下载状态
+  private translateStatus(status: string, locale: string): string {
+    // 正确的翻译键路径，确保与logs.json中的结构一致
+    const keyMap: Record<string, string> = {
+      'success': 'download.status.success',
+      'failed': 'download.status.failed',
+      'canceled': 'download.status.canceled',
+      'downloading': 'download.status.downloading',
+      'unknown': 'download.status.unknown'
+    };
+    
+    const key = keyMap[status] || 'download.status.unknown';
+    const translated = i18nLogger.translate(key, { lng: locale });
+    
+    // 检查是否返回了键名本身，这表示未找到翻译
+    if (translated === key) {
+      logger.warn(`Missing translation for key ${key} in locale ${locale}`);
+      
+      // 返回本地定义的备用文本
+      const fallbackMap: Record<string, Record<string, string>> = {
+        'zh': {
+          'success': '成功',
+          'failed': '失败',
+          'canceled': '已取消',
+          'downloading': '下载中',
+          'unknown': '未知'
+        },
+        'en': {
+          'success': 'Success',
+          'failed': 'Failed',
+          'canceled': 'Canceled',
+          'downloading': 'Downloading',
+          'unknown': 'Unknown'
+        }
+      };
+      
+      // 返回对应语言的备用文本或默认英文
+      return (fallbackMap[locale] && fallbackMap[locale][status]) || 
+             (fallbackMap['en'] && fallbackMap['en'][status]) || 
+             status;
+    }
+    
+    return translated;
+  }
+  
+  // 翻译错误消息
+  private translateError(error: string, locale: string): string {
+    // 错误消息匹配逻辑
+    let translationKey = 'download.error_types.unknown';
+    
+    if (error.includes('下载已取消') || error.includes('canceled')) {
+      translationKey = 'download.error_types.canceled';
+    } else if (error.includes('not found') || error.includes('找不到')) {
+      translationKey = 'download.error_types.not_found';
+    } else if (error.includes('network') || error.includes('网络')) {
+      translationKey = 'download.error_types.network';
+    } else if (error.includes('permission') || error.includes('权限')) {
+      translationKey = 'download.error_types.permission';
+    }
+    
+    const translated = i18nLogger.translate(translationKey, { lng: locale });
+    
+    // 检查是否返回了键名本身，这表示未找到翻译
+    if (translated === translationKey) {
+      logger.warn(`Missing translation for error key ${translationKey} in locale ${locale}`);
+      return error; // 如果没有找到翻译，返回原始错误
+    }
+    
+    return translated;
+  }
+  
   // 通用方法：下载模型 - 修改现有方法支持历史记录
   protected async downloadModelByName(
     modelName: string, 

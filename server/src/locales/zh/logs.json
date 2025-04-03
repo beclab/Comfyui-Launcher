@@ -1,0 +1,121 @@
+{
+  "user": {
+    "created": "用户创建成功: {{username}}",
+    "deleted": "用户已删除: {{username}}",
+    "updated": "用户已更新: {{username}}",
+    "login": {
+      "success": "用户登录成功: {{username}}",
+      "failed": "用户登录失败: {{username}}"
+    }
+  },
+  "server": {
+    "start": "服务器已在端口 {{port}} 启动",
+    "error": "服务器错误: {{message}}",
+    "request": "收到 {{method}} 请求: {{path}}",
+    "database": {
+      "connected": "数据库连接成功",
+      "error": "数据库连接错误: {{message}}"
+    }
+  },
+  "comfyui": {
+    "start": "ComfyUI 启动成功",
+    "stop": "ComfyUI 已停止",
+    "error": "ComfyUI 错误: {{message}}",
+    "status": "ComfyUI 状态: {{status}}",
+    "reset": {
+      "started": "ComfyUI还原进程已启动",
+      "stopping": "正在停止运行中的ComfyUI进程",
+      "stop_failed": "无法停止ComfyUI进程",
+      "cleaning_cache": "正在清理缓存目录：{{path}}",
+      "cache_not_exist": "缓存目录不存在：{{path}}",
+      "cleaning_path": "正在清理ComfyUI目录：{{path}}",
+      "keeping_dir": "保留目录：{{name}}",
+      "deleting_dir": "删除目录：{{name}}",
+      "deleting_file": "删除文件：{{name}}",
+      "path_not_exist": "ComfyUI路径不存在：{{path}}",
+      "recovery_started": "开始恢复进程",
+      "recovery_completed": "恢复进程成功完成",
+      "recovery_failed": "恢复进程失败：{{message}}",
+      "reset_completed": "ComfyUI还原成功完成",
+      "completed": "ComfyUI已成功还原至初始状态",
+      "failed": "ComfyUI还原失败：{{message}}",
+      "no_logs": "没有找到还原日志",
+      "logs_retrieved": "已检索到{{count}}条还原日志记录"
+    }
+  },
+  "models": {
+    "download": {
+      "start": "开始下载模型: {{name}}",
+      "progress": "模型 {{name}} 下载进度: {{progress}}%",
+      "complete": "模型 {{name}} 下载完成",
+      "error": "下载模型 {{name}} 时出错: {{message}}",
+      "cancel": "已取消下载模型 {{name}}",
+      "status": {
+        "success": "成功",
+        "failed": "失败",
+        "canceled": "已取消",
+        "downloading": "下载中",
+        "unknown": "未知"
+      },
+      "error_types": {
+        "canceled": "下载已被用户取消",
+        "not_found": "找不到模型文件",
+        "network": "网络连接错误",
+        "permission": "权限不足",
+        "unknown": "未知错误"
+      },
+      "history": {
+        "error": "获取下载历史记录失败",
+        "cleared": "历史记录已成功清空",
+        "clear_error": "清空历史记录失败",
+        "id_required": "需要提供记录ID",
+        "item_deleted": "记录 {{name}} 已删除",
+        "item_not_found": "找不到ID为 {{id}} 的记录",
+        "delete_error": "删除记录失败"
+      }
+    },
+    "install": "正在安装模型: {{name}}",
+    "delete": "已删除模型: {{name}}",
+    "scan": "正在扫描模型",
+    "scan_complete": "模型扫描完成，找到 {{count}} 个模型"
+  },
+  "plugins": {
+    "install": {
+      "start": "开始安装插件: {{name}}",
+      "complete": "插件 {{name}} 安装完成",
+      "error": "安装插件 {{name}} 时出错: {{message}}"
+    },
+    "uninstall": "已卸载插件: {{name}}",
+    "enable": "已启用插件: {{name}}",
+    "disable": "已禁用插件: {{name}}",
+    "operation": {
+      "install": "安装",
+      "uninstall": "卸载",
+      "enable": "启用",
+      "disable": "禁用",
+      "unknown": "未知操作"
+    },
+    "status": {
+      "running": "进行中",
+      "success": "成功",
+      "failed": "失败",
+      "unknown": "未知"
+    },
+    "result": {
+      "install_completed": "安装完成于 {{date}}",
+      "uninstall_completed": "卸载完成于 {{date}}",
+      "enable_completed": "启用完成于 {{date}}",
+      "disable_completed": "禁用完成于 {{date}}",
+      "operation_failed": "操作失败: {{message}}"
+    },
+    "history": {
+      "error": "获取插件历史记录失败",
+      "cleared": "插件历史记录已清除",
+      "clear_error": "清除插件历史记录失败",
+      "id_required": "需要提供历史记录项ID",
+      "item_deleted": "插件 {{name}} 的历史记录项已删除",
+      "item_not_found": "未找到ID为 {{id}} 的历史记录项",
+      "delete_error": "删除历史记录项失败"
+    }
+  }
+} 
