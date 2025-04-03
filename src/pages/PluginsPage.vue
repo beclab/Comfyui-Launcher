@@ -608,6 +608,8 @@ interface PluginOperation {
   logs: string[];
   result?: string;
   githubProxy?: string;
+  typeText?: string;   // 添加这个可选属性
+  statusText?: string; // 添加这个可选属性
 }
 
 // 状态和数据
@@ -1456,7 +1458,7 @@ watch(activeTab, (newValue) => {
 });
 
 // 添加这些辅助函数
-const getOperationLocalizedName = (row) => {
+const getOperationLocalizedName = (row: PluginOperation) => {
   // 检查typeText是否为翻译键（包含点号）
   if (row.typeText && !row.typeText.includes('.')) {
     return row.typeText; // 如果不是翻译键，直接使用
@@ -1464,7 +1466,7 @@ const getOperationLocalizedName = (row) => {
   return getOperationName(row.type); // 否则使用本地函数
 };
 
-const getStatusLocalizedName = (row) => {
+const getStatusLocalizedName = (row: PluginOperation) => {
   // 检查statusText是否为翻译键（包含点号）
   if (row.statusText && !row.statusText.includes('.')) {
     return row.statusText; // 如果不是翻译键，直接使用

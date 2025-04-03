@@ -2,55 +2,66 @@
   <div>
     <q-card class="comfyui-card custom-card">
       <div class="comfyui-container">
-        <!-- 左侧只放logo，移除q-avatar -->
+        <!-- 左侧放logo -->
         <div class="logo-container">
           <img src="~assets/comfyui-logo2.png" alt="ComfyUI" class="app-logo" />
         </div>
         
-        <!-- 右侧放标题和控制按钮 -->
+        <!-- 右侧放标题和版本信息 -->
         <div class="content-container">
-          <div class="title-container">
-            <div class="comfyui-title">ComfyUI</div>
+          <div class="header-row">
+            <div class="title-section">
+              <div class="comfyui-title">ComfyUI</div>
+              <q-chip size="sm" class="creator-chip">
+                <span class="creator-text">创作卡</span>
+              </q-chip>
+            </div>
           </div>
           
-          <div class="status-actions">
-            <!-- 先显示按钮 -->
+          <div class="version-row">
+            <q-chip dense size="sm" class="version-chip">
+              <span class="version-text">comfyui 0.3.26</span>
+            </q-chip>
+            <q-chip dense size="sm" class="version-chip">
+              <span class="version-text">frontend v0.3.26</span>
+            </q-chip>
+            <q-chip dense size="sm" class="version-chip">
+              <span class="version-text">launcher v0.3.26</span>
+            </q-chip>
+            <q-chip dense size="sm" class="version-chip">
+              <span class="version-text">GPU: Shared</span>
+            </q-chip>
+          </div>
+          
+
+        </div>
+          
+          <div class="action-row">
             <q-btn 
-              v-if="!isConnected" 
-              unelevated
-              color="blue-grey"
-              class="action-btn"
+              flat
+              rounded
+              icon="play_circle_outline"
+              class="start-btn"
               @click="checkAndStartComfyUI"
               :loading="isStarting"
             >
-              启动
-            </q-btn>
-            <q-btn 
-              v-else 
-              unelevated
-              color="blue-grey"
-              class="action-btn"
-              @click="stopComfyUI"
-              :loading="isStopping"
-            >
-              停止
+              <span class="start-btn-text">启动</span>
             </q-btn>
             
-            <!-- 后显示状态标签 -->
-            <q-chip 
-              :color="isConnected ? 'green' : 'orange'"
-              text-color="white"
-              class="status-chip"
-            >
-              {{ isConnected ? '运行中' : '停止' }}
-            </q-chip>
+            <q-btn 
+              round
+              flat
+              color="grey-7"
+              icon="more_vert"
+              size="sm"
+              class="menu-btn"
+            />
           </div>
-        </div>
       </div>
     </q-card>
 
-    <!-- 添加日志显示区域 -->
-    <q-card v-if="showLogs" class="q-mt-md log-container">
+    <!-- 隐藏日志和对话框部分，保留功能但不显示 -->
+    <q-card v-if="showLogs" class="q-mt-md log-container" style="display: none;">
       <q-expansion-item
         v-model="logsExpanded"
         icon="report_problem"
@@ -81,7 +92,6 @@
       </q-expansion-item>
     </q-card>
     
-    <!-- 自定义确认对话框 -->
     <q-dialog v-model="showConfirmDialog" persistent>
       <q-card>
         <q-card-section class="row items-center">
@@ -355,12 +365,12 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* 使用!important强制应用样式 */
+/* 卡片整体样式 */
 .custom-card {
   border-radius: 12px !important;
   overflow: hidden !important;
   box-shadow: none !important;
-  background-color: transparent !important;
+  background-color: white !important;
   border: none !important;
 }
 
@@ -368,80 +378,123 @@ export default defineComponent({
   width: 100%;
   padding: 0;
   margin-bottom: 15px;
-  background-color: transparent;
 }
 
-/* 确保整个容器也有圆角 */
+/* 整个容器布局 */
 .comfyui-container {
   display: flex;
   align-items: stretch;
-  min-height: 90px;
-  background-color: transparent;
+  background-color: white;
 }
 
+/* Logo容器 */
 .logo-container {
-  width: 90px;
-  height: 90px;
+  width: 98px;
+  height: 98px;
   background-color: #000000;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-right: none;
-  border-radius: inherit;
+  padding: 15px;
+  border-radius: 8px;
 }
 
 .app-logo {
-  width: 70px;
-  height: 70px;
+  width: 65px;
+  height: 65px;
   object-fit: contain;
 }
 
+/* 内容容器 */
 .content-container {
   flex: 1;
-  padding: 0px 16px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  border-top-right-radius: 12px;
-  border-bottom-right-radius: 12px;
-  position: relative;
+  justify-content: space-between;
 }
 
-.title-container {
-  position: absolute;
-  top: 0px;
-  left: 16px;
+/* 头部行 - 标题和菜单按钮 */
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
 }
 
-.comfyui-title {
-  font-size: 1.2rem;
-  font-weight: 500;
-  margin: 0;
-  padding: 0;
-}
-
-.status-actions {
+.title-section {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 49px;
-  
 }
 
-.status-chip {
-  font-size: 0.9rem !important;
-  height: 28px !important;
-  padding: 0 12px !important;
+.comfyui-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
 }
 
-.action-btn {
-  min-width: 70px;
-  font-size: 0.9rem !important;
-  padding: 8px 12px !important;
+.creator-chip {
+  height: 18px !important;
+  background-color: rgba(255, 193, 7, 0.1) !important;
+  padding: 0 8px !important;
+}
+
+.creator-text {
+  color: #ffc107;
+  font-size: 12px;
   font-weight: 500;
 }
 
-/* 保留日志相关样式 */
+/* 版本信息行 */
+.version-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.version-chip {
+  background-color: #f5f5f5 !important;
+  color: #757575 !important;
+  height: 20px !important;
+  padding: 0 10px !important;
+}
+
+.version-text {
+  font-size: 12px;
+  color: #757575;
+}
+
+/* 按钮行 */
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* 新的启动按钮样式 */
+.start-btn {
+  background-color: rgba(33, 150, 243, 0.1) !important;
+  color: #2196f3 !important;
+  border-radius: 4px !important;
+  padding: 0 12px !important;
+  height: 28px !important;
+  font-weight: normal !important;
+}
+
+.start-btn-text {
+  font-size: 13px;
+  margin-left: 4px;
+}
+
+.menu-btn {
+  padding: 8px !important;
+  min-height: auto !important;
+}
+
+/* 隐藏日志相关样式但保留 */
 .log-container {
   border-left: 4px solid #f44336;
   margin-top: 15px;
@@ -457,10 +510,5 @@ export default defineComponent({
 .log-error {
   color: #f44336;
   font-weight: bold;
-}
-
-/* 添加深色风格的按钮样式 */
-.dark-style {
-  border: 1px solid currentColor;
 }
 </style> 
