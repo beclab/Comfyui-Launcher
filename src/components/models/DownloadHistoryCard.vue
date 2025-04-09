@@ -1,26 +1,10 @@
 <template>
   <q-card flat bordered class="q-mb-md">
     <q-card-section class="row items-center justify-between">
-      <div class="text-h6">下载历史记录</div>
+      <div class="text-h6">模型下载记录</div>
       <div>
-        <q-select
-          v-model="selectedLanguage"
-          :options="languageOptions"
-          dense
-          outlined
-          emit-value
-          map-options
-          options-dense
-          class="q-mr-md language-selector"
-          style="min-width: 120px"
-          @update:model-value="onLanguageChange"
-        />
-        <q-btn flat round color="grey" icon="refresh" @click="refreshHistory" :loading="loading">
-          <q-tooltip>刷新历史记录</q-tooltip>
-        </q-btn>
-        <q-btn flat round color="negative" icon="delete_sweep" @click="confirmClearHistory">
-          <q-tooltip>清空历史记录</q-tooltip>
-        </q-btn>
+        <q-btn outline color="primary" icon="delete_sweep" label="清空历史记录" @click="confirmClearHistory" class="q-mr-sm" />
+        <q-btn outline color="primary" icon="refresh" label="刷新" @click="refreshHistory" :loading="loading" />
       </div>
     </q-card-section>
 
@@ -35,45 +19,76 @@
         <div class="q-mt-sm">暂无下载历史记录</div>
       </div>
       
-      <q-list v-else bordered separator>
-        <q-item v-for="item in history" :key="item.id" :class="getItemClass(item)">
-          <q-item-section avatar>
-            <q-avatar :color="getStatusColor(item.status)" text-color="white">
-              <q-icon :name="getStatusIcon(item.status)" />
-            </q-avatar>
-          </q-item-section>
-          
-          <q-item-section>
-            <q-item-label>{{ item.modelName }}</q-item-label>
-            <q-item-label caption lines="2">
-              来源: {{ item.source || '未知' }} | 
-              {{ formatDate(item.startTime) }} | 
-              状态: {{ item.statusText || getStatusText(item.status) }}
-              <template v-if="item.error">
-                <br />错误信息: {{ item.error }}
-              </template>
-            </q-item-label>
-          </q-item-section>
-          
-          <q-item-section side>
-            <div class="text-grey-8">
-              <div v-if="item.fileSize">{{ formatSize(item.fileSize) }}</div>
-              <div v-if="item.endTime && item.startTime">
-                耗时: {{ formatDuration(item.endTime - item.startTime) }}
-              </div>
-              <div v-if="item.speed">
-                平均速度: {{ formatSpeed(item.speed) }}
-              </div>
-            </div>
-          </q-item-section>
-          
-          <q-item-section side>
-            <q-btn flat round color="grey" icon="delete" @click="confirmDeleteItem(item)">
+      <q-table
+        v-else
+        :rows="history"
+        :columns="columns"
+        row-key="id"
+        flat
+        :pagination="pagination"
+        :rows-per-page-options="[10, 20, 50]"
+        class="history-table"
+      >
+        <!-- 名称列 -->
+        <template v-slot:body-cell-modelName="props">
+          <q-td :props="props">
+            {{ props.row.modelName }}
+          </q-td>
+        </template>
+        
+        <!-- 时间列 -->
+        <template v-slot:body-cell-startTime="props">
+          <q-td :props="props">
+            {{ formatDate(props.row.startTime) }}
+          </q-td>
+        </template>
+        
+        <!-- 来源列 -->
+        <template v-slot:body-cell-source="props">
+          <q-td :props="props">
+            {{ props.row.source || 'mirror' }}
+          </q-td>
+        </template>
+        
+        <!-- 大小列 -->
+        <template v-slot:body-cell-fileSize="props">
+          <q-td :props="props">
+            {{ formatSize(props.row.fileSize) }}
+          </q-td>
+        </template>
+        
+        <!-- 耗时列 -->
+        <template v-slot:body-cell-duration="props">
+          <q-td :props="props">
+            {{ formatDuration(props.row.endTime && props.row.startTime ? props.row.endTime - props.row.startTime : 0) }}
+          </q-td>
+        </template>
+        
+        <!-- 平均速度列 -->
+        <template v-slot:body-cell-speed="props">
+          <q-td :props="props">
+            {{ formatSpeed(props.row.speed) }}
+          </q-td>
+        </template>
+        
+        <!-- 状态列 -->
+        <template v-slot:body-cell-status="props">
+          <q-td :props="props">
+            <q-badge :color="getStatusColor(props.row.status)" text-color="white">
+              {{ props.row.statusText || getStatusText(props.row.status) }}
+            </q-badge>
+          </q-td>
+        </template>
+        
+        <!-- 操作列 -->
+        <template v-slot:body-cell-actions="props">
+          <q-td :props="props" class="q-gutter-xs">
+            <q-btn flat round dense color="grey" icon="delete" @click="confirmDeleteItem(props.row)">
               <q-tooltip>删除此记录</q-tooltip>
             </q-btn>
-          </q-item-section>
-        </q-item>
-      </q-list>
+          </q-td>
+        </template>
+      </q-table>
     </q-card-section>
   </q-card>
 </template>
@@ -83,12 +98,12 @@ import { defineComponent, ref, onMounted, watch } from 'vue';
 import api from '../../api';
 import { useQuasar } from 'quasar';
 
-// 定义下载历史项类型接口
+// Define download history item type interface
 interface DownloadHistoryItem {
   id: string;
   modelName: string;
   status: 'success' | 'failed' | 'canceled' | 'downloading';
-  statusText?: string; // 添加本地化状态文本
+  statusText?: string;
   startTime: number;
   endTime?: number;
   fileSize?: number;
@@ -99,6 +114,16 @@ interface DownloadHistoryItem {
   savePath?: string;
   downloadUrl?: string;
   taskId?: string;
+}
+
+// Define table column type interface
+interface TableColumn {
+  name: string;
+  required?: boolean;
+  label: string;
+  align?: 'left' | 'right' | 'center';
+  field: string | ((row: DownloadHistoryItem) => string | number | null | undefined);
+  sortable?: boolean;
 }
 
 export default defineComponent({
@@ -115,33 +140,94 @@ export default defineComponent({
     const $q = useQuasar();
     const history = ref<DownloadHistoryItem[]>([]);
     const loading = ref(false);
-    
-    // 使用父组件传递的语言
     const selectedLanguage = ref(props.preferredLanguage);
-    const languageOptions = [
-      { label: '中文', value: 'zh' },
-      { label: 'English', value: 'en' },
-      { label: '日本語', value: 'ja' },
-      { label: '한국어', value: 'ko' }
-    ];
     
-    // 语言变更处理函数
-    const onLanguageChange = () => {
-      // 刷新历史记录，使用新选择的语言
-      fetchHistory();
-    };
+    // Pagination settings
+    const pagination = ref({
+      rowsPerPage: 10,
+      sortBy: 'startTime',
+      descending: true
+    });
     
-    // 获取下载历史
+    // Table columns
+    const columns = [
+      {
+        name: 'modelName',
+        required: true,
+        label: '名称',
+        align: 'left',
+        field: 'modelName',
+        sortable: true
+      },
+      {
+        name: 'startTime',
+        required: true,
+        label: '时间',
+        align: 'left',
+        field: 'startTime',
+        sortable: true
+      },
+      {
+        name: 'source',
+        required: true,
+        label: '来源',
+        align: 'left',
+        field: 'source',
+        sortable: true
+      },
+      {
+        name: 'fileSize',
+        required: true,
+        label: '大小',
+        align: 'left',
+        field: 'fileSize',
+        sortable: true
+      },
+      {
+        name: 'duration',
+        required: true,
+        label: '耗时',
+        align: 'left',
+        field: (row: DownloadHistoryItem) => row.endTime && row.startTime ? row.endTime - row.startTime : 0,
+        sortable: true
+      },
+      {
+        name: 'speed',
+        required: true,
+        label: '平均速度',
+        align: 'left',
+        field: 'speed',
+        sortable: true
+      },
+      {
+        name: 'status',
+        required: true,
+        label: '状态',
+        align: 'left',
+        field: 'status',
+        sortable: true
+      },
+      {
+        name: 'actions',
+        required: true,
+        label: '操作',
+        align: 'center',
+        field: 'actions',
+        sortable: false
+      }
+    ] as TableColumn[];
+    
+    // Fetch download history
     const fetchHistory = async () => {
       loading.value = true;
       try {
-        // 添加语言参数到API请求
+        // Add language parameter to API request
         const response = await api.getDownloadHistory(selectedLanguage.value);
         history.value = response.body.history || [];
-        // 按时间降序排列
+        // Sort by time in descending order
         history.value.sort((a, b) => b.startTime - a.startTime);
       } catch (error) {
-        console.error('获取下载历史记录失败:', error);
+        console.error('Failed to fetch download history:', error);
         $q.notify({
           color: 'negative',
           message: '获取下载历史记录失败',
@@ -152,12 +238,12 @@ export default defineComponent({
       }
     };
     
-    // 刷新历史记录
+    // Refresh history
     const refreshHistory = () => {
       fetchHistory();
     };
     
-    // 确认清空历史记录
+    // Confirm clear history
     const confirmClearHistory = () => {
       $q.dialog({
         title: '确认清空',
@@ -166,7 +252,7 @@ export default defineComponent({
         persistent: true
       }).onOk(async () => {
         try {
-          // 添加语言参数到API请求
+          // Add language parameter to API request
           await api.clearDownloadHistory(selectedLanguage.value);
           history.value = [];
           $q.notify({
@@ -175,7 +261,7 @@ export default defineComponent({
             icon: 'check_circle'
           });
         } catch (error) {
-          console.error('清空历史记录失败:', error);
+          console.error('Failed to clear history:', error);
           $q.notify({
             color: 'negative',
             message: '清空历史记录失败',
@@ -185,7 +271,7 @@ export default defineComponent({
       });
     };
     
-    // 确认删除单条记录 - 使用正确的类型替代 any
+    // Confirm delete single item
     const confirmDeleteItem = (item: DownloadHistoryItem) => {
       $q.dialog({
         title: '确认删除',
@@ -194,9 +280,9 @@ export default defineComponent({
         persistent: true
       }).onOk(async () => {
         try {
-          // 添加语言参数到API请求
+          // Add language parameter to API request
           await api.deleteDownloadHistoryItem(item.id, selectedLanguage.value);
-          // 从列表中移除
+          // Remove from list
           history.value = history.value.filter(record => record.id !== item.id);
           $q.notify({
             color: 'positive',
@@ -204,7 +290,7 @@ export default defineComponent({
             icon: 'check_circle'
           });
         } catch (error) {
-          console.error('删除记录失败:', error);
+          console.error('Failed to delete record:', error);
           $q.notify({
             color: 'negative',
             message: '删除记录失败',
@@ -214,7 +300,7 @@ export default defineComponent({
       });
     };
     
-    // 获取状态颜色
+    // Get status color
     const getStatusColor = (status: string) => {
       switch (status) {
         case 'success': return 'positive';
@@ -225,18 +311,7 @@ export default defineComponent({
       }
     };
     
-    // 获取状态图标
-    const getStatusIcon = (status: string) => {
-      switch (status) {
-        case 'success': return 'check_circle';
-        case 'failed': return 'error';
-        case 'canceled': return 'cancel';
-        case 'downloading': return 'downloading';
-        default: return 'help';
-      }
-    };
-    
-    // 获取状态文本
+    // Get status text
     const getStatusText = (status: string) => {
       switch (status) {
         case 'success': return '成功';
@@ -247,14 +322,14 @@ export default defineComponent({
       }
     };
     
-    // 格式化日期时间
+    // Format date time
     const formatDate = (timestamp: number) => {
       if (!timestamp) return '未知时间';
       const date = new Date(timestamp);
       return date.toLocaleString('zh-CN');
     };
     
-    // 格式化文件大小
+    // Format file size
     const formatSize = (bytes: number) => {
       if (!bytes) return '未知大小';
       const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -263,13 +338,13 @@ export default defineComponent({
       return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
     };
     
-    // 格式化下载速度
+    // Format download speed
     const formatSpeed = (bytesPerSecond: number) => {
       if (!bytesPerSecond) return '未知速度';
       return formatSize(bytesPerSecond) + '/s';
     };
     
-    // 格式化持续时间
+    // Format duration
     const formatDuration = (ms: number) => {
       if (!ms) return '未知时间';
       
@@ -285,23 +360,13 @@ export default defineComponent({
       return `${hours}小时${remainingMinutes}分`;
     };
     
-    // 获取项目样式 - 使用正确的类型替代 any
-    const getItemClass = (item: DownloadHistoryItem) => {
-      return {
-        'bg-red-1': item.status === 'failed',
-        'bg-green-1': item.status === 'success',
-        'bg-orange-1': item.status === 'canceled',
-        'bg-blue-1': item.status === 'downloading'
-      };
-    };
-    
-    // 监听 preferredLanguage 属性变化
+    // Watch for preferredLanguage property changes
     watch(() => props.preferredLanguage, (newLang) => {
       selectedLanguage.value = newLang;
       fetchHistory();
     });
     
-    // 组件挂载时获取历史记录
+    // Fetch history on component mount
     onMounted(() => {
       fetchHistory();
     });
@@ -309,28 +374,61 @@ export default defineComponent({
     return {
       history,
       loading,
+      columns,
+      pagination,
       selectedLanguage,
-      languageOptions,
-      onLanguageChange,
       refreshHistory,
       confirmClearHistory,
       confirmDeleteItem,
       getStatusColor,
-      getStatusIcon,
       getStatusText,
       formatDate,
       formatSize,
       formatSpeed,
-      formatDuration,
-      getItemClass
+      formatDuration
     };
   }
 });
 </script>
 
 <style scoped>
-.language-selector {
-  display: inline-block;
-  vertical-align: middle;
+.q-table th {
+  font-weight: bold;
+}
+
+/* 增加卡片圆角 */
+.q-card {
+  border-radius: 16px;
+}
+
+/* 表格样式调整 */
+.history-table {
+  /* 去掉表格外边框 */
+  border: none !important;
+}
+
+/* 让分隔线填充满宽度 */
+.history-table .q-table__middle {
+  border-left: none;
+  border-right: none;
+}
+
+.history-table tbody tr {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.history-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+/* 确保表格内容不会突破边界 */
+.history-table .q-table__container {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* 给按钮增加圆角 */
+.q-btn {
+  border-radius: 8px;
 }
 </style> 
