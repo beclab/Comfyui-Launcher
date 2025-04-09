@@ -1,5 +1,5 @@
 <template>
-  <q-page class="q-pa-md">
+  <q-page class="index-page-container">
     <!-- 顶部标题区域 -->
     <!-- 
     <div class="text-center q-mb-md">
@@ -28,7 +28,9 @@
     </div>
     
     <!-- 底部支持链接 -->
-    <SupportLinks />
+    <div class="footer-wrapper">
+      <SupportLinks />
+    </div>
   </q-page>
 </template>
 
@@ -53,6 +55,13 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.index-page-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 16px;
+}
+
 .dashboard-card {
   transition: all 0.3s ease;
   height: 100%;
@@ -66,5 +75,11 @@ export default defineComponent({
 
 .dashboard-container {
   margin-top: 30px;
+}
+
+.footer-wrapper {
+  margin-top: auto;
+  width: 100%;
+  border-top: 1px solid #eee;
 }
 </style>

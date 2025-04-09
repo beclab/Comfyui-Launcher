@@ -1,11 +1,37 @@
 <template>
-  <div class="q-mt-xl row justify-center q-gutter-md">
-    <q-btn v-for="link in supportLinks" :key="link.name" flat class="support-btn" :href="link.url" target="_blank">
-      <template v-if="link.text">{{ link.text }}</template>
-      <template v-if="link.images">
-        <img v-for="(img, index) in link.images" :key="index" :src="img.src" :style="`height: ${img.height}`" :class="img.class">
-      </template>
-    </q-btn>
+  <div class="footer-container row justify-between items-center">
+    <!-- 左侧版权信息 -->
+    <div class="copyright">
+      ©2025 Bytetrade, Inc
+    </div>
+    
+    <!-- 中间链接 -->
+    <div class="center-links row items-center">
+      <a href="#" target="_blank" class="footer-link row items-center q-mx-sm">
+        <img src="~assets/icon-comfyorg.png" style="height: 20px" class="q-mr-xs">
+        ComfyOrg
+      </a>
+      <a href="#" target="_blank" class="footer-link row items-center q-mx-sm">
+        <img src="~assets/icon-discord.png" style="height: 20px" class="q-mr-xs">
+        Discord
+      </a>
+    </div>
+    
+    <!-- 右侧图标 -->
+    <div class="right-icons row items-center">
+      <q-btn flat round size="sm" class="icon-btn">
+        <img src="~assets/icon-m.png" style="height: 18px">
+      </q-btn>
+      <q-btn flat round size="sm" class="icon-btn">
+        <img src="~assets/icon-github.png" style="height: 18px">
+      </q-btn>
+      <q-btn flat round size="sm" class="icon-btn">
+        <img src="~assets/icon-weichat.png" style="height: 18px">
+      </q-btn>
+      <q-btn flat round size="sm" class="icon-btn">
+        <img src="~assets/icon-olares.png" style="height: 18px">
+      </q-btn>
+    </div>
   </div>
 </template>
 
@@ -13,36 +39,38 @@
 import { defineComponent } from 'vue';
 
 export default defineComponent({
-  name: 'SupportLinks',
-  data() {
-    return {
-      supportLinks: [
-        { name: 'support', text: 'Get Support', url: '#' },
-        { name: 'comfyorg', text: 'ComfyOrg', url: '#' },
-        { 
-          name: 'social', 
-          url: '#',
-          images: [
-            { src: '~assets/discord-logo.png', height: '20px', class: 'q-mr-xs' },
-            { src: '~assets/github-logo.png', height: '20px', class: '' }
-          ]
-        },
-        {
-          name: 'civitai',
-          url: '#',
-          images: [
-            { src: '~assets/civitai-logo.png', height: '20px', class: '' }
-          ]
-        }
-      ]
-    }
-  }
+  name: 'SupportLinks'
 });
 </script>
 
 <style scoped>
-.support-btn {
-  border-radius: 8px;
-  padding: 8px 16px;
+.footer-container {
+  padding: 12px 16px;
+  width: 100%;
+  color: #666;
+  font-size: 14px;
+}
+
+.footer-link {
+  text-decoration: none;
+  color: #666;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.copyright {
+  opacity: 0.7;
+}
+
+.right-icons .q-btn {
+  margin: 0 2px;
+  padding: 4px;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style> 
