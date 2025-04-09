@@ -85,12 +85,7 @@
 
     <!-- 历史记录标签页内容 -->
     <div v-if="activeTab === 'history'">
-      <div class="row q-mb-md">
-        <div class="col-12 flex justify-end">
-          <q-btn color="primary" icon="refresh" label="刷新" flat @click="fetchHistory" :loading="historyLoading" class="q-mr-sm" />
-          <q-btn color="negative" icon="delete" label="清除历史" flat @click="confirmClearHistory" />
-        </div>
-      </div>
+
 
       <!-- 历史记录表格 -->
       <operation-history-table

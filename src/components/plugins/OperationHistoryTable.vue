@@ -1,93 +1,141 @@
 <template>
-  <div>
+  <div class="history-table-container rounded-borders">
+    <!-- 标题和按钮区域 -->
+    <div class="row justify-between items-center q-px-md q-py-sm">
+      <div class="text-h6">操作历史记录</div>
+      <div class="row items-center">
+        <q-btn color="primary" icon="refresh" label="刷新" flat @click="fetchHistory" :loading="loading" class="q-mr-sm" />
+        <q-btn color="negative" icon="delete" label="清除历史" flat @click="confirmClearHistory" />
+      </div>
+    </div>
+    
+    <!-- 分割线 -->
+    <q-separator />
+
+    <!-- 表格 -->
     <q-table
       :rows="operations"
-      :columns="historyColumns"
+      :columns="tableColumns"
       row-key="id"
       :loading="loading"
-      :pagination="{ rowsPerPage: 10 }"
-      :filter="filter"
+      :pagination="pagination"
       dense
       binary-state-sort
+      flat
     >
-      <!-- 顶部工具栏 -->
-      <template v-slot:top-right>
-        <q-input
-          dense
-          v-model="localFilter"
-          debounce="300"
-          placeholder="搜索历史记录..."
-        >
-          <template v-slot:append>
-            <q-icon name="search" />
-          </template>
-        </q-input>
+      <!-- 名称列 -->
+      <template v-slot:body-cell-name="props">
+        <q-td :props="props">
+          {{ props.row.pluginName || 'ComfyUI-Manager' }}
+        </q-td>
       </template>
 
       <!-- 操作类型列 -->
       <template v-slot:body-cell-type="props">
         <q-td :props="props">
-          <q-chip
-            dense
-            :color="getOperationColor(props.row.type)"
-            text-color="white"
-            size="sm"
-          >
-            {{ getOperationLocalizedName(props.row) }}
-          </q-chip>
+          {{ getOperationLocalizedName(props.row) }}
+        </q-td>
+      </template>
+
+      <!-- 开始时间列 -->
+      <template v-slot:body-cell-startTime="props">
+        <q-td :props="props">
+          {{ formatTime(props.row.startTime) }}
+        </q-td>
+      </template>
+
+      <!-- 结束时间列 -->
+      <template v-slot:body-cell-endTime="props">
+        <q-td :props="props">
+          {{ formatTime(props.row.endTime) }}
+        </q-td>
+      </template>
+
+      <!-- 耗时列 -->
+      <template v-slot:body-cell-duration="props">
+        <q-td :props="props">
+          {{ formatDuration(props.row.startTime, props.row.endTime) }}
         </q-td>
       </template>
 
       <!-- 状态列 -->
       <template v-slot:body-cell-status="props">
         <q-td :props="props">
-          <q-chip
-            dense
+          <q-badge
             :color="getStatusColor(props.row.status)"
             text-color="white"
-            size="sm"
+            class="q-px-sm"
           >
             {{ getStatusLocalizedName(props.row) }}
-          </q-chip>
-        </q-td>
-      </template>
-
-      <!-- 时间列 -->
-      <template v-slot:body-cell-time="props">
-        <q-td :props="props">
-          <div>开始: {{ formatTime(props.row.startTime) }}</div>
-          <div v-if="props.row.endTime">
-            结束: {{ formatTime(props.row.endTime) }}
-          </div>
-          <div v-if="props.row.endTime">
-            耗时: {{ formatDuration(props.row.startTime, props.row.endTime) }}
-          </div>
+          </q-badge>
         </q-td>
       </template>
 
       <!-- 操作列 -->
       <template v-slot:body-cell-actions="props">
-        <q-td :props="props">
+        <q-td :props="props" class="q-gutter-xs">
           <q-btn
             dense
             flat
-            color="primary"
+            round
+            color="grey"
             icon="visibility"
+            size="sm"
             @click="onViewLogs(props.row)"
           >
             <q-tooltip>查看详细日志</q-tooltip>
           </q-btn>
           <q-btn
-            v-if="props.row.type === 'install' && props.row.status === 'failed'"
             dense
             flat
-            color="primary"
-            icon="refresh"
-            @click="onRetryInstall(props.row)"
+            round
+            color="grey"
+            icon="delete"
+            size="sm"
+            @click="onDeleteRecord(props.row)"
           >
-            <q-tooltip>重试安装</q-tooltip>
+            <q-tooltip>删除记录</q-tooltip>
           </q-btn>
         </q-td>
+      </template>
+
+      <!-- 底部分页 -->
+      <template v-slot:pagination="scope">
+        <div class="row items-center justify-end q-py-sm">
+          <span class="q-mr-md text-caption">Records per page: </span>
+          <q-select
+            v-model="pagination.rowsPerPage"
+            :options="[10, 20, 50]"
+            dense
+            borderless
+            emit-value
+            map-options
+            options-dense
+            style="min-width: 60px"
+            @update:model-value="updatePagination(scope)"
+          />
+          <span class="q-mx-md text-caption">
+            {{ scope.pagesNumber > 0 ? scope.pagination.page : 0 }} of {{ scope.pagesNumber }}
+          </span>
+          <q-btn
+            icon="chevron_left"
+            color="grey-8"
+            round
+            dense
+            flat
+            :disable="scope.isFirstPage"
+            @click="scope.prevPage"
+          />
+          <q-btn
+            icon="chevron_right"
+            color="grey-8"
+            round
+            dense
+            flat
+            :disable="scope.isLastPage"
+            @click="scope.nextPage"
+          />
+        </div>
       </template>
 
       <!-- 无数据提示 -->
@@ -102,7 +150,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import type { QTableColumn } from 'quasar';
 
 // 操作类型定义
@@ -129,32 +177,85 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
-  },
-  historyColumns: {
-    type: Array as () => QTableColumn[],
-    required: true
-  },
-  filter: {
-    type: String,
-    default: ''
   }
 });
 
 // Emits
-const emit = defineEmits(['view-logs', 'retry-install', 'filter-change']);
+const emit = defineEmits([
+  'view-logs', 
+  'retry-install', 
+  'delete-record',
+  'clear-history',
+  'refresh'
+]);
 
 // Data
-const localFilter = ref(props.filter);
-
-// Watch for filter changes
-watch(localFilter, (newVal) => {
-  emit('filter-change', newVal);
+const pagination = ref({
+  sortBy: 'startTime',
+  descending: true,
+  page: 1,
+  rowsPerPage: 10
 });
 
-// Watch for external filter changes
-watch(() => props.filter, (newVal) => {
-  localFilter.value = newVal;
-});
+// Table columns definition
+const tableColumns = computed<QTableColumn[]>(() => [
+  {
+    name: 'name',
+    required: true,
+    label: '名称',
+    align: 'left',
+    field: row => row.pluginName || 'ComfyUI-Manager',
+    sortable: true
+  },
+  {
+    name: 'type',
+    required: true,
+    label: '操作类型',
+    align: 'left',
+    field: 'type',
+    sortable: true
+  },
+  {
+    name: 'startTime',
+    required: true,
+    label: '开始时间',
+    align: 'left',
+    field: 'startTime',
+    sortable: true
+  },
+  {
+    name: 'endTime',
+    required: true,
+    label: '结束时间',
+    align: 'left',
+    field: 'endTime',
+    sortable: true
+  },
+  {
+    name: 'duration',
+    required: true,
+    label: '耗时',
+    align: 'left',
+    field: row => row.endTime ? (row.endTime - row.startTime) : 0,
+    sortable: true
+  },
+  {
+    name: 'status',
+    required: true,
+    label: '状态',
+    align: 'left',
+    field: 'status',
+    sortable: true
+  },
+  {
+    name: 'actions',
+    required: true,
+    label: '操作',
+    align: 'center',
+    field: 'actions',
+    sortable: false
+  }
+]);
 
 // Methods for operation and status handling
 const getOperationColor = (type: string): string => {
@@ -172,8 +273,8 @@ const getStatusColor = (status: string): string => {
   if (!status) return 'grey';
   switch (status) {
     case 'running': return 'blue';
-    case 'success': return 'positive';
-    case 'failed': return 'negative';
+    case 'success': return 'green';
+    case 'failed': return 'red';
     default: return 'grey';
   }
 };
@@ -237,7 +338,36 @@ const onViewLogs = (operation: PluginOperation): void => {
   emit('view-logs', operation);
 };
 
-const onRetryInstall = (operation: PluginOperation): void => {
-  emit('retry-install', operation);
+const onDeleteRecord = (operation: PluginOperation): void => {
+  emit('delete-record', operation);
 };
-</script> 
+
+const confirmClearHistory = (): void => {
+  emit('clear-history');
+};
+
+const fetchHistory = (): void => {
+  emit('refresh');
+};
+
+const updatePagination = (scope: any): void => {
+  // 更新本地分页状态
+  pagination.value.rowsPerPage = pagination.value.rowsPerPage;
+  
+  // 使用 scope 提供的方法更新分页
+  scope.pagination.rowsPerPage = pagination.value.rowsPerPage;
+  scope.pagination.page = 1;
+};
+</script>
+
+<style scoped>
+.history-table-container {
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+}
+
+.rounded-borders {
+  border-radius: 8px;
+  overflow: hidden;
+}
+</style> 
