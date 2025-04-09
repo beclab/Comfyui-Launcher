@@ -55,42 +55,64 @@
               icon="more_vert"
               size="sm"
               class="menu-btn"
-            />
+            >
+              <q-menu>
+                <q-list style="min-width: 140px">
+                  <q-item clickable v-close-popup @click="showLogView">
+                    <q-item-section avatar>
+                      <q-icon name="visibility" />
+                    </q-item-section>
+                    <q-item-section>查看日志</q-item-section>
+                  </q-item>
+                  
+                  <q-item clickable v-close-popup @click="resetComfyUI">
+                    <q-item-section avatar>
+                      <q-icon name="refresh" />
+                    </q-item-section>
+                    <q-item-section>抹掉并还原</q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </q-btn>
           </div>
       </div>
     </q-card>
 
-    <!-- 隐藏日志和对话框部分，保留功能但不显示 -->
-    <q-card v-if="showLogs" class="q-mt-md log-container" style="display: none;">
-      <q-expansion-item
-        v-model="logsExpanded"
-        icon="report_problem"
-        label="ComfyUI 启动日志"
-        header-class="bg-red-1 text-red-9"
-        expand-icon-class="text-red-9"
-        default-opened
-      >
-        <q-card>
-          <q-card-section>
-            <div class="text-subtitle2 q-mb-sm">启动过程中发生错误，请查看以下日志信息：</div>
-            <q-scroll-area style="height: 300px;" class="bg-grey-1">
-              <div class="q-pa-sm log-content">
-                <div v-for="(log, index) in logs" :key="index" :class="{'log-error': log.includes('ERROR')}">
-                  {{ log }}
-                </div>
-                <div v-if="logs.length === 0" class="text-grey-6 text-center q-pa-md">
-                  正在加载日志...
-                </div>
+    <!-- 将日志显示改为对话框形式 -->
+    <q-dialog v-model="showLogs" persistent class="log-dialog">
+      <q-card class="log-dialog-card">
+        <q-card-section class="log-dialog-header">
+          <div class="row items-center justify-between full-width">
+            <div class="text-h6">ComfyUI 日志</div>
+            <q-btn flat round dense icon="close" @click="showLogs = false" />
+          </div>
+        </q-card-section>
+
+        <q-card-section class="log-content-section q-pa-none">
+          <q-scroll-area style="height: 400px;" class="log-scroll-area">
+            <div class="q-pa-md log-content">
+              <div v-for="(log, index) in logs" :key="index" :class="{'log-error': log.includes('ERROR')}">
+                {{ log }}
               </div>
-            </q-scroll-area>
-            <div class="row justify-end q-mt-md">
-              <q-btn flat dense color="primary" icon="refresh" @click="fetchLogs" label="刷新日志" />
-              <q-btn flat dense color="negative" icon="close" @click="showLogs = false" label="关闭" />
+              <div v-if="logs.length === 0" class="text-grey-6 text-center q-pa-md">
+                正在加载日志...
+              </div>
             </div>
-          </q-card-section>
-        </q-card>
-      </q-expansion-item>
-    </q-card>
+          </q-scroll-area>
+        </q-card-section>
+
+        <q-card-actions align="right" class="log-dialog-actions">
+          <div class="row items-center full-width justify-end q-gutter-md">
+            <q-btn flat round color="primary" icon="refresh" @click="fetchLogs">
+              <q-tooltip>刷新日志</q-tooltip>
+            </q-btn>
+            <q-btn flat round color="primary" icon="file_download" @click="downloadLogs">
+              <q-tooltip>下载日志</q-tooltip>
+            </q-btn>
+          </div>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
     
     <q-dialog v-model="showConfirmDialog" persistent>
       <q-card>
@@ -342,6 +364,49 @@ export default defineComponent({
       }
     });
     
+    // 添加新的方法
+    const showLogView = async () => {
+      await fetchLogs();
+      showLogs.value = true;
+      logsExpanded.value = true;
+    };
+    
+    // 添加重置ComfyUI方法
+    const resetComfyUI = () => {
+      router.push('/reset');
+      // 如果没有专门的重置页面，可以改为通过API调用重置功能
+      // api.resetComfyUI().then(() => { 
+      //   $q.notify({ type: 'positive', message: 'ComfyUI已重置' });
+      // });
+    };
+    
+    // 添加下载日志方法
+    const downloadLogs = () => {
+      if (logs.value.length === 0) {
+        $q.notify({
+          type: 'warning',
+          message: '没有可下载的日志'
+        });
+        return;
+      }
+      
+      const logText = logs.value.join('\n');
+      const blob = new Blob([logText], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const timestamp = new Date().toISOString().replace(/:/g, '-').substring(0, 19);
+      a.href = url;
+      a.download = `comfyui-log-${timestamp}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // 清理
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    };
+    
     return {
       isConnected,
       installedModelsCount,
@@ -358,7 +423,12 @@ export default defineComponent({
       showLogs,
       logsExpanded,
       logs,
-      fetchLogs
+      fetchLogs,
+      // 添加新方法到返回值
+      showLogView,
+      resetComfyUI,
+      // 添加新方法到返回值
+      downloadLogs
     };
   }
 });
@@ -510,5 +580,47 @@ export default defineComponent({
 .log-error {
   color: #f44336;
   font-weight: bold;
+}
+
+/* 日志对话框样式 */
+.log-dialog {
+  /* 添加日志对话框的样式代码 */
+}
+
+.log-dialog-card {
+  width: 80vw;
+  max-width: 900px;
+  max-height: 90vh;
+}
+
+.log-dialog-header {
+  padding: 12px 16px;
+  background-color: #f5f5f5;
+}
+
+.log-content-section {
+  padding: 0;
+}
+
+.log-scroll-area {
+  background-color: white;
+}
+
+.log-content {
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.5;
+  font-size: 12px;
+}
+
+.log-error {
+  color: #f44336;
+  font-weight: bold;
+}
+
+.log-dialog-actions {
+  padding: 8px 16px;
+  background-color: #f5f5f5;
 }
 </style> 

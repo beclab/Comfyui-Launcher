@@ -1,35 +1,71 @@
 <template>
   <div class="q-mb-lg">
-    <div class="network-status">
-      <div class="text-subtitle1 q-mb-sm">网络环境</div>
-      <div class="row q-col-gutter-md">
-        <div v-for="status in networkStatuses" :key="status.name" class="col-auto">
-          <q-btn class="network-btn" flat align="left">
-            <q-avatar size="md" class="q-mr-sm">
-              <img :src="`~assets/${status.name.toLowerCase()}-logo.png`" :alt="status.name">
-            </q-avatar>
-            <div>
-              <div>{{ status.name }}</div>
-              <div class="text-caption">{{ status.available ? '可访问' : '不可访问' }}</div>
-            </div>
-          </q-btn>
+    <q-card flat bordered class="network-status">
+      <q-card-section>
+        <div class="row justify-between items-center q-mb-sm">
+          <div class="text-subtitle1">网络环境</div>
+          <q-icon name="wifi" size="sm" color="grey-7" />
         </div>
-      </div>
-    </div>
+        <q-separator class="q-mb-md" />
+        <div class="row q-col-gutter-md">
+          <div v-for="status in networkStatuses" :key="status.name" class="col-4">
+            <div class="network-item">
+              <q-avatar size="md" class="q-mr-sm">
+                <img :src="status.logo" :alt="status.name">
+              </q-avatar>
+              <div class="network-item-content">
+                <div class="row justify-between items-center full-width">
+                  <div>{{ status.name }}</div>
+                  <div class="status-indicator">
+                    <q-badge :color="status.statusColor" rounded style="width: 8px; height: 8px;" class="q-mr-xs" />
+                    <span class="text-caption" :class="status.textColorClass">{{ status.statusText }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </q-card-section>
+    </q-card>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+// Import logo images
+import githubLogo from '../assets/github-logo.png';
+import pypiLogo from '../assets/pypi-logo.png';
+import huggingfaceLogo from '../assets/huggingface-logo.png';
 
 export default defineComponent({
   name: 'NetworkEnvironment',
   data() {
     return {
       networkStatuses: [
-        { name: 'Github', available: true },
-        { name: 'PyPI', available: true },
-        { name: 'HuggingFace', available: true }
+        { 
+          name: 'Github', 
+          available: true, 
+          statusText: '可访问', 
+          statusColor: 'green', 
+          textColorClass: 'text-green',
+          logo: githubLogo
+        },
+        { 
+          name: 'PyPI', 
+          available: true, 
+          statusText: '可访问', 
+          statusColor: 'green', 
+          textColorClass: 'text-green',
+          logo: pypiLogo
+        },
+        { 
+          name: 'HuggingFace', 
+          available: false, 
+          statusText: '访问超时', 
+          statusColor: 'red', 
+          textColorClass: 'text-red',
+          logo: huggingfaceLogo
+        }
       ]
     }
   }
@@ -37,9 +73,25 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.network-btn {
-  border-radius: 8px;
+.network-item {
+  display: flex;
+  align-items: center;
   padding: 8px 16px;
+  border-radius: 8px;
   min-width: 150px;
+  height: 100%;
+}
+
+.network-item-content {
+  flex: 1;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+}
+
+.network-status {
+  border-radius: 8px;
 }
 </style> 
