@@ -23,7 +23,9 @@
     </div>
     
     <!-- 资源包安装组件 -->
-    <PackageInstall />
+    <div class="q-my-md">
+      <PackageInstall />
+    </div>
     
     <!-- 底部支持链接 -->
     <SupportLinks />
