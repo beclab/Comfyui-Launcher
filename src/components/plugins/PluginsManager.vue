@@ -1,0 +1,172 @@
+<template>
+  <div>
+    <!-- 插件管理内容 -->
+    <div>
+      <!-- 可用插件列表 -->
+      <plugin-list
+        :plugins="visiblePlugins"
+        :loading="loading"
+        :installation-in-progress="installationInProgress"
+        :uninstallation-in-progress="uninstallationInProgress"
+        :state-changing="stateChanging"
+        :installation-progress="installationProgress"
+        :has-more-plugins="hasMorePlugins"
+        :status-options="statusOptions"
+        :tag-options="tagOptions"
+        :initial-values="{
+          searchQuery,
+          statusFilter,
+          tagFilter
+        }"
+        @install="onInstall"
+        @uninstall="onUninstall"
+        @toggle-state="onToggleState"
+        @show-info="onShowInfo"
+        @clear-filters="onClearFilters"
+        @load-more="onLoadMore"
+        @search="onSearch"
+        @filter="onFilter"
+        @refresh="onRefresh"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue';
+import PluginList from './PluginList.vue';
+
+// 插件类型定义
+interface Plugin {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  author: string;
+  github: string;
+  installed: boolean;
+  installedOn?: string;
+  disabled?: boolean;
+  stars?: number;
+  tags?: string[];
+  install_type?: string;
+  files?: string[];
+  require_restart?: boolean;
+  size?: string;
+}
+
+// 进度状态类型
+interface ProgressState {
+  [key: string]: boolean | number;
+}
+
+// Props
+const props = defineProps({
+  plugins: {
+    type: Array as () => Plugin[],
+    required: true
+  },
+  loading: {
+    type: Boolean,
+    default: false
+  },
+  installationInProgress: {
+    type: Object as () => ProgressState,
+    default: () => ({})
+  },
+  uninstallationInProgress: {
+    type: Object as () => ProgressState,
+    default: () => ({})
+  },
+  stateChanging: {
+    type: Object as () => ProgressState,
+    default: () => ({})
+  },
+  installationProgress: {
+    type: Object as () => ProgressState,
+    default: () => ({})
+  },
+  visiblePlugins: {
+    type: Array as () => Plugin[],
+    required: true
+  },
+  hasMorePlugins: {
+    type: Boolean,
+    default: false
+  },
+  statusOptions: {
+    type: Array,
+    default: () => [
+      { label: '全部', value: 'all' },
+      { label: '已安装', value: 'installed' },
+      { label: '未安装', value: 'not-installed' }
+    ]
+  },
+  tagOptions: {
+    type: Array,
+    default: () => []
+  },
+  searchQuery: {
+    type: String,
+    default: ''
+  },
+  statusFilter: {
+    type: Object,
+    default: () => ({ label: '全部', value: 'all' })
+  },
+  tagFilter: {
+    type: Array,
+    default: () => []
+  }
+});
+
+// Emits
+const emit = defineEmits([
+  'install', 
+  'uninstall', 
+  'toggle-state', 
+  'show-info', 
+  'clear-filters', 
+  'load-more',
+  'search',
+  'filter',
+  'refresh'
+]);
+
+// 方法转发
+const onInstall = (plugin: Plugin): void => {
+  emit('install', plugin);
+};
+
+const onUninstall = (plugin: Plugin): void => {
+  emit('uninstall', plugin);
+};
+
+const onToggleState = (plugin: Plugin): void => {
+  emit('toggle-state', plugin);
+};
+
+const onShowInfo = (plugin: Plugin): void => {
+  emit('show-info', plugin);
+};
+
+const onClearFilters = (): void => {
+  emit('clear-filters');
+};
+
+const onLoadMore = (): void => {
+  emit('load-more');
+};
+
+const onSearch = (query: string): void => {
+  emit('search', query);
+};
+
+const onFilter = (filters: any): void => {
+  emit('filter', filters);
+};
+
+const onRefresh = (): void => {
+  emit('refresh');
+};
+</script> 
