@@ -1,240 +1,236 @@
 <template>
-  <q-card class="q-mb-lg">
-    <q-card-section class="bg-secondary text-white">
-      <div class="text-h6">
-        <q-icon name="collections" class="q-mr-sm" />
-        可选模型库
-      </div>
-      <div class="text-caption">按需下载各类模型增强您的AI创作能力</div>
-      
-      <!-- 添加数据源选择和刷新按钮 -->
-      <div class="row items-center q-mt-sm">
-        <q-select
-          v-model="databaseMode"
-          :options="databaseModeOptions"
-          option-value="value"
-          option-label="label"
-          dense
-          outlined
-          class="bg-white text-black q-mr-md"
-          style="width: 200px"
-          label="数据源"
-          @update:model-value="onDatabaseModeChange"
-        />
+  <q-card class="model-card">
+    <q-card-section class="header-section">
+      <div class="row items-center justify-between">
+        <div class="col-auto">
+          <div class="text-subtitle1 text-dark">
+            可用模型
+          </div>
+          <div class="text-caption text-grey-7">查看HuggingFace上的可用模型</div>
+        </div>
         
-        <!-- 添加下载源选择 -->
-        <q-select
-          v-model="downloadSource"
-          :options="downloadSourceOptions"
-          dense
-          outlined
-          class="bg-white text-black q-mr-md"
-          style="width: 180px"
-          label="下载源"
-        />
-        
-        <q-btn 
-          color="white" 
-          text-color="secondary" 
-          icon="refresh" 
-          label="刷新" 
-          @click="onRefresh"
-          :loading="isLoading"
-        />
-        
-        <!-- 添加搜索框 -->
-        <q-input
-          v-model="searchQuery"
-          placeholder="搜索模型..."
-          dense
-          outlined
-          clearable
-          @clear="clearSearch"
-          class="bg-white q-ml-md"
-          style="width: 200px"
-          @update:model-value="handleSearchInput"
-        >
-          <template v-slot:append>
-            <q-icon name="search" />
-          </template>
-        </q-input>
+        <div class="row items-center col-auto">
+          <q-input
+            v-model="searchQuery"
+            placeholder="搜索模型..."
+            dense
+            outlined
+            clearable
+            @clear="clearSearch"
+            class="bg-white q-mr-md"
+            style="width: 200px"
+            @update:model-value="handleSearchInput"
+          >
+            <template v-slot:append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+          
+          <q-select
+            v-model="databaseMode"
+            :options="databaseModeOptions"
+            dense
+            outlined
+            class="bg-white text-black q-mr-md"
+            style="width: 180px"
+            label="存储数据源"
+            @update:model-value="onDatabaseModeChange"
+          />
+          
+          <q-btn 
+            color="primary" 
+            outlined
+            icon="refresh" 
+            label="刷新"
+            @click="onRefresh"
+            :loading="isLoading"
+            size="md"
+          />
+        </div>
       </div>
     </q-card-section>
     
     <q-tabs
       v-model="activeTab"
       dense
+      align="left"
+      active-color="primary"
+      indicator-color="primary"
       class="text-grey-7"
-      active-color="secondary"
-      indicator-color="secondary"
-      align="justify"
     >
-      <q-tab name="all" label="全部" icon="apps" />
-      <q-tab name="checkpoint" label="SD模型" icon="image" />
-      <q-tab name="lora" label="LoRA" icon="tune" />
-      <q-tab name="controlnet" label="ControlNet" icon="explore" />
-      <q-tab name="vae" label="VAE" icon="auto_fix_high" />
-      <q-tab name="upscaler" label="超分辨率" icon="hd" />
+      <q-tab name="all" label="全部" />
+      <q-tab name="sd" label="SD 模型" />
+      <q-tab name="lora" label="LORA" />
+      <q-tab name="controlnet" label="CONTROLNET" />
+      <q-tab name="vae" label="VAE" />
+      <q-tab name="upscaler" label="超分辨率" />
     </q-tabs>
     
     <q-separator />
     
     <q-tab-panels v-model="activeTab" animated>
-      <!-- 所有模型面板 -->
-      <q-tab-panel name="all">
+      <!-- 模型列表面板 - 改为表格布局 -->
+      <q-tab-panel :name="tabName" v-for="tabName in ['all', 'sd', 'lora', 'controlnet', 'vae', 'upscaler']" :key="tabName">
         <div v-if="isLoading" class="text-center q-pa-lg">
-          <q-spinner color="secondary" size="3em" />
+          <q-spinner color="primary" size="3em" />
           <div class="q-mt-md">加载模型中...</div>
         </div>
         
-        <div v-else-if="filteredModels.length === 0" class="text-center q-pa-lg text-grey">
+        <!-- 根据tabName过滤显示对应类型的模型 -->
+        <div v-else-if="getFilteredModelsByTab(tabName).length === 0" class="text-center q-pa-lg text-grey">
           没有找到匹配的模型
         </div>
         
-        <div v-else class="row q-col-gutter-md">
-          <div v-for="model in filteredModels" :key="model.name" class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
-            <q-card class="model-card" :class="{ 'installed': model.installed }">
-              <q-card-section>
-                <div class="text-h6 ellipsis">{{ model.name }}</div>
-                <q-badge :color="getTypeColor(model.type)">{{ model.type }}</q-badge>
-              </q-card-section>
-              
-              <q-card-section>
-                <p v-if="model.description" class="description">{{ model.description }}</p>
-                <p v-else class="text-grey">无描述</p>
-              </q-card-section>
-              
-              <q-card-actions align="right">
-                <template v-if="downloadProgress[model.name]">
-                  <q-card-section class="download-progress q-pa-none">
-                    <div class="progress-info">
-                      <div class="text-subtitle2">
-                        {{ model.name }} 下载中...
+        <div v-else>
+          <!-- 表格布局 -->
+          <q-table
+            :rows="getFilteredModelsByTab(tabName)"
+            :columns="columns"
+            row-key="name"
+            flat
+            separator="horizontal"
+            :pagination="{ rowsPerPage: 10 }"
+            class="model-table"
+          >
+            <!-- 自定义表头 -->
+            <template v-slot:header="props">
+              <q-tr :props="props">
+                <q-th v-for="col in props.cols" :key="col.name" :props="props" class="text-subtitle2">
+                  {{ col.label }}
+                </q-th>
+              </q-tr>
+            </template>
+            
+            <!-- 自定义行 -->
+            <template v-slot:body="props">
+              <q-tr :props="props">
+                <!-- 名称列 -->
+                <q-td key="name" :props="props" class="text-weight-medium">
+                  {{ props.row.name }}
+                </q-td>
+                
+                <!-- 类型列 -->
+                <q-td key="type" :props="props">
+                  <q-badge :color="getTypeColor(props.row.type)">{{ getTypeLabel(props.row.type) }}</q-badge>
+                </q-td>
+                
+                <!-- 大小列 -->
+                <q-td key="size" :props="props">{{ props.row.size || '大小未知' }}</q-td>
+                
+                <!-- 底模列 -->
+                <q-td key="baseModel" :props="props">{{ props.row.baseModel || 'FLUX.1' }}</q-td>
+                
+                <!-- 来源列 -->
+                <q-td key="source" :props="props">{{ props.row.source || 'local' }}</q-td>
+                
+                <!-- 说明列 -->
+                <q-td key="description" :props="props">
+                  <div class="description text-grey-8">{{ props.row.description || '无描述' }}</div>
+                </q-td>
+                
+                <!-- 操作列 -->
+                <q-td key="actions" :props="props" class="text-center">
+                  <template v-if="downloadProgress[props.row.name]">
+                    <!-- 下载进度显示 -->
+                    <div class="download-progress">
+                      <div class="progress-info text-caption text-grey-8">
+                        {{ Math.round((downloadProgress[props.row.name].downloadedBytes / downloadProgress[props.row.name].totalBytes) * 100) }}% | 
+                        {{ formatSpeed(downloadProgress[props.row.name].speed) }}
                       </div>
-                      <div class="text-caption q-gutter-x-md">
-                        <span>
-                          已下载: {{ formatFileSize(downloadProgress[model.name].downloadedBytes) }} / 
-                          {{ formatFileSize(downloadProgress[model.name].totalBytes) }}
-                        </span>
-                        <span>
-                          速度: {{ formatSpeed(downloadProgress[model.name].speed) }}
-                        </span>
-                      </div>
+                      <q-linear-progress
+                        :value="downloadProgress[props.row.name].downloadedBytes / downloadProgress[props.row.name].totalBytes"
+                        color="primary"
+                        size="4px"
+                      />
                     </div>
-                    <q-linear-progress
-                      :value="downloadProgress[model.name].downloadedBytes / downloadProgress[model.name].totalBytes"
-                      color="primary"
-                      class="q-mt-sm"
-                      size="10px"
-                    >
-                      <div class="absolute-full flex flex-center">
-                        <q-badge color="white" text-color="primary" :label="`${Math.round((downloadProgress[model.name].downloadedBytes / downloadProgress[model.name].totalBytes) * 100)}%`" />
-                      </div>
-                    </q-linear-progress>
-                  </q-card-section>
-                </template>
-                <template v-else>
-                  <q-btn
-                    :color="model.installed ? 'positive' : 'primary'"
-                    :icon="model.installed ? 'check' : 'download'"
-                    :label="model.installed ? '已安装' : '安装'"
-                    :loading="isDownloading && !!downloadTaskId && !installing"
-                    @click="handleInstallModel(model.name)"
-                    :disable="model.installed"
-                  />
-                </template>
-              </q-card-actions>
-            </q-card>
-          </div>
-        </div>
-      </q-tab-panel>
-      
-      <!-- 其他标签页 - 使用相同的模板但过滤不同类型 -->
-      <q-tab-panel v-for="tabType in ['checkpoint', 'lora', 'controlnet', 'vae', 'upscaler']" :key="tabType" :name="tabType">
-        <div v-if="isLoading" class="text-center q-pa-lg">
-          <q-spinner color="secondary" size="3em" />
-          <div class="q-mt-md">加载模型中...</div>
-        </div>
-        
-        <div v-else-if="getFilteredModelsByType(tabType).length === 0" class="text-center q-pa-lg text-grey">
-          没有找到匹配的{{ getTypeLabel(tabType) }}模型
-        </div>
-        
-        <div v-else class="row q-col-gutter-md">
-          <div v-for="model in getFilteredModelsByType(tabType)" :key="model.name" class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
-            <q-card class="model-card" :class="{ 'installed': model.installed }">
-              <q-card-section>
-                <div class="text-h6 ellipsis">{{ model.name }}</div>
-                <q-badge :color="getTypeColor(model.type)">{{ model.type }}</q-badge>
-              </q-card-section>
-              
-              <q-card-section>
-                <p v-if="model.description" class="description">{{ model.description }}</p>
-                <p v-else class="text-grey">无描述</p>
-              </q-card-section>
-              
-              <q-card-actions align="right">
-                <template v-if="downloadProgress[model.name]">
-                  <q-card-section class="download-progress q-pa-none">
-                    <div class="progress-info">
-                      <div class="text-subtitle2">
-                        {{ model.name }} 下载中...
-                      </div>
-                      <div class="text-caption q-gutter-x-md">
-                        <span>
-                          已下载: {{ formatFileSize(downloadProgress[model.name].downloadedBytes) }} / 
-                          {{ formatFileSize(downloadProgress[model.name].totalBytes) }}
-                        </span>
-                        <span>
-                          速度: {{ formatSpeed(downloadProgress[model.name].speed) }}
-                        </span>
-                      </div>
+                  </template>
+                  <template v-else>
+                    <div class="row justify-center q-gutter-sm">
+                      <!-- 预览按钮 -->
+                      <q-btn
+                        flat
+                        round
+                        size="sm"
+                        color="grey-7"
+                        icon="visibility"
+                        @click="viewModelDetails(props.row.name)"
+                      >
+                        <q-tooltip>查看详情</q-tooltip>
+                      </q-btn>
+                      
+                      <!-- 下载/安装按钮 -->
+                      <q-btn
+                        round
+                        flat
+                        size="sm"
+                        :color="props.row.installed ? 'positive' : 'primary'"
+                        :icon="props.row.installed ? 'check' : 'download'"
+                        :loading="isDownloading && props.row.name === modelToInstall"
+                        @click="handleInstallModel(props.row.name)"
+                        :disable="props.row.installed"
+                      >
+                        <q-tooltip>{{ props.row.installed ? '已安装' : '安装' }}</q-tooltip>
+                      </q-btn>
                     </div>
-                    <q-linear-progress
-                      :value="downloadProgress[model.name].downloadedBytes / downloadProgress[model.name].totalBytes"
-                      color="primary"
-                      class="q-mt-sm"
-                      size="10px"
-                    >
-                      <div class="absolute-full flex flex-center">
-                        <q-badge color="white" text-color="primary" :label="`${Math.round((downloadProgress[model.name].downloadedBytes / downloadProgress[model.name].totalBytes) * 100)}%`" />
-                      </div>
-                    </q-linear-progress>
-                  </q-card-section>
-                </template>
-                <template v-else>
-                  <q-btn
-                    :color="model.installed ? 'positive' : 'primary'"
-                    :icon="model.installed ? 'check' : 'download'"
-                    :label="model.installed ? '已安装' : '安装'"
-                    :loading="isDownloading && !!downloadTaskId && !installing"
-                    @click="handleInstallModel(model.name)"
-                    :disable="model.installed"
+                  </template>
+                </q-td>
+              </q-tr>
+            </template>
+            
+            <!-- 底部分页 -->
+            <template v-slot:pagination="scope">
+              <div class="row items-center justify-between q-px-md">
+                <div class="text-caption text-grey-8">
+                  每页记录数: {{ scope.pagination.rowsPerPage }}
+                </div>
+                <div>
+                  <q-pagination
+                    v-model="scope.pagination.page"
+                    :max="scope.pagesNumber"
+                    :max-pages="6"
+                    :boundary-links="true"
+                    :direction-links="true"
+                    size="sm"
                   />
-                </template>
-              </q-card-actions>
-            </q-card>
-          </div>
+                </div>
+                <div class="text-caption text-grey-8">
+                  {{ scope.pagination.rowsPerPage * (scope.pagination.page-1) + 1 }}-{{ Math.min(scope.pagination.page * scope.pagination.rowsPerPage, scope.pagination.rowsNumber || 0) }} of {{ scope.pagination.rowsNumber || 0 }}
+                </div>
+              </div>
+            </template>
+          </q-table>
         </div>
       </q-tab-panel>
     </q-tab-panels>
   </q-card>
   
-  <!-- 添加自定义确认对话框 -->
+  <!-- 修改确认安装对话框的样式但保持文案和功能不变 -->
   <q-dialog v-model="confirmDialogVisible" persistent>
-    <q-card>
-      <q-card-section class="row items-center">
-        <q-avatar icon="help" color="primary" text-color="white" />
-        <span class="q-ml-sm">确认安装</span>
+    <q-card class="confirmation-dialog">
+      <!-- 修改标题样式但保留文案 -->
+      <q-card-section>
+        <div class="text-h6 text-weight-bold">确认安装</div>
       </q-card-section>
 
       <q-card-section>
         您确定要安装模型"{{ modelToInstall }}"吗？
       </q-card-section>
 
-      <q-card-actions align="right">
-        <q-btn flat label="取消" color="primary" v-close-popup @click="cancelInstall" />
-        <q-btn flat label="确定" color="primary" v-close-popup @click="confirmInstall" />
+      <q-card-actions align="right" class="q-pa-md">
+        <q-btn 
+          label="取消" 
+          color="grey-7" 
+          class="dialog-btn" 
+          v-close-popup 
+          @click="cancelInstall" 
+        />
+        <q-btn 
+          label="确定" 
+          color="primary" 
+          class="dialog-btn q-ml-sm" 
+          v-close-popup 
+          @click="confirmInstall" 
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -257,6 +253,8 @@ interface Model {
   downloading?: boolean;
   installedDate?: string;
   essential?: boolean;
+  baseModel?: string;
+  source?: string;
 }
 
 // 定义更具体的API响应类型
@@ -349,6 +347,23 @@ const extractResponseData = async <T>(response: ApiResponse | Response | undefin
   return null;
 };
 
+// 重新定义TableColumn接口，使用更具体的类型代替any
+interface TableColumn {
+  name: string;
+  label: string;
+  field: string | ((row: Model) => unknown);
+  required?: boolean;
+  align?: 'left' | 'right' | 'center';
+  sortable?: boolean;
+  sort?: (a: unknown, b: unknown, rowA: Model, rowB: Model) => number;
+  sortOrder?: 'ad' | 'da';
+  format?: (val: unknown, row: Model) => unknown;
+  style?: string | ((row: Model) => string);
+  classes?: string | ((row: Model) => string);
+  headerStyle?: string;
+  headerClasses?: string;
+}
+
 export default defineComponent({
   name: 'OptionalModelsCard',
   setup() {
@@ -381,6 +396,17 @@ export default defineComponent({
     // 添加下载源选择
     const downloadSource = ref('HuggingFace中国镜像站');
     const downloadSourceOptions = ['HuggingFace中国镜像站', 'HuggingFace官方'];
+    
+    // 修正列定义为正确的类型
+    const columns = ref<TableColumn[]>([
+      { name: 'name', label: '名称', field: 'name', align: 'left', sortable: true },
+      { name: 'type', label: '类型', field: 'type', align: 'center' },
+      { name: 'size', label: '大小', field: 'size', align: 'center', sortable: true },
+      { name: 'baseModel', label: '底模', field: 'baseModel', align: 'center' },
+      { name: 'source', label: '来源', field: 'source', align: 'center' },
+      { name: 'description', label: '说明', field: 'description', align: 'left' },
+      { name: 'actions', label: '操作', field: 'actions', align: 'center' }
+    ]);
     
     // 获取模型列表
     const fetchModels = async () => {
@@ -742,6 +768,23 @@ export default defineComponent({
       });
     };
     
+    // 添加查看模型详情方法
+    const viewModelDetails = (modelName: string) => {
+      try {
+        // 调用API打开模型文件夹
+        api.post('models/open-folder', { model: modelName })
+          .catch(error => {
+            console.error('打开模型文件夹失败:', error);
+            $q.notify({
+              type: 'negative',
+              message: '无法打开模型文件夹'
+            });
+          });
+      } catch (error) {
+        console.error('打开模型文件夹失败:', error);
+      }
+    };
+    
     // 组件加载时获取数据
     onMounted(() => {
       fetchModels();
@@ -758,6 +801,25 @@ export default defineComponent({
         searchTimeout.value = null;
       }
     });
+    
+    // 修改活动标签的映射关系
+    const tabTypeMapping = {
+      'all': null, // 所有类型
+      'sd': 'checkpoint',
+      'lora': 'lora',
+      'controlnet': 'controlnet',
+      'vae': 'vae',
+      'upscaler': 'upscaler'
+    };
+    
+    // 添加根据标签过滤模型的方法
+    const getFilteredModelsByTab = (tabName: string) => {
+      const models = filteredModels.value;
+      const filterType = tabTypeMapping[tabName as keyof typeof tabTypeMapping];
+      
+      if (!filterType) return models; // 'all' tab
+      return models.filter(model => model.type === filterType);
+    };
     
     return {
       // 状态
@@ -789,9 +851,7 @@ export default defineComponent({
       onRefresh,
       
       // 辅助功能
-      getFilteredModelsByType: (type: string) => {
-        return filteredModels.value.filter(model => model.type === type);
-      },
+      getFilteredModelsByTab,
       
       getTypeLabel,
       getTypeColor,
@@ -800,59 +860,100 @@ export default defineComponent({
       // 添加新的处理函数
       handleSearchInput,
       cancelInstall,
-      confirmInstall
+      confirmInstall,
+      
+      // 添加新的表格列配置
+      columns,
+      viewModelDetails,
     };
   }
 });
 </script>
 
 <style scoped>
+/* 修改样式 */
 .model-card {
-  transition: all 0.3s ease;
-  height: 100%;
+  border-radius: 16px;
+  overflow: hidden;
 }
 
-.model-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+.header-section {
+  padding: 20px;
 }
 
-.model-card.installed {
-  border-left: 4px solid #4CAF50;
+.model-table {
+  width: 100%;
 }
 
 .description {
-  max-height: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-}
-
-.ellipsis {
+  max-width: 200px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* 添加下载进度相关样式 */
 .download-progress {
-  width: 100%;
-  padding: 8px;
+  width: 150px;
 }
 
-.progress-info {
-  margin-bottom: 8px;
+/* 表格行高度调整 */
+:deep(.q-table tbody td) {
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 
-.progress-info .text-caption {
+/* 增大所有圆角尺寸 */
+:deep(.q-card) {
+  border-radius: 16px;
+}
+
+:deep(.q-btn) {
+  border-radius: 12px;
+}
+
+:deep(.q-btn.q-btn--round) {
+  border-radius: 50%;
+}
+
+:deep(.q-input, .q-select) {
+  border-radius: 12px;
+}
+
+:deep(.q-input .q-field__control, .q-select .q-field__control) {
+  border-radius: 12px;
+}
+
+:deep(.q-dialog__inner > div) {
+  border-radius: 16px;
+}
+
+:deep(.q-table) {
+  border-radius: 12px;
+}
+
+:deep(.q-table th:first-child) {
+  border-top-left-radius: 12px;
+}
+
+:deep(.q-table th:last-child) {
+  border-top-right-radius: 12px;
+}
+
+/* 操作按钮间距 */
+.action-buttons {
   display: flex;
-  justify-content: space-between;
-  color: #666;
+  gap: 8px;
+  justify-content: center;
 }
 
-.q-linear-progress {
-  border-radius: 4px;
+/* 添加确认对话框样式 */
+.confirmation-dialog {
+  min-width: 350px;
+  max-width: 400px;
+}
+
+.dialog-btn {
+  border-radius: 8px;
+  min-width: 80px;
 }
 </style> 
