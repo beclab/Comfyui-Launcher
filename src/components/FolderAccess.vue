@@ -1,31 +1,37 @@
 <template>
   <div class="q-mb-lg">
-    <div class="text-subtitle1 q-mb-sm">文件夹</div>
-    <div class="row q-col-gutter-md">
-      <div v-for="folder in folders" :key="folder.name" class="col-12 col-md-6">
-        <q-card flat bordered class="folder-card">
-          <q-card-section class="row items-center no-wrap">
-            <div>
-              <div class="row items-center">
-                <q-icon name="folder" size="xs" class="q-mr-xs" />
-                <div class="text-weight-medium">{{ folder.name }}</div>
+    <q-card flat bordered>
+      <q-card-section class="q-pb-xs">
+        <div class="text-subtitle1">文件类</div>
+      </q-card-section>
+      
+      <q-separator />
+      
+      <div class="row q-col-gutter-none">
+        <template v-for="folder in folders" :key="folder.name">
+          <div class="col-12 col-md-4 folder-container">
+            <div class="folder-content q-pa-md">
+              <div class="row no-wrap items-start">
+                <img src="src/assets/icon-folder.png" class="folder-icon q-mr-sm q-mt-xs" />
+                <div class="column full-width">
+                  <div>
+                    {{ folder.name }}
+                  </div>
+                  <div v-if="folder.used && folder.available" class="text-caption text-grey q-mt-xs">
+                    已安装 {{ folder.used }} 可用 {{ folder.available }}
+                  </div>
+                </div>
               </div>
-              <div v-if="folder.used && folder.available" class="text-caption q-mt-xs">
-                <q-icon name="storage" size="xs" class="q-mr-xs" />
-                已使用 {{ folder.used }}
-                <q-icon name="layers" size="xs" class="q-ml-sm q-mr-xs" />
-                可用 {{ folder.available }}
-              </div>
-              <div class="text-caption text-grey">
-                {{ folder.path }}
+              
+              <div class="row items-center justify-between q-mt-md">
+                <div class="path-badge text-caption text-grey flex-grow-1 mr-2">{{ folder.path }}</div>
+                <q-btn outline rounded label="打开" color="primary" class="open-btn" size="sm" @click="openFolder(folder.path)" />
               </div>
             </div>
-            <q-space />
-            <q-btn label="打开" color="primary" flat @click="openFolder(folder.path)" />
-          </q-card-section>
-        </q-card>
+          </div>
+        </template>
       </div>
-    </div>
+    </q-card>
   </div>
 </template>
 
@@ -37,29 +43,51 @@ export default defineComponent({
   data() {
     return {
       folders: [
-        { name: '模型目录', path: '/external/ai/models', used: '128', available: '541' },
-        { name: '模型目录', path: '/external/ai/models', used: '128', available: '541' },
-        { name: '输出目录', path: '/external/ai/models', used: null, available: null },
-        { name: '输入目录', path: '/external/ai/models', used: null, available: null }
+        { name: '模型目录', path: 'External/ai/models', used: '128', available: '541' },
+        { name: '插件目录', path: 'External/ai/models', used: '128', available: '541' },
+        { name: '模型目录', path: 'External/ai/models', used: '128', available: '541' },
+        { name: '输出目录', path: 'External/ai/models', used: null, available: null },
+        { name: '输入目录', path: 'External/ai/models', used: null, available: null }
       ]
     }
   },
   methods: {
     openFolder(path: string) {
-      console.log('打开文件夹:', path);
-      // 这里可以添加打开文件夹的逻辑
+      console.log('Opening folder:', path);
+      // The logic to open the folder will be implemented here
     }
   }
 });
 </script>
 
 <style scoped>
-.folder-card {
-  border-radius: 8px;
-  transition: all 0.2s ease;
+.folder-container {
+  position: relative;
 }
 
-.folder-card:hover {
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+.folder-content {
+  height: 100%;
+}
+
+.path-badge {
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  padding: 2px 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 80%;
+}
+
+.folder-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.open-btn {
+  min-width: 60px;
+  font-size: 12px;
+  border-radius: 8px;
+  padding: 0 12px;
 }
 </style> 

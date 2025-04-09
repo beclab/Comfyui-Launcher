@@ -18,7 +18,9 @@
     <NetworkEnvironment />
     
     <!-- 文件夹访问组件 -->
-    <FolderAccess />
+    <div class="q-my-md">
+      <FolderAccess />
+    </div>
     
     <!-- 资源包安装组件 -->
     <PackageInstall />
