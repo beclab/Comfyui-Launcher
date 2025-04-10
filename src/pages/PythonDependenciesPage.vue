@@ -6,19 +6,12 @@
       
       <!-- 选项卡 -->
       <div class="q-mb-md">
-        <q-btn-toggle
+        <TabToggle
           v-model="activeTab"
           :options="[
             { label: 'Python依赖库', value: 'deps' },
             { label: '依赖分析', value: 'plugins' }
           ]"
-          class="q-mb-md rounded-borders"
-          text-color="grey-8"
-          toggle-text-color="primary"
-          toggle-color="light-blue-1"
-          unelevated
-          style="border: 1px solid #e0e0e0; border-radius: 8px;"
-          
         />
       </div>
 
@@ -287,9 +280,13 @@ import { useQuasar } from 'quasar';
 import { getPipSource, setPipSource, getInstalledPackages, installPackage as apiInstallPackage, 
          uninstallPackage as apiUninstallPackage, analyzePluginDependencies as apiAnalyzeDeps,
          fixPluginDependencies } from 'src/api';
+import TabToggle from 'src/components/common/TabToggle.vue';
 
 export default defineComponent({
   name: 'PythonDependenciesPage',
+  components: {
+    TabToggle
+  },
   
   setup() {
     const $q = useQuasar();
@@ -745,7 +742,8 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* 覆盖选中按钮样式 */
+/* 移除这部分覆盖样式，因为我们现在使用统一的tab-styles.css */
+/*
 ::v-deep .q-btn-toggle {
   .q-btn-item {
     &.active {
@@ -760,6 +758,7 @@ export default defineComponent({
     }
   }
 }
+*/
 
 .error-dialog {
   max-width: 90vw !important;
@@ -800,8 +799,11 @@ export default defineComponent({
   border-radius: 4px;
 }
 
+/* 移除这个类，因为我们使用统一的tab-styles.css */
+/*
 .q-btn-toggle.active-tab {
   background: var(--q-primary);
   color: white;
 }
+*/
 </style>

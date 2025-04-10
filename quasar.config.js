@@ -28,7 +28,8 @@ module.exports = configure(function (/* ctx */) {
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
     css: [
       'app.scss',
-      '~src/styles/variables.css'
+      '~src/styles/variables.css',
+      // '~src/css/quasar.variables.scss',
     ],
 
     // https://github.com/quasarframework/quasar/tree/dev/extras
@@ -92,7 +93,19 @@ module.exports = configure(function (/* ctx */) {
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework
     framework: {
-      config: {},
+      config: {
+        brand: {
+          // 默认颜色
+          primary: '#1976D2',
+          secondary: '#26A69A',
+          // ... 其他默认颜色 ...
+          
+          // 添加自定义颜色
+          'warning-text': '#FEBE01',
+          'select-button-text': '#3377FF',
+          // 添加其他自定义颜色...
+        }
+      },
 
       // iconSet: 'material-icons', // Quasar icon set
       // lang: 'en-US', // Quasar language pack

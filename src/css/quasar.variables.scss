@@ -37,16 +37,17 @@ $info      : #51AEFF;
 $warning   : #FEBE01;
 
 // Custom colors
-$button-text: #51AEFF;
-$text-normal: #5C5C5C;
-$text-important: #1F1F1F;
-$select-button-text: #3377FF;
-$positive-text: #29CC5F;
-$negative-text: #FF4D4D;
-$warning-text: #FEBE01;
-$positive-bg: rgba(41, 204, 95, 0.1);
-$negative-bg: rgba(255, 77, 77, 0.1);
-$warning-bg: rgba(255, 235, 59, 0.1);
+$button-text: #51AEFF !default;
+$text-normal: #5C5C5C !default;
+$text-important: #1F1F1F !default;
+$select-button-text: #3377FF !default;
+$positive-text: #29CC5F !default;
+$negative-text: #FF4D4D !default;
+$warning-text: #FEBE01 !default;
+$positive-bg: rgba(41, 204, 95, 0.1) !default;
+$negative-bg: rgba(255, 77, 77, 0.1) !default;
+$warning-bg: rgba(255, 235, 59, 0.1) !default;
+$button-bg: rgba(81, 174, 255, 0.1) !default;
 
 // 定义圆角变量
 $border-radius-xs: 2px;

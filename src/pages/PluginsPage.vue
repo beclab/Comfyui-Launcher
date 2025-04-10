@@ -12,33 +12,13 @@
     <div class="row q-mb-md items-center justify-between">
       <!-- 左侧标签切换 -->
       <div>
-        <q-tabs
+        <TabToggle
           v-model="activeTab"
-          dense
-          class="bg-white"
-          no-caps
-          indicator-color="transparent"
-          style="border-radius: 8px; border: 1px solid #e0e0e0; width: fit-content;"
-        >
-          <q-tab 
-            name="plugins" 
-            label="插件库" 
-            class="q-px-md"
-            :class="{ 
-              'bg-light-blue-1 text-blue': activeTab === 'plugins',
-              'text-grey': activeTab !== 'plugins'
-            }"
-          />
-          <q-tab 
-            name="history" 
-            label="操作历史" 
-            class="q-px-md"
-            :class="{ 
-              'bg-light-blue-1 text-blue': activeTab === 'history',
-              'text-grey': activeTab !== 'history'
-            }"
-          />
-        </q-tabs>
+          :options="[
+            {label: '插件库', value: 'plugins'},
+            {label: '操作历史', value: 'history'}
+          ]"
+        />
       </div>
       
       <!-- 右侧操作按钮 -->
@@ -130,7 +110,18 @@ import { QTableColumn } from 'quasar';
 import PluginsManager from 'src/components/plugins/PluginsManager.vue';
 import OperationHistoryTable from 'src/components/plugins/OperationHistoryTable.vue';
 import OperationLogsDialog from 'src/components/plugins/OperationLogsDialog.vue';
+import PluginInfoDialog from 'src/components/plugins/PluginInfoDialog.vue';
+import TabToggle from 'src/components/common/TabToggle.vue';
 
+// 确保 ESLint 知道所有组件都被使用
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const components = {
+  PluginsManager,
+  OperationHistoryTable,
+  OperationLogsDialog,
+  PluginInfoDialog,
+  TabToggle
+};
 
 const $q = useQuasar();
 

@@ -4,25 +4,14 @@
     <q-separator class="q-mb-md" />
 
     <div class="row items-center justify-between q-mb-md">
-      <div class="col">
-        <div class="custom-tabs-container">
-          <q-btn-toggle
-            v-model="activeTab"
-            toggle-color="primary"
-            :options="[
-              {label: '模型库', value: 'models'},
-              {label: '操作历史', value: 'history'}
-            ]"
-            class="custom-tab-toggle"
-            no-caps
-            unelevated
-            rounded
-            spread
-            
-            active-class="custom-btn-active"
-            inactive-class="custom-btn-inactive"
-          />
-        </div>
+      <div>
+        <TabToggle
+          v-model="activeTab"
+          :options="[
+            {label: '模型库', value: 'models'},
+            {label: '操作历史', value: 'history'}
+          ]"
+        />
       </div>
       
       <div class="col-auto">
@@ -54,6 +43,7 @@ import { defineComponent, ref, provide } from 'vue';
 import OptionalModelsCard from '../components/models/OptionalModelsCard.vue';
 import InstalledModelsCard from '../components/models/InstalledModelsCard.vue';
 import DownloadHistoryCard from '../components/models/DownloadHistoryCard.vue';
+import TabToggle from 'src/components/common/TabToggle.vue';
 import api from '../api';
 
 export default defineComponent({
@@ -61,7 +51,8 @@ export default defineComponent({
   components: {
     OptionalModelsCard,
     InstalledModelsCard,
-    DownloadHistoryCard
+    DownloadHistoryCard,
+    TabToggle
   },
   setup() {
     const activeTab = ref('models');
@@ -112,63 +103,5 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.custom-tabs-container {
-  max-width: 300px; /* 稍微减小整体宽度 */
-}
-
-.custom-tab-toggle {
-  width: 100%;
-  border-radius: 16px; /* 减小边框圆角 */
-  border: 1px solid #e0e0e0;
-  background-color: #f5f5f5;
-  overflow: hidden;
-}
-
-/* 调整按钮样式 */
-:deep(.q-btn-toggle .q-btn) {
-  border-radius: 16px !important; /* 减小圆角 */
-  padding: 8px 16px; /* 减小内边距，使按钮更紧凑 */
-  min-height: 36px; /* 减小高度 */
-}
-
-/* 移除下划线 */
-:deep(.q-btn-toggle .q-btn .q-btn__content) {
-  position: relative;
-}
-
-/* 使用组件提供的类名来定义样式 */
-:deep(.custom-btn-active) {
-  background-color: #e8f0fe !important;
-  color: #1976d2 !important;
-  font-weight: 500 !important;
-}
-
-:deep(.custom-btn-inactive) {
-  background-color: transparent !important;
-  color: #5f6368 !important;
-}
-
-/* 可以保留原有的选择器作为后备 */
-:deep(.q-btn-toggle .q-btn--active) {
-  background-color: #e8f0fe !important;
-  color: #1976d2 !important;
-}
-
-/* 增加选择器特异性，提高权重 */
-:deep(.q-btn-toggle.custom-tab-toggle .q-btn--active),
-:deep(.custom-tabs-container .q-btn-toggle .q-btn--active) {
-  background-color: #e8f0fe !important;
-  color: #1976d2 !important;
-  font-weight: 500 !important;
-}
-
-/* 减小按钮之间的间距 */
-:deep(.q-btn-toggle) {
-  gap: 0; /* 移除间距 */
-}
-
-/* 可能需要调整按钮内边距来减少间距感 */
-:deep(.q-btn-toggle .q-btn__content) {
-  padding: 0 4px;
-}
+/* 删除所有重复的样式，因为我们现在使用共享的 tab-styles.css */
 </style>

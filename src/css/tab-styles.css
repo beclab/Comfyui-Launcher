@@ -1,0 +1,45 @@
+/* 统一的标签切换按钮样式 */
+.custom-tabs-container {
+  max-width: 300px;
+}
+
+.custom-tab-toggle {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background-color: #f5f5f5;
+  overflow: hidden;
+}
+
+/* 使用深度选择器确保样式能够穿透组件边界 */
+.q-btn-toggle .q-btn,
+:deep(.q-btn-toggle .q-btn) {
+  border-radius: 8px !important;
+  padding: 8px 16px;
+  min-height: 36px;
+}
+
+/* 修改选中状态的样式，使用CSS变量 */
+.custom-btn-active,
+:deep(.custom-btn-active) {
+  background-color: var(--normal-button-bg-color) !important;
+  color: var(--select-button-text-color) !important;
+  font-weight: 500 !important;
+}
+
+/* 修改非选中状态的样式 */
+.custom-btn-inactive,
+:deep(.custom-btn-inactive) {
+  background-color: white !important;
+  color: var(--text-important) !important;
+}
+
+.q-btn-toggle,
+:deep(.q-btn-toggle) {
+  gap: 0;
+}
+
+.q-btn-toggle .q-btn__content,
+:deep(.q-btn-toggle .q-btn__content) {
+  padding: 0 4px;
+}
