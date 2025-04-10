@@ -95,10 +95,10 @@ RUN chmod -R 777 /app/dist
 WORKDIR /app/server
 RUN npm install && \
     npm install superagent --save && \
-    npm install fs-extra && \
-    npm install winston
+    npm install fs-extra --save && \
+    npm install winston --save
 
-    
+
 # 回到应用根目录
 WORKDIR /app
 
