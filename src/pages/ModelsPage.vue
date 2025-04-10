@@ -1,7 +1,7 @@
 <template>
   <q-page padding>
     <div class="text-h5 q-mb-md">模型管理</div>
-    <q-separator class="q-mb-md" />
+    <q-separator class="q-mb-md" style="margin-bottom: 40px; margin-top: 30px;"/>
 
     <div class="row items-center justify-between q-mb-md">
       <div>
@@ -21,6 +21,7 @@
           label="打开模型目录"
           @click="openModelFolder"
           flat
+          style="color: var(--button-text-color);"
         />
       </div>
     </div>
@@ -103,5 +104,10 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.text-h5 {
+  color: var(--text-important);
+  font-size: 40px; /* 假设默认字号为 16px */
+  font-weight: bold;
+}
 /* 删除所有重复的样式，因为我们现在使用共享的 tab-styles.css */
 </style>

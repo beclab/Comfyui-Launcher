@@ -17,6 +17,9 @@ const execPromise = util.promisify(exec);
 const RESET_LOG_PATH = path.join(process.cwd(), 'logs');
 const RESET_LOG_FILE = path.join(RESET_LOG_PATH, 'comfyui-reset.log');
 
+// 程序版本号常量
+const APP_VERSION = '0.1.0';
+
 export class ComfyUIController {
   private comfyProcess: ChildProcess | null = null;
   private startTime: Date | null = null;
@@ -26,6 +29,12 @@ export class ComfyUIController {
   private recentLogs: string[] = [];
   private maxLogEntries: number = 100; // 保留最近100条日志
   private resetLogs: string[] = []; // 存储最近一次重置操作的日志
+  // 缓存版本信息，避免频繁读取
+  private versionCache: {
+    comfyui?: string;
+    frontend?: string;
+    timestamp?: number;
+  } = {};
 
   constructor() {
     // 绑定方法到实例
@@ -77,11 +86,121 @@ export class ComfyUIController {
       logger.info(`[API] 已运行时间: ${uptime}`);
     }
     
+    // 获取版本信息
+    const versions = await this.getVersionInfo();
+    
+    // 获取GPU模式
+    const gpuMode = this.getGPUMode();
+    
     ctx.body = {
       running,
       pid: this.comfyPid,
-      uptime
+      uptime,
+      // 新增返回数据
+      versions: {
+        comfyui: versions.comfyui || 'unknown',
+        frontend: versions.frontend || 'unknown',
+        app: APP_VERSION
+      },
+      gpuMode
     };
+  }
+
+  // 获取ComfyUI和前端版本信息
+  private async getVersionInfo(): Promise<{ comfyui?: string; frontend?: string }> {
+    // 如果缓存存在且未过期（10分钟内），直接返回缓存
+    const now = Date.now();
+    if (this.versionCache.timestamp && (now - this.versionCache.timestamp < 600000)) {
+      return {
+        comfyui: this.versionCache.comfyui,
+        frontend: this.versionCache.frontend
+      };
+    }
+    
+    const result: { comfyui?: string; frontend?: string } = {};
+    
+    try {
+      // 获取ComfyUI版本 - 从ComfyUI目录下的version文件或git信息
+      const comfyuiPath = paths.comfyui;
+      if (comfyuiPath && fs.existsSync(comfyuiPath)) {
+        // 尝试从version文件获取
+        const versionFilePath = path.join(comfyuiPath, 'version');
+        if (fs.existsSync(versionFilePath)) {
+          result.comfyui = fs.readFileSync(versionFilePath, 'utf8').trim();
+        } else {
+          // 尝试从git获取
+          try {
+            const { stdout } = await execPromise('git describe --tags', { cwd: comfyuiPath });
+            if (stdout.trim()) {
+              result.comfyui = stdout.trim();
+            }
+          } catch (gitError) {
+            // 如果git命令失败，尝试从package.json获取
+            const packageJsonPath = path.join(comfyuiPath, 'package.json');
+            if (fs.existsSync(packageJsonPath)) {
+              try {
+                const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+                if (packageJson.version) {
+                  result.comfyui = packageJson.version;
+                }
+              } catch (e) {
+                logger.warn(`[API] 无法从package.json解析ComfyUI版本: ${e}`);
+              }
+            }
+          }
+        }
+      }
+      
+      // 获取前端版本 - 从web/index.html或web/scripts/app.js中查找
+      if (comfyuiPath && fs.existsSync(comfyuiPath)) {
+        const indexHtmlPath = path.join(comfyuiPath, 'web', 'index.html');
+        if (fs.existsSync(indexHtmlPath)) {
+          const indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
+          // 尝试从HTML中查找版本信息
+          const versionMatch = indexHtml.match(/ComfyUI\s+v([\d.]+)/i) || 
+                              indexHtml.match(/version:\s*["']([\d.]+)["']/i);
+          if (versionMatch && versionMatch[1]) {
+            result.frontend = versionMatch[1];
+          } else {
+            // 尝试从app.js中查找
+            const appJsPath = path.join(comfyuiPath, 'web', 'scripts', 'app.js');
+            if (fs.existsSync(appJsPath)) {
+              const appJs = fs.readFileSync(appJsPath, 'utf8');
+              const jsVersionMatch = appJs.match(/version:\s*["']([\d.]+)["']/i) ||
+                                    appJs.match(/APP_VERSION\s*=\s*["']([\d.]+)["']/i);
+              if (jsVersionMatch && jsVersionMatch[1]) {
+                result.frontend = jsVersionMatch[1];
+              }
+            }
+          }
+        }
+      }
+      
+      // 更新缓存
+      this.versionCache = {
+        ...result,
+        timestamp: now
+      };
+      
+    } catch (error) {
+      logger.error(`[API] 获取版本信息时出错: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    
+    return result;
+  }
+  
+  // 获取GPU模式
+  private getGPUMode(): string {
+    // 检查环境变量NVSHARE_MANAGED_MEMORY
+    const nvshareMode = process.env.NVSHARE_MANAGED_MEMORY;
+    
+    if (nvshareMode === '1') {
+      return '独立模式';
+    } else if (nvshareMode === '0'){
+      return '共享模式';
+    } else {
+      return '未知';
+    }
   }
 
   // 添加新方法: 获取ComfyUI日志
