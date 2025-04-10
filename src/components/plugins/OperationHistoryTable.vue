@@ -1,11 +1,28 @@
 <template>
   <div class="history-table-container rounded-borders">
     <!-- 标题和按钮区域 -->
-    <div class="row justify-between items-center q-px-md q-py-sm">
+    <div class="row justify-between items-center q-px-md q-py-md q-gutter-x-sm">
       <div class="text-h6">操作历史记录</div>
       <div class="row items-center">
-        <q-btn color="primary" icon="refresh" label="刷新" flat @click="fetchHistory" :loading="loading" class="q-mr-sm" />
-        <q-btn color="negative" icon="delete" label="清除历史" flat @click="confirmClearHistory" />
+        <q-btn 
+          color="grey" 
+          icon="delete" 
+          label="清除历史" 
+          outline 
+          @click="confirmClearHistory" 
+          class="custom-btn q-mr-sm"
+          style="border-radius: 8px"
+        />
+        <q-btn
+          color="grey"
+          icon="refresh"
+          label="刷新"
+          outline
+          @click="fetchHistory"
+          :loading="loading"
+          class="custom-btn"
+          style="border-radius: 8px"
+        />
       </div>
     </div>
     
@@ -60,14 +77,18 @@
 
       <!-- 状态列 -->
       <template v-slot:body-cell-status="props">
-        <q-td :props="props">
-          <q-badge
-            :color="getStatusColor(props.row.status)"
-            text-color="white"
-            class="q-px-sm"
-          >
-            {{ getStatusLocalizedName(props.row) }}
-          </q-badge>
+        <q-td :props="props" class="q-pa-sm">
+          <div class="flex items-center no-wrap">
+            <q-icon 
+              name="circle"
+              size="10px"
+              :color="getStatusColor(props.row.status)"
+              class="q-mr-xs"
+            />
+            <span class="text-caption text-weight-medium">
+              {{ getStatusLocalizedName(props.row) }}
+            </span>
+          </div>
         </q-td>
       </template>
 
@@ -366,8 +387,42 @@ const updatePagination = (scope: any): void => {
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
 }
 
+:deep(.q-table__top) {
+  padding: 8px 16px;
+}
+
+:deep(.q-table thead th) {
+  color: #616161;
+  font-weight: 600;
+}
+
+:deep(.q-table tbody td) {
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
 .rounded-borders {
   border-radius: 8px;
   overflow: hidden;
 }
-</style> 
+
+.custom-btn {
+  border-width: 2px;
+  border-color: #616161 !important;
+  color: #616161 !important;
+  transition: all 0.3s ease;
+  margin-right: 8px;
+  border-radius: 8px;
+}
+
+.custom-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: var(--q-primary) !important;
+}
+
+.custom-btn:active {
+  transform: translateY(0);
+  opacity: 0.8;
+}
+</style>
