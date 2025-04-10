@@ -25,7 +25,7 @@
               <div class="text-caption text-grey-7">包含ComfyUI能工作所需的基础模型</div>
             </div>
             
-            <q-btn outline rounded color="primary" label="下载" class="download-btn q-ml-sm">
+            <q-btn outline rounded  label="下载" class="download-btn q-ml-sm">
               <q-menu>
                 <q-list style="min-width: 100px">
                   <q-item clickable v-close-popup @click="downloadOption('基础模型包', '模型')">
@@ -60,7 +60,7 @@
               <div class="text-caption text-grey-7">包含ControlNet所需全部模型</div>
             </div>
             
-            <q-btn outline rounded color="primary" label="下载" class="download-btn q-ml-sm" @click="downloadPackage('ControlNet模型包')" />
+            <q-btn outline rounded label="下载" class="download-btn q-ml-sm" @click="downloadPackage('ControlNet模型包')" />
           </div>
         </div>
       </div>
@@ -114,13 +114,16 @@ export default defineComponent({
 <style scoped>
 .package-container {
   border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 8px;
+  border-radius: var(--border-radius-xl);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .download-btn {
   min-width: 72px;
   font-size: 0.9rem;
+  border-radius: var(--border-radius-md);
+  color: var(--button-text-color);
+  border-color: var(--button-text-color);
 }
 
 /* 处理两列布局时的间距 */
@@ -146,4 +149,12 @@ export default defineComponent({
     display: none;
   }
 }
-</style> 
+
+.text-subtitle1 {
+  color: var(--text-important);
+}
+.text-weight-medium {
+  color: var(--text-important);
+  font-weight: normal;
+}
+</style>

@@ -1,5 +1,5 @@
 <template>
-  <q-page class="index-page-container">
+  <q-page class="index-page-container ">
     <!-- 顶部标题区域 -->
     <!-- 
     <div class="text-center q-mb-md">
@@ -13,6 +13,8 @@
     <div class="q-mb-lg">
       <ComfyUIStatus />
     </div>
+    
+    <div style="height: 1px; width: 100%; background-color: gainsboro; margin-bottom: 50px;"></div>
     
     <!-- 网络环境组件 -->
     <NetworkEnvironment />

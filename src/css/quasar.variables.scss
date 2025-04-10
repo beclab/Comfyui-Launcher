@@ -31,7 +31,33 @@ $accent    : #9C27B0;
 $dark      : #1D1D1D;
 $dark-page : #121212;
 
-$positive  : #21BA45;
-$negative  : #C10015;
-$info      : #31CCEC;
-$warning   : #F2C037;
+$positive  : #29CC5F;
+$negative  : #FF4D4D;
+$info      : #51AEFF;
+$warning   : #FEBE01;
+
+// Custom colors
+$button-text: #51AEFF;
+$text-normal: #5C5C5C;
+$text-important: #1F1F1F;
+$select-button-text: #3377FF;
+$positive-text: #29CC5F;
+$negative-text: #FF4D4D;
+$warning-text: #FEBE01;
+$positive-bg: rgba(41, 204, 95, 0.1);
+$negative-bg: rgba(255, 77, 77, 0.1);
+$warning-bg: rgba(255, 235, 59, 0.1);
+
+// 定义圆角变量
+$border-radius-xs: 2px;
+$border-radius-sm: 4px;
+$border-radius-md: 8px;
+$border-radius-lg: 12px;
+$border-radius-xl: 16px;
+$border-radius-2xl: 24px;
+$border-radius-full: 9999px;
+
+// 你也可以覆盖Quasar的默认圆角变量
+$generic-border-radius: $border-radius-md;
+$button-border-radius: $border-radius-sm;
+$generic-rounded-borders: $border-radius-lg;

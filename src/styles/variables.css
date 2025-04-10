@@ -1,0 +1,34 @@
+:root {
+  /* Border radius */
+  --border-radius-xs: 2px;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+  --border-radius-2xl: 24px;
+  --border-radius-full: 9999px;
+
+  /* Button colors */
+  --button-text-color: #51AEFF;
+  --select-button-text-color: #3377FF;
+  
+  /* Text colors */
+  --text-normal: #5C5C5C;
+  --text-important: #1F1F1F;
+  
+  /* Status colors */
+  --positive-color: #29CC5F;
+  --negative-color: #FF4D4D;
+  --warning-color: #FFEB3B;
+  
+  /* Status text colors */
+  --positive-text-color: #29CC5F;
+  --negative-text-color: #FF4D4D;
+  --warning-text-color: #FEBE01;
+  
+  /* Status background colors with opacity */
+  --positive-bg-color: rgba(41, 204, 95, 0.1);
+  --negative-bg-color: rgba(255, 77, 77, 0.1);
+  --warning-bg-color: rgba(255, 235, 59, 0.1);
+  --normal-button-bg-color: rgba(81, 174, 255, 0.1); /* 51AEFF 的 10% 可见度 */
+} 

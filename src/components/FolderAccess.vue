@@ -17,15 +17,15 @@
                   <div>
                     {{ folder.name }}
                   </div>
-                  <div v-if="folder.used && folder.available" class="text-caption text-grey q-mt-xs">
+                  <div v-if="folder.used && folder.available" class="text-caption" style="color: var(--text-normal);">
                     已安装 {{ folder.used }} 可用 {{ folder.available }}
                   </div>
                 </div>
               </div>
               
               <div class="row items-center justify-between q-mt-md">
-                <div class="path-badge text-caption text-grey flex-grow-1 mr-2">{{ folder.path }}</div>
-                <q-btn outline rounded label="打开" color="primary" class="open-btn" size="sm" @click="openFolder(folder.path)" />
+                <div class="path-badge text-caption flex-grow-1 mr-2" style="color: var(--text-normal);">{{ folder.path }}</div>
+                <q-btn outline rounded label="打开" class="open-btn" size="sm" @click="openFolder(folder.path)" />
               </div>
             </div>
           </div>
@@ -61,6 +61,9 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.text-subtitle1 {
+  color: var(--text-important);
+}
 .folder-container {
   position: relative;
 }
@@ -71,12 +74,14 @@ export default defineComponent({
 
 .path-badge {
   background-color: #f5f5f5;
-  border-radius: 4px;
-  padding: 2px 8px;
+  border-radius: var(--border-radius-md);
+  border: gainsboro solid 1px;
+  padding: 4px 8px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   width: 80%;
+  height: 30px;
 }
 
 .folder-icon {
@@ -86,8 +91,15 @@ export default defineComponent({
 
 .open-btn {
   min-width: 60px;
-  font-size: 12px;
-  border-radius: 8px;
-  padding: 0 12px;
+  border-radius: var(--border-radius-md);
+  padding: 8px 6px;
+  color: var(--button-text-color);
+  border-color: var(--button-text-color);
 }
-</style> 
+.q-card {
+  border-radius: var(--border-radius-xl);
+}
+.folder-content div:first-child {
+  color: var(--text-important);
+}
+</style>

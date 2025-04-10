@@ -3,7 +3,7 @@
     <q-card flat bordered class="network-status">
       <q-card-section>
         <div class="row justify-between items-center q-mb-sm">
-          <div class="text-subtitle1">网络环境</div>
+          <div class="text-subtitle1" style="color: var(--text-important);">网络环境</div>
           <q-icon name="wifi" size="sm" color="grey-7" />
         </div>
         <q-separator class="q-mb-md" />
@@ -15,7 +15,7 @@
               </q-avatar>
               <div class="network-item-content">
                 <div class="row justify-between items-center full-width">
-                  <div>{{ status.name }}</div>
+                  <div style="color: var(--text-important);">{{ status.name }}</div>
                   <div class="status-indicator">
                     <q-badge :color="status.statusColor" rounded style="width: 8px; height: 8px;" class="q-mr-xs" />
                     <span class="text-caption" :class="status.textColorClass">{{ status.statusText }}</span>
@@ -77,7 +77,7 @@ export default defineComponent({
   display: flex;
   align-items: center;
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-xl);
   min-width: 150px;
   height: 100%;
 }
@@ -92,6 +92,6 @@ export default defineComponent({
 }
 
 .network-status {
-  border-radius: 8px;
+  border-radius: var(--border-radius-xl);
 }
-</style> 
+</style>

@@ -6,7 +6,7 @@
         <div class="logo-container">
           <img src="~assets/comfyui-logo2.png" alt="ComfyUI" class="app-logo" />
         </div>
-        
+
         <!-- 右侧放标题和版本信息 -->
         <div class="content-container">
           <div class="header-row">
@@ -55,6 +55,7 @@
               icon="more_vert"
               size="sm"
               class="menu-btn"
+              style="background-color: #f5f5f5; border-radius: var(--border-radius-md);"
             >
               <q-menu>
                 <q-list style="min-width: 140px">
@@ -459,8 +460,8 @@ export default defineComponent({
 
 /* Logo容器 */
 .logo-container {
-  width: 98px;
-  height: 98px;
+  width: 80px;
+  height: 80px;
   background-color: #000000;
   display: flex;
   align-items: center;
@@ -501,7 +502,7 @@ export default defineComponent({
 .comfyui-title {
   font-size: 18px;
   font-weight: 500;
-  color: #333;
+  color: var(--text-important);
 }
 
 .creator-chip {
@@ -533,7 +534,7 @@ export default defineComponent({
 
 .version-text {
   font-size: 12px;
-  color: #757575;
+  color: var(--text-normal);
 }
 
 /* 按钮行 */
@@ -546,10 +547,10 @@ export default defineComponent({
 
 /* 新的启动按钮样式 */
 .start-btn {
-  background-color: rgba(33, 150, 243, 0.1) !important;
-  color: #2196f3 !important;
-  border-radius: 4px !important;
-  padding: 0 12px !important;
+  background-color: var(--normal-button-bg-color) !important;
+  color: var(--select-button-text-color) !important;
+  border-radius: var(--border-radius-md) !important;
+  padding: 0px 24px !important;
   height: 28px !important;
   font-weight: normal !important;
 }
@@ -623,4 +624,4 @@ export default defineComponent({
   padding: 8px 16px;
   background-color: #f5f5f5;
 }
-</style> 
+</style>

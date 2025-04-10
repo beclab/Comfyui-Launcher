@@ -18,7 +18,8 @@ const getApiBaseUrl = () => {
   // 根据环境选择回退地址
   // 开发环境使用localhost
   if (import.meta.env.DEV) {
-    return 'http://localhost:3000/api';
+    // return 'http://localhost:3000/api';
+    return 'https://7e6098941.xuejingjie089.olares.cn/api'
   }
   
   // 生产环境使用当前网站地址
