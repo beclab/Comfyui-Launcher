@@ -48,7 +48,7 @@
             dense
             color="primary"
             icon="visibility"
-            @click="$emit('show-info')"
+            @click="onShowInfo"
             class="q-mr-xs"
           >
             <q-tooltip>查看详情</q-tooltip>
@@ -76,7 +76,7 @@
             :color="plugin.installed ? 'negative' : 'positive'"
             :icon="plugin.installed ? 'delete' : 'download'"
             :loading="!!installationInProgress"
-            @click="plugin.installed ? $emit('uninstall') : $emit('install')"
+            @click="plugin.installed ? onUninstall : onInstall"
             class="q-mr-xs"
           >
             <q-tooltip>{{ plugin.installed ? '卸载' : '安装' }}</q-tooltip>
@@ -91,7 +91,7 @@
             color="primary"
             :icon="plugin.disabled ? 'play_arrow' : 'pause'"
             :loading="!!stateChanging"
-            @click="$emit('toggle-state')"
+            @click="onToggleState"
           >
             <q-tooltip>{{ plugin.disabled ? '启用' : '禁用' }}</q-tooltip>
           </q-btn>
@@ -148,12 +148,7 @@ const emit = defineEmits([
   'show-info',
 ]);
 
-// Methods
-const getStatusText = () => {
-  if (!props.plugin.installed) return '未安装';
-  if (props.plugin.disabled) return '已禁用';
-  return '已安装';
-};
+
 
 const onInstall = () => {
   emit('install', props.plugin);

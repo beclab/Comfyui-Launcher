@@ -171,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, computed } from 'vue';
 import type { QTableColumn } from 'quasar';
 
 // 操作类型定义
@@ -190,7 +190,7 @@ interface PluginOperation {
 }
 
 // Props
-const props = defineProps({
+const { operations } = defineProps({
   operations: {
     type: Array as () => PluginOperation[],
     required: true
@@ -279,17 +279,6 @@ const tableColumns = computed<QTableColumn[]>(() => [
 ]);
 
 // Methods for operation and status handling
-const getOperationColor = (type: string): string => {
-  if (!type) return 'grey';
-  switch (type) {
-    case 'install': return 'primary';
-    case 'uninstall': return 'negative';
-    case 'disable': return 'warning';
-    case 'enable': return 'positive';
-    default: return 'grey';
-  }
-};
-
 const getStatusColor = (status: string): string => {
   if (!status) return 'grey';
   switch (status) {
@@ -371,13 +360,28 @@ const fetchHistory = (): void => {
   emit('refresh');
 };
 
-const updatePagination = (scope: any): void => {
-  // 更新本地分页状态
-  pagination.value.rowsPerPage = pagination.value.rowsPerPage;
+// 定义一个更具体的类型来替代 any
+interface PaginationScope {
+  pagination: {
+    sortBy: string | null;
+    descending: boolean;
+    page: number;
+    rowsPerPage: number;
+    rowsNumber?: number;
+  };
+  pagesNumber: number;
+  isFirstPage: boolean;
+  isLastPage: boolean;
+  prevPage: () => void;
+  nextPage: () => void;
+}
+
+const updatePagination = (scope: PaginationScope): void => {
+  // 确保 sortBy 不为 null
+  scope.pagination.sortBy = scope.pagination.sortBy || ''; // 直接修改 scope 对象
   
-  // 使用 scope 提供的方法更新分页
-  scope.pagination.rowsPerPage = pagination.value.rowsPerPage;
-  scope.pagination.page = 1;
+  // 更新页码等其他操作
+  scope.pagination.page = 1; // 重置到第一页
 };
 </script>
 

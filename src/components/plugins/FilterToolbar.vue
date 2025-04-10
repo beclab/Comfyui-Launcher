@@ -135,10 +135,6 @@ const onFetchFromSource = () => {
   emit('fetch-from-source');
 };
 
-const onProxyChange = () => {
-  emit('proxy-change', proxy.value);
-};
-
 const openPluginsFolder = () => {
   emit('open-folder');
 };

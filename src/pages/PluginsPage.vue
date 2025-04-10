@@ -130,7 +130,7 @@ import { QTableColumn } from 'quasar';
 import PluginsManager from 'src/components/plugins/PluginsManager.vue';
 import OperationHistoryTable from 'src/components/plugins/OperationHistoryTable.vue';
 import OperationLogsDialog from 'src/components/plugins/OperationLogsDialog.vue';
-import PluginInfoDialog from 'src/components/plugins/PluginInfoDialog.vue';
+
 
 const $q = useQuasar();
 
@@ -173,11 +173,6 @@ const plugins = ref<Plugin[]>([]);
 const loading = ref(false);
 const searchQuery = ref('');
 const statusFilter = ref({ label: '全部', value: 'all' });
-const statusOptions = [
-  { label: '全部', value: 'all' },
-  { label: '已安装', value: 'installed' },
-  { label: '未安装', value: 'not-installed' }
-];
 const tagFilter = ref<string[]>([]);
 const tagOptions = ref<string[]>([]);
 const selectedPlugin = ref<Plugin | null>(null);
@@ -194,17 +189,6 @@ const installationMessage = ref('');
 const errorDialogVisible = ref(false);
 const errorMessage = ref('');
 
-// 代理选项
-const proxyOptions = ref<string[]>([
-  '',
-  'https://gh-proxy.com/'
-]);
-const githubProxy = ref('');
-
-// 插件状态变更
-const pluginStateChanging = reactive<Record<string, boolean>>({});
-const pluginTaskId = reactive<Record<string, string>>({});
-
 // 标签页和历史记录
 const activeTab = ref('plugins');
 const operationHistory = ref<PluginOperation[]>([]);
@@ -213,7 +197,7 @@ const historyFilter = ref('');
 const logsDialogVisible = ref(false);
 const selectedOperation = ref<PluginOperation | null>(null);
 const operationLogs = ref<string[]>([]);
-const clearHistoryConfirmVisible = ref(false);
+
 
 // 延迟加载相关状态
 const isInitialLoad = ref(true);
@@ -223,12 +207,6 @@ const visiblePlugins = ref<Plugin[]>([]);
 
 // 历史语言设置
 const historyLanguage = ref('zh');
-const languageOptions = [
-  { label: '中文', value: 'zh' },
-  { label: 'English', value: 'en' },
-  { label: '日本語', value: 'ja' },
-  { label: '한국어', value: 'ko' }
-];
 
 // 历史记录表格列定义
 const historyColumns: QTableColumn[] = [
@@ -305,22 +283,6 @@ const handleSearch = (query: string) => {
   filterPlugins();
 };
 
-// 处理过滤器变化
-interface FilterOptions {
-  statusFilter: { label: string; value: string };
-  tagFilter: string[];
-}
-
-const handleFilter = ({ statusFilter: newStatusFilter, tagFilter: newTagFilter }: FilterOptions): void => {
-  statusFilter.value = newStatusFilter;
-  tagFilter.value = newTagFilter;
-  filterPlugins();
-};
-
-// 处理代理变化
-const handleProxyChange = (proxy: string) => {
-  githubProxy.value = proxy;
-};
 
 // 过滤插件
 const filterPlugins = () => {
@@ -354,40 +316,6 @@ const fetchPlugins = async () => {
     $q.notify({
       color: 'negative',
       message: '获取插件列表失败，请稍后重试',
-      icon: 'error'
-    });
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 从源获取最新插件列表
-const fetchPluginsFromSource = async () => {
-  loading.value = true;
-  try {
-    const response = await api.getPlugins().query({ force: 'true', t: Date.now() });
-    plugins.value = response.body;
-    
-    // 更新标签选项
-    const allTags = plugins.value
-      .map(p => p.tags || [])
-      .flat()
-      .filter((tag, index, self) => self.indexOf(tag) === index);
-    
-    tagOptions.value = allTags;
-    
-    filterPlugins();
-    
-    $q.notify({
-      color: 'positive',
-      message: `已从ComfyUI-Manager更新 ${plugins.value.length} 个插件`,
-      icon: 'cloud_download'
-    });
-  } catch (error) {
-    console.error('获取插件列表失败:', error);
-    $q.notify({
-      color: 'negative',
-      message: '更新插件列表失败，请稍后重试',
       icon: 'error'
     });
   } finally {
@@ -518,11 +446,11 @@ const pollProgress = async (taskId: string, pluginId: string, type: 'install' | 
 // 修改插件状态
 const togglePluginState = async (plugin: Plugin) => {
   try {
-    if (pluginStateChanging[plugin.id]) {
+    if (pluginStateChanging.value[plugin.id]) {
       return;
     }
     
-    pluginStateChanging[plugin.id] = true;
+    pluginStateChanging.value[plugin.id] = true;
     
     overallProgress.value = 0;
     installationMessage.value = `正在${plugin.disabled ? '启用' : '禁用'} ${plugin.name}...`;
@@ -538,7 +466,7 @@ const togglePluginState = async (plugin: Plugin) => {
     }
     
     activeTaskId.value = response.body.taskId;
-    pluginTaskId[plugin.id] = response.body.taskId;
+    pluginTaskId.value[plugin.id] = response.body.taskId;
     
     await pollPluginStateChange(activeTaskId.value, plugin.id, action);
     
@@ -554,7 +482,7 @@ const togglePluginState = async (plugin: Plugin) => {
       timeout: 5000
     });
   } finally {
-    pluginStateChanging[plugin.id] = false;
+    pluginStateChanging.value[plugin.id] = false;
     progressVisible.value = false;
   }
 };
@@ -662,12 +590,7 @@ const showPluginInfo = (plugin: Plugin) => {
   pluginInfoDialog.value = true;
 };
 
-// 关闭错误对话框
-const closeErrorDialog = () => {
-  errorDialogVisible.value = false;
-  progressVisible.value = false;
-  overallProgress.value = 0;
-};
+
 
 // 批量功能
 const updateAllPlugins = async () => {
@@ -704,38 +627,9 @@ const updateAllPlugins = async () => {
   }
 };
 
-const showBulkUninstall = () => {
-  const installedPlugins = plugins.value.filter(p => p.installed);
-  if (installedPlugins.length === 0) {
-    $q.notify({
-      color: 'warning',
-      message: '没有已安装的插件可卸载',
-      icon: 'info'
-    });
-    return;
-  }
-  
-  $q.dialog({
-    title: '批量卸载插件',
-    message: `确定要卸载所有 ${installedPlugins.length} 个已安装的插件吗？`,
-    cancel: true,
-    persistent: true
-  }).onOk(() => {
-    $q.notify({
-      color: 'positive',
-      message: '批量卸载功能尚未实现',
-      icon: 'info'
-    });
-  });
-};
 
-const createSnapshot = () => {
-  $q.notify({
-    color: 'positive',
-    message: '快照功能尚未实现',
-    icon: 'info'
-  });
-};
+
+
 
 // 历史记录相关功能
 const fetchHistory = async () => {
@@ -791,36 +685,9 @@ const showOperationLogs = async (operation: PluginOperation) => {
   }
 };
 
-const confirmClearHistory = () => {
-  clearHistoryConfirmVisible.value = true;
-};
 
-const clearHistory = async () => {
-  try {
-    const response = await api.clearOperationHistory().query({ lang: historyLanguage.value });
-    if (response.body.success) {
-      operationHistory.value = [];
-      $q.notify({
-        color: 'positive',
-        message: '历史记录已清除',
-        icon: 'check_circle'
-      });
-    } else {
-      $q.notify({
-        color: 'negative',
-        message: '清除历史记录失败',
-        icon: 'error'
-      });
-    }
-  } catch (error) {
-    console.error('清除历史记录失败:', error);
-    $q.notify({
-      color: 'negative',
-      message: '清除历史记录失败',
-      icon: 'error'
-    });
-  }
-};
+
+
 
 const retryInstallation = (operation: PluginOperation) => {
   if (operation && operation.pluginId) {
@@ -849,9 +716,9 @@ const loadMorePlugins = () => {
   visiblePlugins.value = [...visiblePlugins.value, ...newPlugins];
 };
 
-const changeHistoryLanguage = () => {
-  fetchHistory();
-};
+//const changeHistoryLanguage = () => {
+//  fetchHistory();
+//};
 
 // 监听标签页切换，加载历史记录
 watch(activeTab, (newValue) => {
@@ -895,6 +762,11 @@ const openPluginsFolder = async () => {
     });
   }
 };
+
+// 添加这些变量的定义
+const pluginStateChanging = ref<Record<string, boolean>>({});
+const pluginTaskId = ref<Record<string, string>>({});
+const githubProxy = ref<string>(''); // 修改为 string 类型
 </script>
 
 <style scoped>

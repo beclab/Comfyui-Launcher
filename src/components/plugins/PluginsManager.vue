@@ -33,7 +33,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
 import PluginList from './PluginList.vue';
 
 // 插件类型定义
@@ -61,7 +60,7 @@ interface ProgressState {
 }
 
 // Props
-const props = defineProps({
+defineProps({
   plugins: {
     type: Array as () => Plugin[],
     required: true
@@ -162,7 +161,7 @@ const onSearch = (query: string): void => {
   emit('search', query);
 };
 
-const onFilter = (filters: any): void => {
+const onFilter = (filters: { statusFilter: { label: string; value: string }; tagFilter: string[] }): void => {
   emit('filter', filters);
 };
 

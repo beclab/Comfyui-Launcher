@@ -155,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { debounce } from 'quasar';
 import PluginCard from './PluginCard.vue';
 
