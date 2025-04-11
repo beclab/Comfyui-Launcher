@@ -4,9 +4,9 @@
       <!-- 标题区域 -->
       <div class="q-px-md q-pt-md q-pb-xs">
         <div class="text-subtitle1">资源包安装</div>
-        <q-separator class="q-my-sm" />
+        
       </div>
-      
+      <q-separator class="q-my-sm" />
       <!-- 包内容区域 -->
       <div class="row q-px-md q-py-sm">
         <!-- 基础模型包 -->
@@ -25,18 +25,7 @@
               <div class="text-caption text-grey-7">包含ComfyUI能工作所需的基础模型</div>
             </div>
             
-            <q-btn outline rounded  label="下载" class="download-btn q-ml-sm">
-              <q-menu>
-                <q-list style="min-width: 100px">
-                  <q-item clickable v-close-popup @click="downloadOption('基础模型包', '模型')">
-                    <q-item-section>模型</q-item-section>
-                  </q-item>
-                  <q-item clickable v-close-popup @click="downloadOption('基础模型包', '扩展')">
-                    <q-item-section>扩展</q-item-section>
-                  </q-item>
-                </q-list>
-              </q-menu>
-            </q-btn>
+            <q-btn outline rounded label="下载" class="download-btn q-ml-sm" @click="showEssentialModelsDialog = true" />
           </div>
         </div>
         
@@ -65,11 +54,19 @@
         </div>
       </div>
     </q-card>
+    
+    <!-- 基础模型安装对话框 -->
+    <EssentialModelsDialog 
+      v-model="showEssentialModelsDialog"
+      @installation-complete="handleInstallationComplete"
+    />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
+import EssentialModelsDialog from './models/EssentialModelsDialog.vue';
+import { useQuasar } from 'quasar';
 
 // 定义资源包接口，避免使用 any 类型
 interface Package {
@@ -81,32 +78,60 @@ interface Package {
 
 export default defineComponent({
   name: 'PackageInstall',
-  data() {
-    return {
-      packages: [
-        { 
-          name: '最低模型包', 
-          description: 'SD1.5 4G SDXL base-model...等', 
-          hasMenu: true,
-          menuOptions: ['模型', '扩展']
-        },
-        { 
-          name: 'ControlNet模型包', 
-          description: 'controllllnet-models', 
-          hasMenu: false
-        }
-      ] as Package[]
-    }
+  components: {
+    EssentialModelsDialog
   },
-  methods: {
-    downloadPackage(packageName: string) {
+  setup() {
+    const $q = useQuasar();
+    const showEssentialModelsDialog = ref(false);
+    
+    const packages = ref<Package[]>([
+      { 
+        name: '最低模型包', 
+        description: 'SD1.5 4G SDXL base-model...等', 
+        hasMenu: true,
+        menuOptions: ['模型', '扩展']
+      },
+      { 
+        name: 'ControlNet模型包', 
+        description: 'controllllnet-models', 
+        hasMenu: false
+      }
+    ]);
+    
+    const downloadPackage = (packageName: string) => {
       console.log('Downloading package:', packageName);
-      // Implement download logic
-    },
-    downloadOption(packageName: string, option: string) {
+      // 实现下载逻辑
+      $q.notify({
+        type: 'info',
+        message: `准备下载 ${packageName}，功能开发中...`
+      });
+    };
+    
+    const downloadOption = (packageName: string, option: string) => {
       console.log('Downloading option:', packageName, option);
-      // Implement option download logic
-    }
+      // 实现选项下载逻辑
+      $q.notify({
+        type: 'info',
+        message: `准备下载 ${packageName} 的 ${option}，功能开发中...`
+      });
+    };
+    
+    const handleInstallationComplete = () => {
+      $q.notify({
+        type: 'positive',
+        message: '基础模型安装完成！',
+        timeout: 3000
+      });
+    };
+    
+    return {
+      packages,
+      showEssentialModelsDialog,
+      downloadPackage,
+      downloadOption,
+      handleInstallationComplete
+    };
   }
 });
 </script>
