@@ -32,6 +32,8 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import api from 'src/api';
+// import { onMounted } from 'vue';
 // Import logo images
 import githubLogo from '../assets/github-logo.png';
 import pypiLogo from '../assets/pypi-logo.png';
@@ -41,32 +43,43 @@ export default defineComponent({
   name: 'NetworkEnvironment',
   data() {
     return {
-      networkStatuses: [
-        { 
-          name: 'Github', 
-          available: true, 
-          statusText: '可访问', 
-          statusColor: 'green', 
-          textColorClass: 'text-green',
-          logo: githubLogo
-        },
-        { 
-          name: 'PyPI', 
-          available: true, 
-          statusText: '可访问', 
-          statusColor: 'green', 
-          textColorClass: 'text-green',
-          logo: pypiLogo
-        },
-        { 
-          name: 'HuggingFace', 
-          available: false, 
-          statusText: '访问超时', 
-          statusColor: 'red', 
-          textColorClass: 'text-red',
-          logo: huggingfaceLogo
-        }
-      ]
+      networkStatuses: [] as { name: string; available: boolean; statusText: string; statusColor: string; textColorClass: string; logo: string }[]
+    };
+  },
+  async mounted() {
+    try {
+      const response = await api.get('system/network-status');
+      if (response.data.code === 200) {
+        const result = response.data.data;
+        this.networkStatuses = [
+          {
+            name: 'Github',
+            available: result.github.accessible,
+            statusText: result.github.accessible ? '可访问' : '不可访问',
+            statusColor: result.github.accessible ? 'green' : 'red',
+            textColorClass: result.github.accessible ? 'text-green' : 'text-red',
+            logo: githubLogo
+          },
+          {
+            name: 'PyPI',
+            available: result.pip.accessible,
+            statusText: result.pip.accessible ? '可访问' : '不可访问',
+            statusColor: result.pip.accessible ? 'green' : 'red',
+            textColorClass: result.pip.accessible ? 'text-green' : 'text-red',
+            logo: pypiLogo
+          },
+          {
+            name: 'HuggingFace',
+            available: result.huggingface.accessible,
+            statusText: result.huggingface.accessible ? '可访问' : '不可访问',
+            statusColor: result.huggingface.accessible ? 'green' : 'red',
+            textColorClass: result.huggingface.accessible ? 'text-green' : 'text-red',
+            logo: huggingfaceLogo
+          }
+        ];
+      }
+    } catch (error) {
+      console.error('获取网络状态失败:', error);
     }
   }
 });
