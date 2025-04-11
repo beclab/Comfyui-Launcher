@@ -1,10 +1,15 @@
+import { defineConfig } from 'vite';
+
 export default defineConfig({
   server: {
+    host: '0.0.0.0',
+    port: 9000,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true
+        target: 'https://7e6098941.xuejingjie089.olares.cn/',
+        changeOrigin: true,
+        
       }
     }
   }
-}); 
+});

@@ -12,31 +12,72 @@
           <div class="header-row">
             <div class="title-section">
               <div class="comfyui-title">ComfyUI</div>
-              <q-chip size="sm" class="creator-chip">
-                <span class="creator-text">创作卡</span>
+
+              <!-- 添加状态指示器 -->
+              <q-chip 
+                size="sm" 
+                :class="[
+                  'status-chip', 
+                  isConnected ? 'status-running' : 'status-stopped'
+                ]"
+              >
+                <q-icon 
+                  :name="isConnected ? 'play_circle' : 'stop_circle'" 
+                  size="xs" 
+                  class="q-mr-xs status-icon"
+                  :class="isConnected ? 'running-icon' : 'stopped-icon'"
+                />
+                <span class="status-text">{{ isConnected ? '运行中' : '已停止' }}</span>
               </q-chip>
             </div>
           </div>
           
           <div class="version-row">
             <q-chip dense size="sm" class="version-chip">
-              <span class="version-text">comfyui 0.3.26</span>
+              <span class="version-text">comfyui {{ versions.comfyui }}</span>
             </q-chip>
             <q-chip dense size="sm" class="version-chip">
-              <span class="version-text">frontend v0.3.26</span>
+              <span class="version-text">frontend {{ versions.frontend }}</span>
             </q-chip>
             <q-chip dense size="sm" class="version-chip">
-              <span class="version-text">launcher v0.3.26</span>
+              <span class="version-text">launcher {{ versions.app }}</span>
             </q-chip>
             <q-chip dense size="sm" class="version-chip">
-              <span class="version-text">GPU: Shared</span>
+              <span class="version-text">GPU: {{ gpuMode }}</span>
             </q-chip>
           </div>
           
 
         </div>
           
-          <div class="action-row">
+        <div class="action-row">
+          <!-- 根据状态显示不同的按钮 -->
+          <template v-if="isConnected">
+            <!-- ComfyUI运行中 - 显示打开和停止按钮 -->
+            <q-btn 
+              flat
+              rounded
+              icon="open_in_new"
+              class="open-btn"
+              @click="openComfyUI"
+            >
+              <span class="btn-text">打开</span>
+            </q-btn>
+            
+            <q-btn 
+              flat
+              rounded
+              icon="stop_circle"
+              class="stop-btn"
+              @click="stopComfyUI"
+              :loading="isStopping"
+            >
+              <span class="btn-text">停止</span>
+            </q-btn>
+          </template>
+          
+          <template v-else>
+            <!-- ComfyUI已停止 - 只显示启动按钮 -->
             <q-btn 
               flat
               rounded
@@ -47,35 +88,36 @@
             >
               <span class="start-btn-text">启动</span>
             </q-btn>
-            
-            <q-btn 
-              round
-              flat
-              color="grey-7"
-              icon="more_vert"
-              size="sm"
-              class="menu-btn"
-              style="background-color: #f5f5f5; border-radius: var(--border-radius-md);"
-            >
-              <q-menu>
-                <q-list style="min-width: 140px">
-                  <q-item clickable v-close-popup @click="showLogView">
-                    <q-item-section avatar>
-                      <q-icon name="visibility" />
-                    </q-item-section>
-                    <q-item-section>查看日志</q-item-section>
-                  </q-item>
-                  
-                  <q-item clickable v-close-popup @click="resetComfyUI">
-                    <q-item-section avatar>
-                      <q-icon name="refresh" />
-                    </q-item-section>
-                    <q-item-section>抹掉并还原</q-item-section>
-                  </q-item>
-                </q-list>
-              </q-menu>
-            </q-btn>
-          </div>
+          </template>
+          
+          <q-btn 
+            round
+            flat
+            color="grey-7"
+            icon="more_vert"
+            size="sm"
+            class="menu-btn"
+            style="background-color: #f5f5f5; border-radius: var(--border-radius-md);"
+          >
+            <q-menu>
+              <q-list style="min-width: 140px">
+                <q-item clickable v-close-popup @click="showLogView">
+                  <q-item-section avatar>
+                    <q-icon name="visibility" />
+                  </q-item-section>
+                  <q-item-section>查看日志</q-item-section>
+                </q-item>
+                
+                <q-item clickable v-close-popup @click="resetComfyUI">
+                  <q-item-section avatar>
+                    <q-icon name="refresh" />
+                  </q-item-section>
+                  <q-item-section>抹掉并还原</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
+        </div>
       </div>
     </q-card>
 
@@ -117,18 +159,26 @@
     
     <q-dialog v-model="showConfirmDialog" persistent>
       <q-card>
+        <!-- 删除左上角图标 -->
         <q-card-section class="row items-center">
-          <q-avatar icon="warning" color="warning" text-color="white" />
-          <span class="q-ml-sm">缺少基础模型</span>
+          <!-- <q-avatar icon="warning" color="warning" text-color="white" /> -->
+          <span class="q-ml-sm" style="color: var(--text-important); font-weight: bold;">缺少基础模型</span>
+          <!-- 右上角增加 ❌ 关闭按钮 -->
+          <q-btn flat round dense icon="close" @click="showConfirmDialog = false" style="margin-left: auto;" />
         </q-card-section>
-
-        <q-card-section>
+        <q-card-section style="color: var(--text-normal); padding-top: 8px; padding-bottom: 8px; padding-left: 24px;">
           您尚未安装所有必要的基础模型，这可能导致ComfyUI无法正常生成图像。是否继续启动？
         </q-card-section>
-
-        <q-card-actions align="right">
-          <q-btn flat label="去安装模型" color="primary" @click="goToModels" />
-          <q-btn flat label="仍然启动" color="negative" @click="confirmStartComfyUI" />
+        <!-- 提示文案下方增加单选框“记住我的选择, 下次无需弹窗确认” -->
+        <q-card-section style="color: var(--text-normal)">
+          <q-checkbox v-model="rememberChoice" label="记住我的选择, 下次无需弹窗确认" />
+        </q-card-section>
+        <q-card-actions align="right" style="margin-right: 10px; margin-bottom: 10px;">
+          <!-- 下方按钮 去安装模型 和 仍然启动 对调位置 -->
+          <q-btn flat label="仍然启动" style="color: var(--text-normal); border: 1px solid var(--text-normal); border-radius: var(--border-radius-md);" @click="confirmStartComfyUI" />
+          <q-btn label="安装模型" color="primary" @click="goToModels" style="box-shadow: none; border-radius: var(--border-radius-md);" />
+          
+          
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -136,7 +186,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, onUnmounted } from 'vue';
+import { defineComponent, ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { modelsApi, Model } from '../api';
 import api from '../api';
 import { useQuasar } from 'quasar';
@@ -158,6 +208,13 @@ interface InstalledModel {
   size?: number | string;
 }
 
+// 定义版本信息接口
+interface VersionInfo {
+  comfyui: string;
+  frontend: string;
+  app: string;
+}
+
 export default defineComponent({
   name: 'ComfyUIStatus',
   
@@ -170,6 +227,28 @@ export default defineComponent({
     const isStopping = ref(false);
     const essentialModels = ref<EssentialModel[]>([]);
     const installedModels = ref<InstalledModel[]>([]);
+    const rememberChoice = ref(false);
+    // const handleRememberChoiceChange = (value: boolean) => {
+    //   console.log('rememberChoice changed:', value);
+    //   try {
+    //     rememberChoice.value = value;
+    //     localStorage.setItem('rememberComfyUIStartChoice', String(rememberChoice.value));
+    //   } catch (error) {
+    //     console.error('写入localStorage失败:', error);
+    //   }
+    // };
+
+    watch(() => rememberChoice.value, () => {
+      console.log('rememberChoice 变化:', rememberChoice.value);
+    });
+    
+    // 添加版本信息和GPU模式
+    const versions = ref<VersionInfo>({
+      comfyui: 'unknown',
+      frontend: 'unknown',
+      app: 'unknown'
+    });
+    const gpuMode = ref('未知');
     
     // 添加对话框控制变量
     const showConfirmDialog = ref(false);
@@ -184,6 +263,16 @@ export default defineComponent({
         // 检查 ComfyUI 连接状态
         const response = await api.getStatus();
         isConnected.value = response.status === 200 && response.body.running;
+        // isConnected.value = true
+        
+        // 更新版本信息和GPU模式
+        if (response.body.versions) {
+          versions.value = response.body.versions;
+        }
+        
+        if (response.body.gpuMode) {
+          gpuMode.value = response.body.gpuMode;
+        }
         
         if (isConnected.value) {
           // 如果连接正常，获取模型列表
@@ -242,10 +331,20 @@ export default defineComponent({
       const allEssentialModelsInstalled = await checkEssentialModels();
       
       if (!allEssentialModelsInstalled) {
-        // 显示自定义对话框
-        showConfirmDialog.value = true;
+
+        if (rememberChoice.value) {
+          $q.notify({
+            type: 'warning',
+            message: '缺少基础模型，仍将启动ComfyUI'
+          });
+          startComfyUI();
+          return;
+        } else {
+          // 显示自定义对话框
+          showConfirmDialog.value = true;
+        }
+
       } else {
-        // 所有基础模型已安装，直接启动
         startComfyUI();
       }
     };
@@ -264,6 +363,7 @@ export default defineComponent({
     
     // 启动 ComfyUI
     const startComfyUI = async () => {
+      localStorage.setItem('rememberComfyUIStartChoice', String(rememberChoice.value));
       try {
         isStarting.value = true;
         showLogs.value = false; // 重置日志显示状态
@@ -408,6 +508,12 @@ export default defineComponent({
       }, 100);
     };
     
+    // 打开ComfyUI界面
+    const openComfyUI = () => {
+      // 在新标签页中打开ComfyUI界面
+      window.open('/comfyui', '_blank');
+    };
+    
     return {
       isConnected,
       installedModelsCount,
@@ -429,7 +535,13 @@ export default defineComponent({
       showLogView,
       resetComfyUI,
       // 添加新方法到返回值
-      downloadLogs
+      downloadLogs,
+      // 添加版本信息和GPU模式
+      versions,
+      gpuMode,
+      // 添加打开ComfyUI方法
+      openComfyUI,
+      rememberChoice
     };
   }
 });
@@ -517,6 +629,48 @@ export default defineComponent({
   font-weight: 500;
 }
 
+/* 状态指示器样式 */
+.status-chip {
+  height: 18px !important;
+  padding: 0 8px !important;
+  display: flex;
+  align-items: center;
+}
+
+.status-running {
+  background-color: var(--positive-bg-color) !important;
+}
+
+.status-stopped {
+  background-color: var(--warning-bg-color) !important;
+}
+
+/* 图标颜色样式 */
+.status-icon {
+  font-size: 14px;
+}
+
+.running-icon {
+  color: var(--positive-text-color) !important;
+}
+
+.stopped-icon {
+  color: var(--warning-text-color) !important;
+}
+
+.status-text {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-running .status-text {
+  color: var(--positive-text-color);
+}
+
+.status-stopped .status-text {
+  color: var(--warning-text-color);
+}
+
 /* 版本信息行 */
 .version-row {
   display: flex;
@@ -545,17 +699,28 @@ export default defineComponent({
   justify-content: flex-end;
 }
 
-/* 新的启动按钮样式 */
-.start-btn {
-  background-color: var(--normal-button-bg-color) !important;
-  color: var(--select-button-text-color) !important;
+/* 按钮通用样式 */
+.start-btn, .open-btn, .stop-btn {
   border-radius: var(--border-radius-md) !important;
   padding: 0px 24px !important;
   height: 28px !important;
   font-weight: normal !important;
 }
 
-.start-btn-text {
+/* 启动按钮样式 */
+.start-btn, .open-btn{
+  background-color: var(--normal-button-bg-color) !important;
+  color: var(--select-button-text-color) !important;
+}
+
+
+/* 停止按钮样式 */
+.stop-btn {
+  background-color: var(--negative-bg-color) !important;
+  color: var(--negative-text-color) !important;
+}
+
+.start-btn-text, .btn-text {
   font-size: 13px;
   margin-left: 4px;
 }
@@ -623,5 +788,9 @@ export default defineComponent({
 .log-dialog-actions {
   padding: 8px 16px;
   background-color: #f5f5f5;
+}
+.q-card-section.q-ml-sm {
+  margin-left: 0; /* 调整提示文案的左侧边距，使其与title对齐 */
+  align-self: center; /* 垂直居中对齐 */
 }
 </style>
