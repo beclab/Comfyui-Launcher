@@ -18,6 +18,7 @@ if [ ! -d "/app/dist" ] || [ -z "$(ls -A /app/dist 2>/dev/null)" ]; then
 fi
 
 # 启动后端服务
+cd /app/server && npm install --production=false;
 node /app/server/dist/index.js > /app/logs/server.log 2>&1 &
 BACKEND_PID=$!
 echo "后端服务已启动，PID: $BACKEND_PID"

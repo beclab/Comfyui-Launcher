@@ -119,5 +119,10 @@ RUN mkdir /newversion/ComfyUI/launchercache
 RUN chown -R 1000:1000 /runner-scripts /newversion && \
     chmod -R 755 /runner-scripts /newversion
 
+# 重新安装依赖
+WORKDIR /app/server
+RUN npm install --production=false
+WORKDIR /app
+
 # 启动应用
 CMD ["/app/start.sh"]
