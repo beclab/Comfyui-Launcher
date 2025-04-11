@@ -80,6 +80,9 @@ RUN mkdir -p /app/logs && \
 COPY --from=builder /app/dist /app/dist
 COPY --from=builder /app/server/dist /app/server/dist
 
+# 从构建阶段复制源码,方便后期调试
+COPY --from=builder /app/server/src /app/server/src
+
 # 复制运行所需的所有package和依赖文件
 COPY --from=builder /app/server/package.json /app/server/
 COPY --from=builder /app/server/package-lock.json /app/server/

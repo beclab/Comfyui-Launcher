@@ -43,3 +43,4 @@ server/combined.log
 server/error.log
 server/logs/comfyui-reset.log
 server/data/model-cache.json
+server/dist
