@@ -1,5 +1,6 @@
-import winston from 'winston';
 import i18n from './i18n';
+import fs from 'fs';
+import path from 'path';
 
 // Logger interface to match existing functionality
 interface LoggerInterface {
@@ -9,28 +10,88 @@ interface LoggerInterface {
   debug: (message: string | object, ...meta: any[]) => void;
 }
 
-// Format for logs
-const logFormat = winston.format.printf(({ level, message, timestamp, ...metadata }) => {
-  // Add timestamp to log entry
-  return `${timestamp} [${level.toUpperCase()}]: ${message} ${
-    Object.keys(metadata).length ? JSON.stringify(metadata) : ''
-  }`;
-});
+// Custom logger implementation without Winston
+class CustomLogger {
+  private level: string;
+  private logDir: string;
+  
+  constructor() {
+    this.level = process.env.LOG_LEVEL || 'info';
+    this.logDir = process.env.LOG_DIR || '.';
+    
+    // Create log directory if it doesn't exist
+    if (!fs.existsSync(this.logDir)) {
+      fs.mkdirSync(this.logDir, { recursive: true });
+    }
+  }
+  
+  private getTimestamp(): string {
+    const now = new Date();
+    return now.toISOString().replace('T', ' ').substring(0, 19);
+  }
+  
+  private formatLog(level: string, message: string | object, meta: any = {}): string {
+    const timestamp = this.getTimestamp();
+    const metaStr = Object.keys(meta).length ? JSON.stringify(meta) : '';
+    return `${timestamp} [${level.toUpperCase()}]: ${typeof message === 'string' ? message : JSON.stringify(message)} ${metaStr}`;
+  }
+  
+  private writeToFile(filename: string, data: string): void {
+    const filePath = path.join(this.logDir, filename);
+    fs.appendFileSync(filePath, data + '\n');
+  }
+  
+  log(level: string, message: string | object, meta: any = {}): void {
+    const logLevels = { error: 0, warn: 1, info: 2, debug: 3 };
+    const currentLevelValue = logLevels[this.level as keyof typeof logLevels] || 2;
+    const messageLevelValue = logLevels[level as keyof typeof logLevels] || 2;
+    
+    // Only log if the message level is less than or equal to the current level
+    if (messageLevelValue <= currentLevelValue) {
+      const formattedLog = this.formatLog(level, message, meta);
+      
+      // Log to console
+      switch (level) {
+        case 'error':
+          console.error(formattedLog);
+          break;
+        case 'warn':
+          console.warn(formattedLog);
+          break;
+        case 'debug':
+          console.debug(formattedLog);
+          break;
+        default:
+          console.log(formattedLog);
+      }
+      
+      // Log to files
+      this.writeToFile('combined.log', formattedLog);
+      if (level === 'error') {
+        this.writeToFile('error.log', formattedLog);
+      }
+    }
+  }
+  
+  error(message: string | object, meta: any = {}): void {
+    this.log('error', message, meta);
+  }
+  
+  warn(message: string | object, meta: any = {}): void {
+    this.log('warn', message, meta);
+  }
+  
+  info(message: string | object, meta: any = {}): void {
+    this.log('info', message, meta);
+  }
+  
+  debug(message: string | object, meta: any = {}): void {
+    this.log('debug', message, meta);
+  }
+}
 
-// Create Winston logger
-const winstonLogger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: winston.format.combine(
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.metadata({ fillExcept: ['message', 'level', 'timestamp'] }),
-    logFormat
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: 'error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'combined.log' }),
-  ],
-});
+// Create custom logger instance
+const customLogger = new CustomLogger();
 
 /**
  * i18n logger wrapper
@@ -63,7 +124,7 @@ class I18nLogger implements LoggerInterface {
   // Log methods with translation
   t(key: string, options: object = {}, meta: object = {}): string {
     const message = this.translate(key, options);
-    winstonLogger.info(message, meta);
+    customLogger.info(message, meta);
     return message;
   }
 
@@ -71,36 +132,36 @@ class I18nLogger implements LoggerInterface {
   error(key: string | object, options: object = {}, meta: object = {}): string {
     // Support legacy usage
     if (typeof key !== 'string') {
-      winstonLogger.error(String(key), options);
+      customLogger.error(String(key), options);
       return String(key);
     }
     
     const message = this.translate(key, options);
-    winstonLogger.error(message, meta);
+    customLogger.error(message, meta);
     return message;
   }
 
   warn(key: string | object, options: object = {}, meta: object = {}): string {
     // Support legacy usage
     if (typeof key !== 'string') {
-      winstonLogger.warn(String(key), options);
+      customLogger.warn(String(key), options);
       return String(key);
     }
     
     const message = this.translate(key, options);
-    winstonLogger.warn(message, meta);
+    customLogger.warn(message, meta);
     return message;
   }
 
   info(key: string | object, options: object = {}, meta: object = {}): string {
     // Support legacy usage
     if (typeof key !== 'string') {
-      winstonLogger.info(String(key), options);
+      customLogger.info(String(key), options);
       return String(key);
     }
     
     const message = this.translate(key, options);
-    winstonLogger.info(message, meta);
+    customLogger.info(message, meta);
     return message;
   }
 
@@ -108,21 +169,21 @@ class I18nLogger implements LoggerInterface {
     // Support legacy usage
     if (typeof key !== 'string') {
       if (process.env.DEBUG) {
-        winstonLogger.debug(String(key), options);
+        customLogger.debug(String(key), options);
       }
       return String(key);
     }
     
     const message = this.translate(key, options);
     if (process.env.DEBUG) {
-      winstonLogger.debug(message, meta);
+      customLogger.debug(message, meta);
     }
     return message;
   }
 
   // Direct logging without translation
   log(level: string, message: string, meta: object = {}): string {
-    winstonLogger.log(level, message, meta);
+    customLogger.log(level, message, meta);
     return message;
   }
 }
