@@ -47,7 +47,7 @@ export default defineComponent({
       folders: [
         { name: '根目录', path: '/Files/External/ai/comfyui/ComfyUI', used: null, available: null },
         { name: '插件目录', path: '/Files/External/ai/comfyui/ComfyUI/custom_nodes/', used: '128', available: '541' },
-        { name: '模型目录', path: '/Files/External/ai/model/', used: null, available: '541' },
+        { name: '模型目录', path: '/Files/External/ai/model/', used: null, available: null },
         { name: '输出目录', path: '/Files/External/ai/output/comfyui/', used: null, available: null },
         { name: '输入目录', path: '/Files/External/ai/comfyui/ComfyUI/input/', used: null, available: null }
       ]
@@ -56,10 +56,17 @@ export default defineComponent({
   async created() {
     const installedModelsCount = await DataCenter.getInstalledModelsCount();
     const optionalModelsCount = await DataCenter.getOptionalModelsCount();
+    const installedPluginsCount = await DataCenter.getInstalledPluginsCount();
+    const optionalPluginsCount = await DataCenter.getOptionalPluginsCount();
     const modelFolderIndex = this.folders.findIndex(folder => folder.name === '模型目录');
+    const pluginFolderIndex = this.folders.findIndex(folder => folder.name === '插件目录');
     if (modelFolderIndex!== -1) {
       this.folders[modelFolderIndex].used = installedModelsCount.toString();
       this.folders[modelFolderIndex].available = optionalModelsCount.toString();
+    }
+    if (pluginFolderIndex!== -1) {
+      this.folders[pluginFolderIndex].used = installedPluginsCount.toString();
+      this.folders[pluginFolderIndex].available = optionalPluginsCount.toString();
     }
   },
   methods: {

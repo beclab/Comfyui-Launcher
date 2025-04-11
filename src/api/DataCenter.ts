@@ -17,8 +17,26 @@ interface Model {
   source?: string;
 }
 
+interface Plugin {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  author: string;
+  github: string;
+  installed: boolean;
+  installedOn?: string;
+  disabled?: boolean;
+  stars?: number;
+  tags?: string[];
+  install_type?: string;
+  files?: string[];
+  require_restart?: boolean;
+}
+
 class DataCenter {
   private modelCache: { [key: string]: Model[] } = {};
+  private pluginCache: { [key: string]: Plugin[] } = {};
 
   async getInstalledModels(forceUpdate = false): Promise<Model[]> {
     if (!forceUpdate && this.modelCache['installedModels']) {
@@ -69,6 +87,36 @@ class DataCenter {
   async getOptionalModelsCount(forceUpdate = false): Promise<number> {
     const optionalModels = await this.getOptionalModels(forceUpdate);
     return optionalModels.length;
+  }
+
+  async getPlugins(forceUpdate = false): Promise<Plugin[]> {
+    if (!forceUpdate && this.pluginCache['plugins']) {
+      return this.pluginCache['plugins'];
+    }
+    try {
+      const response = await api.getPlugins();
+      const data = await extractResponseData<Plugin[]>(response);
+      if (data && Array.isArray(data)) {
+        this.pluginCache['plugins'] = data;
+        return data;
+      } else {
+        console.error('获取插件列表失败: 响应格式不正确', response);
+        throw new Error('获取插件列表失败');
+      }
+    } catch (error) {
+      console.error('获取插件列表失败:', error);
+      throw error;
+    }
+  }
+
+  async getInstalledPluginsCount(forceUpdate = false): Promise<number> {
+    const installedPlugins = await this.getPlugins(forceUpdate);
+    return installedPlugins.filter(plugin => plugin.installed).length;
+  }
+
+  async getOptionalPluginsCount(forceUpdate = false): Promise<number> {
+    const allPlugins = await this.getPlugins(forceUpdate);
+    return allPlugins.length;
   }
 }
 

@@ -105,6 +105,7 @@ import { ref, onMounted, reactive, watch, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import api from 'src/api';
 import { QTableColumn } from 'quasar';
+import DataCenter from 'src/api/DataCenter';
 
 // 导入组件
 import PluginsManager from 'src/components/plugins/PluginsManager.vue';
@@ -296,11 +297,11 @@ const clearFilters = () => {
 };
 
 // 获取插件列表
-const fetchPlugins = async () => {
+const fetchPlugins = async (forceUpdate = false) => {
   loading.value = true;
   try {
-    const response = await api.getPlugins();
-    plugins.value = response.body;
+    const response = await DataCenter.getPlugins(forceUpdate);
+    plugins.value = response;
     filterPlugins();
   } catch (error) {
     console.error('获取插件列表失败:', error);
@@ -766,4 +767,4 @@ const githubProxy = ref<string>(''); // 修改为 string 类型
   font-family: monospace;
   font-size: 0.9em;
 }
-</style> 
+</style>
