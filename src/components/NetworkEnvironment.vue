@@ -1,13 +1,13 @@
 <template>
   <div class="q-mb-lg">
-    <q-card flat bordered class="network-status">
-      <q-card-section>
-        <div class="row justify-between items-center q-mb-sm">
+    <q-card flat bordered class="network-status" style="padding-left: 0px; padding-right: 0px;">
+      <q-card-section style="width: 100%; margin-left: 0px; margin-right: 0px; padding-left: 0px; padding-right: 0px;">
+        <div class="row justify-between items-center q-mb-sm" style="margin-left: 16px;margin-right: 16px;">
           <div class="text-subtitle1" style="color: var(--text-important);">网络环境</div>
-          <q-icon name="wifi" size="sm" color="grey-7" />
+          <q-icon :name="allAccessible ? 'wifi' : 'wifi_off'" size="sm" color="grey-7" />
         </div>
-        <q-separator class="q-mb-md" />
-        <div class="row q-col-gutter-md">
+        <q-separator class="q-mb-md" style="width: 100%;" />
+        <div class="row q-col-gutter-md" style="margin-left: 16px;margin-right: 16px;">
           <div v-for="status in networkStatuses" :key="status.name" class="col-4">
             <div class="network-item">
               <q-avatar size="md" class="q-mr-sm">
@@ -43,7 +43,8 @@ export default defineComponent({
   name: 'NetworkEnvironment',
   data() {
     return {
-      networkStatuses: [] as { name: string; available: boolean; statusText: string; statusColor: string; textColorClass: string; logo: string }[]
+      networkStatuses: [] as { name: string; available: boolean; statusText: string; statusColor: string; textColorClass: string; logo: string }[],
+      allAccessible: true
     };
   },
   async mounted() {
@@ -77,6 +78,7 @@ export default defineComponent({
             logo: huggingfaceLogo
           }
         ];
+        this.allAccessible = this.networkStatuses.every(status => status.available);
       }
     } catch (error) {
       console.error('获取网络状态失败:', error);
