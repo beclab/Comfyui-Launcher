@@ -240,6 +240,7 @@
 import { defineComponent, ref, watch, onMounted, onUnmounted } from 'vue';
 import { useQuasar } from 'quasar';
 import api from '../../api';
+import DataCenter from 'src/api/DataCenter';
 
 // 本地模型接口定义
 interface Model {
@@ -321,9 +322,9 @@ const isCompletedProgress = (data: ProgressData): data is ProgressData & { compl
 };
 
 // 添加类型守卫函数
-function hasModelFetchModeValue(obj: unknown): obj is { value: ModelFetchMode } {
-  return typeof obj === 'object' && obj !== null && 'value' in obj;
-}
+// function hasModelFetchModeValue(obj: unknown): obj is { value: ModelFetchMode } {
+//   return typeof obj === 'object' && obj !== null && 'value' in obj;
+// }
 
 // 工具函数：提取API响应数据
 const extractResponseData = async <T>(response: ApiResponse | Response | undefined): Promise<T | null> => {
@@ -412,30 +413,15 @@ export default defineComponent({
     const fetchModels = async () => {
       try {
         isLoading.value = true;
-        
-        // 在获取模式值时使用类型安全的方法
-        const modeValue = ((mode) => {
-          if (hasModelFetchModeValue(mode)) {
-            return mode.value || 'cache';
-          }
-          // 确保值是ModelFetchMode类型之一
-          return ['cache', 'local', 'remote'].includes(String(mode)) 
-            ? mode as ModelFetchMode 
-            : 'cache';
-        })(databaseMode.value);
-        
-        // 获取模型列表
-        const response = await api.get(`models?mode=${modeValue}`);
-        const data = await extractResponseData<Model[]>(response);
-        
+        // 调用数据中心的方法获取模型列表
+        const data = await DataCenter.getOptionalModels();
         if (data && Array.isArray(data)) {
           models.value = data;
           console.log('获取到可选模型列表:', models.value.length);
-          
           // 初始过滤
           filterModels(searchQuery.value);
         } else {
-          console.error('获取模型列表失败: 响应格式不正确', response);
+          console.error('获取模型列表失败: 响应格式不正确', data);
           $q.notify({
             type: 'negative',
             message: '获取模型列表失败'
@@ -956,4 +942,4 @@ export default defineComponent({
   border-radius: 8px;
   min-width: 80px;
 }
-</style> 
+</style>

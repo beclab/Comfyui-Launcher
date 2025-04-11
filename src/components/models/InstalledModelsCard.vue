@@ -215,6 +215,7 @@
 import { defineComponent, ref, computed, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import api from '../../api';
+import dataCenter from '../../api/DataCenter';
 
 interface ApiResponse {
   data?: unknown;
@@ -310,16 +311,13 @@ export default defineComponent({
     const fetchInstalledModels = async () => {
       try {
         isLoading.value = true;
-        const response = await api.get('models');
-        const data = await extractResponseData<Model[]>(response);
-        
+        const data = await dataCenter.getInstalledModels(false);
         if (data && Array.isArray(data)) {
-          installedModels.value = data.filter(model => model.installed);
+          installedModels.value = data;
           installedModelsCount.value = installedModels.value.length;
-          
           updateTotalStorageUsed();
         } else {
-          console.error('获取已安装模型列表失败: 响应格式不正确', response);
+          console.error('获取已安装模型列表失败: 响应格式不正确', data);
           $q.notify({
             type: 'negative',
             message: '获取已安装模型列表失败'
@@ -729,4 +727,4 @@ export default defineComponent({
     margin-bottom: 8px;
   }
 }
-</style> 
+</style>

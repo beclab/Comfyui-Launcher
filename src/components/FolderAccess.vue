@@ -37,24 +37,40 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import api from '../api';
+import DataCenter from '../api/DataCenter';
 
 export default defineComponent({
   name: 'FolderAccess',
   data() {
     return {
       folders: [
-        { name: '模型目录', path: 'External/ai/models', used: '128', available: '541' },
-        { name: '插件目录', path: 'External/ai/models', used: '128', available: '541' },
-        { name: '模型目录', path: 'External/ai/models', used: '128', available: '541' },
-        { name: '输出目录', path: 'External/ai/models', used: null, available: null },
-        { name: '输入目录', path: 'External/ai/models', used: null, available: null }
+        { name: '根目录', path: '/Files/External/ai/comfyui/ComfyUI', used: null, available: null },
+        { name: '插件目录', path: '/Files/External/ai/comfyui/ComfyUI/custom_nodes/', used: '128', available: '541' },
+        { name: '模型目录', path: '/Files/External/ai/model/', used: null, available: '541' },
+        { name: '输出目录', path: '/Files/External/ai/output/comfyui/', used: null, available: null },
+        { name: '输入目录', path: '/Files/External/ai/comfyui/ComfyUI/input/', used: null, available: null }
       ]
     }
   },
+  async created() {
+    const installedModelsCount = await DataCenter.getInstalledModelsCount();
+    const optionalModelsCount = await DataCenter.getOptionalModelsCount();
+    const modelFolderIndex = this.folders.findIndex(folder => folder.name === '模型目录');
+    if (modelFolderIndex!== -1) {
+      this.folders[modelFolderIndex].used = installedModelsCount.toString();
+      this.folders[modelFolderIndex].available = optionalModelsCount.toString();
+    }
+  },
   methods: {
-    openFolder(path: string) {
+    async openFolder(path: string) {
       console.log('Opening folder:', path);
-      // The logic to open the folder will be implemented here
+      try {
+        await api.openPath(path);
+        console.log('文件夹打开成功');
+      } catch (error) {
+        console.error('打开文件夹失败:', error);
+      }
     }
   }
 });
