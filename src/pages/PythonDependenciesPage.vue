@@ -1,7 +1,7 @@
 <template>
   <q-page padding>
     <div class="q-pa-md">
-      <h4 class="q-mb-md text-bold" style="font-size: 1.2rem">环境管理</h4>
+      <div class="text-h5 q-mb-md">环境管理</div>
       <q-separator class="q-mb-md" />
       
       <!-- 选项卡 -->
@@ -87,6 +87,7 @@ pip install --user 包名</pre>
                 />
               </div>
             </div>
+            <q-separator class="q-mb-md" style="margin-top: 30px;"/>
             <q-table
               :rows="filteredPackages"
               style="margin-left: 0; margin-right: 0; margin-bottom: 0; box-shadow: none;"
@@ -95,8 +96,7 @@ pip install --user 包名</pre>
               :loading="loading"
               :pagination="{ rowsPerPage: 10 }"
               class="q-mt-md"
-              flat
-              bordered
+              
             >
               <template v-slot:body-cell-version="props">
                 <q-td :props="props">
@@ -105,8 +105,8 @@ pip install --user 包名</pre>
               </template>
               <template v-slot:body-cell-actions="props">
                 <q-td :props="props" class="q-gutter-xs">
-                  <q-btn flat round dense size="sm" icon="arrow_upward" color="primary" @click="upgradePackage(props.row)" />
-                  <q-btn flat round dense size="sm" icon="delete" color="negative" @click="confirmUninstall(props.row)" />
+                  <q-btn flat round dense size="sm" icon="arrow_upward" color="grey-7" @click="upgradePackage(props.row)" />
+                  <q-btn flat round dense size="sm" icon="delete_outline" color="grey-7" @click="confirmUninstall(props.row)" />
                 </q-td>
               </template>
               <template v-slot:bottom="scope">
@@ -806,4 +806,10 @@ export default defineComponent({
   color: white;
 }
 */
+
+.text-h5 {
+  color: var(--text-important);
+  font-size: 40px; /* 假设默认字号为 16px */
+  font-weight: bold;
+}
 </style>

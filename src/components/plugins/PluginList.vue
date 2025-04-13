@@ -69,12 +69,14 @@
             />
             
             <q-btn 
-              color="primary" 
-              icon="refresh" 
-              flat
-              round
-              @click="onRefresh" 
-              :loading="loading"
+            color="grey-7"
+            outline
+            icon="refresh" 
+            label="刷新"
+            @click="onRefresh"
+            :loading="loading"
+            size="md"
+            style="border-radius: var(--border-radius-md);"
             >
               <q-tooltip>刷新插件列表</q-tooltip>
             </q-btn>
@@ -326,4 +328,9 @@ const onRefresh = (): void => {
 .plugin-items > div:not(:last-child) .plugin-card {
   border-bottom: 1px solid #f0f0f0;
 }
-</style> 
+
+/* 添加刷新按钮样式 */
+.refresh-btn {
+  border-radius: var(--border-radius-md);
+}
+</style>

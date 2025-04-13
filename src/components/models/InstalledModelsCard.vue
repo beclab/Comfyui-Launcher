@@ -32,7 +32,7 @@
             </template>
           </q-input>
           
-          <q-btn color="primary" outline icon="search" label="扫描模型" 
+          <q-btn color="grey-7" outline icon="search" label="扫描模型" 
                  @click="onScanModels" :loading="isScanning" />
           <q-btn color="grey-7" outline icon="refresh" label="刷新" @click="onRefresh" />
         </div>
@@ -71,7 +71,7 @@
         
         <template v-slot:body-cell-mode="props">
           <q-td :props="props" class="text-center">
-            {{ props.row.mode || 'FLUX.1' }}
+            {{ props.row.mode || '未知' }}
           </q-td>
         </template>
         
@@ -92,7 +92,7 @@
             <q-btn size="sm" flat dense round icon="visibility" color="grey-7" @click="onInfoClick(props.row)">
               <q-tooltip>查看详情</q-tooltip>
             </q-btn>
-            <q-btn size="sm" flat dense round icon="delete" color="negative" @click="onDeleteClick(props.row)">
+            <q-btn size="sm" flat dense round icon="delete_outline" color="grey-7" @click="onDeleteClick(props.row)">
               <q-tooltip>删除模型</q-tooltip>
             </q-btn>
           </q-td>

@@ -3,8 +3,8 @@
     <q-card-section class="row items-center justify-between">
       <div class="text-h6">模型下载记录</div>
       <div>
-        <q-btn outline color="primary" icon="delete_sweep" label="清空历史记录" @click="confirmClearHistory" class="q-mr-sm" />
-        <q-btn outline color="primary" icon="refresh" label="刷新" @click="refreshHistory" :loading="loading" />
+        <q-btn outline color="grey-7" icon="delete_sweep" label="清空历史记录" @click="confirmClearHistory" class="q-mr-sm" />
+        <q-btn outline color="grey-7" icon="refresh" label="刷新" @click="refreshHistory" :loading="loading" />
       </div>
     </q-card-section>
 
@@ -74,9 +74,10 @@
         <!-- 状态列 -->
         <template v-slot:body-cell-status="props">
           <q-td :props="props">
-            <q-badge :color="getStatusColor(props.row.status)" text-color="white">
-              {{ props.row.statusText || getStatusText(props.row.status) }}
-            </q-badge>
+            <div class="status-indicator" style="display: flex; align-items: center;">
+              <q-badge :color="getStatusColor(props.row.status)" rounded style="width: 8px; height: 8px;" class="q-mr-xs" />
+              <span class="text-caption">{{ props.row.statusText || getStatusText(props.row.status) }}</span>
+            </div>
           </q-td>
         </template>
         
@@ -431,4 +432,4 @@ export default defineComponent({
 .q-btn {
   border-radius: 8px;
 }
-</style> 
+</style>

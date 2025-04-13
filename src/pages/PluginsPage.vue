@@ -2,7 +2,7 @@
   <q-page padding>
     <!-- 顶部标题 -->
     <div>
-      <div class="text-h4">插件管理</div>
+      <div class="text-h5 q-mb-md">插件管理</div>
     </div>
     
     <!-- 分割线 -->
@@ -766,5 +766,11 @@ const githubProxy = ref<string>(''); // 修改为 string 类型
   white-space: pre-wrap;
   font-family: monospace;
   font-size: 0.9em;
+}
+
+.text-h5 {
+  color: var(--text-important);
+  font-size: 40px; /* 假设默认字号为 16px */
+  font-weight: bold;
 }
 </style>

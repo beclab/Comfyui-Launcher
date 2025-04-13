@@ -1,9 +1,9 @@
 <template>
-  <q-card class="model-card">
+  <q-card class="model-card" flat bordered>
     <q-card-section class="header-section">
       <div class="row items-center justify-between">
         <div class="col-auto">
-          <div class="text-subtitle1 text-dark">
+          <div class="text-subtitle1 text-weight-medium q-mb-xs">
             可用模型
           </div>
           <div class="text-caption text-grey-7">查看HuggingFace上的可用模型</div>
@@ -38,8 +38,8 @@
           />
           
           <q-btn 
-            color="primary" 
-            outlined
+            color="grey-7"
+            outline
             icon="refresh" 
             label="刷新"
             @click="onRefresh"
@@ -163,7 +163,7 @@
                         round
                         flat
                         size="sm"
-                        :color="props.row.installed ? 'positive' : 'primary'"
+                        :color="props.row.installed ? 'positive' : 'grey-7'"
                         :icon="props.row.installed ? 'check' : 'download'"
                         :loading="isDownloading && props.row.name === modelToInstall"
                         @click="handleInstallModel(props.row.name)"
@@ -231,6 +231,57 @@
           v-close-popup 
           @click="confirmInstall" 
         />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+  
+  <q-dialog v-model="modelInfoDialog">
+    <q-card style="min-width: 350px">
+      <q-card-section>
+        <div class="text-h6">模型详情</div>
+      </q-card-section>
+      <q-card-section v-if="selectedModel">
+        <q-list>
+          <q-item>
+            <q-item-section>
+              <q-item-label overline>名称</q-item-label>
+              <q-item-label>{{ selectedModel.name }}</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>
+              <q-item-label overline>类型</q-item-label>
+              <q-item-label>{{ selectedModel.type }}</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>
+              <q-item-label overline>大小</q-item-label>
+              <q-item-label>{{ selectedModel.size }}</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>
+              <q-item-label overline>底模</q-item-label>
+              <q-item-label>{{ selectedModel.baseModel || 'FLUX.1' }}</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>
+              <q-item-label overline>来源</q-item-label>
+              <q-item-label>{{ selectedModel.source || 'local' }}</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>
+              <q-item-label overline>说明</q-item-label>
+              <q-item-label>{{ selectedModel.description || '无描述' }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn flat label="关闭" color="primary" v-close-popup />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -383,6 +434,8 @@ export default defineComponent({
     const downloadProgress = ref<ModelDownloadProgress>({});
     const downloadPollingInterval = ref<ReturnType<typeof setInterval> | null>(null);
     const installing = ref('');
+    const modelInfoDialog = ref(false);
+    const selectedModel = ref<Model | null>(null);
     
     const databaseModeOptions = [
       {label: '通道 (1天缓存)', value: 'cache' as ModelFetchMode},
@@ -755,20 +808,9 @@ export default defineComponent({
     };
     
     // 添加查看模型详情方法
-    const viewModelDetails = (modelName: string) => {
-      try {
-        // 调用API打开模型文件夹
-        api.post('models/open-folder', { model: modelName })
-          .catch(error => {
-            console.error('打开模型文件夹失败:', error);
-            $q.notify({
-              type: 'negative',
-              message: '无法打开模型文件夹'
-            });
-          });
-      } catch (error) {
-        console.error('打开模型文件夹失败:', error);
-      }
+    const viewModelDetails = (name: string) => {
+      selectedModel.value = models.value.find(model => model.name === name) || null;
+      modelInfoDialog.value = true;
     };
     
     // 组件加载时获取数据
@@ -824,6 +866,8 @@ export default defineComponent({
       modelToInstall,
       downloadSource,
       downloadSourceOptions,
+      selectedModel,
+      modelInfoDialog,
       
       // 方法
       fetchModels,

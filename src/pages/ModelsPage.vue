@@ -86,7 +86,9 @@ export default defineComponent({
     const openModelFolder = async () => {
       try {
         // 调用API打开模型文件夹
-        await api.post('system/open-folder', { folderType: 'models' });
+        // 调用与FolderAccess.vue相同的API打开模型文件夹
+      const modelPath = '/Files/External/ai/model/';
+      await api.openPath(modelPath);
       } catch (error) {
         console.error('打开模型文件夹失败:', error);
       }

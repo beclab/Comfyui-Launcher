@@ -41,12 +41,26 @@
         
         <!-- 操作列 -->
         <div class="col-2 text-right">
+                    <!-- 启用/禁用按钮 (仅对已安装插件显示) -->
+                    <q-btn
+            v-if="plugin.installed"
+            flat
+            round
+            dense
+            color="primary"
+            :icon="plugin.disabled ? 'play_arrow' : 'pause'"
+            :loading="!!stateChanging"
+            @click="onToggleState"
+          >
+            <q-tooltip>{{ plugin.disabled ? '启用' : '禁用' }}</q-tooltip>
+          </q-btn>
+          
           <!-- 查看详情按钮 -->
           <q-btn
             flat
             round
             dense
-            color="primary"
+            color="grey-7"
             icon="visibility"
             @click="onShowInfo"
             class="q-mr-xs"
@@ -60,11 +74,11 @@
             flat
             round
             dense
-            color="primary"
-            icon="code"
-            @click="openGithub"
+            color="grey-7"
             class="q-mr-xs"
+            @click="openGithub"
           >
+            <img src="../../assets/icon-github.png" alt="GitHub Icon" style="width: 18px; height: 18px;">
             <q-tooltip>访问GitHub</q-tooltip>
           </q-btn>
           
@@ -73,7 +87,7 @@
             flat
             round
             dense
-            :color="plugin.installed ? 'negative' : 'positive'"
+            :color="plugin.installed ? 'grey-7' : 'grey-7'"
             :icon="plugin.installed ? 'delete' : 'download'"
             :loading="!!installationInProgress"
             @click="plugin.installed ? onUninstall : onInstall"
@@ -82,22 +96,10 @@
             <q-tooltip>{{ plugin.installed ? '卸载' : '安装' }}</q-tooltip>
           </q-btn>
           
-          <!-- 启用/禁用按钮 (仅对已安装插件显示) -->
-          <q-btn
-            v-if="plugin.installed"
-            flat
-            round
-            dense
-            color="primary"
-            :icon="plugin.disabled ? 'play_arrow' : 'pause'"
-            :loading="!!stateChanging"
-            @click="onToggleState"
-          >
-            <q-tooltip>{{ plugin.disabled ? '启用' : '禁用' }}</q-tooltip>
-          </q-btn>
+
           
           <!-- 下载按钮 -->
-          <q-btn
+          <!-- <q-btn
             v-if="plugin.installed"
             flat
             round
@@ -106,7 +108,7 @@
             icon="file_download"
           >
             <q-tooltip>下载</q-tooltip>
-          </q-btn>
+          </q-btn> -->
         </div>
       </div>
     </q-card-section>
@@ -187,4 +189,4 @@ const onShowInfo = () => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-</style> 
+</style>
