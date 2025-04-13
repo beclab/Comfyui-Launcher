@@ -1,7 +1,7 @@
 <template>
   <q-card flat style="border-radius: 16px; border: 1px solid #e0e0e0; overflow: hidden; padding-left: 0; padding-right: 0; padding-bottom: 0;">
 
-    <q-card-section style="padding-left: 0px; padding-right: 0px;">
+    <q-card-section style="padding-left: 0px; padding-right: 0px; padding-bottom: 0px;">
         
       <div class="row items-center justify-between" style="margin-left: 16px; margin-right: 16px;">
         <div>
@@ -15,13 +15,13 @@
         </div>
       </div>
 
-      <q-separator class="q-mt-md" />
+      <q-separator class="q-mt-md" style="height: 1px;"/>
     
 
       
-      <div class="row q-mt-md">
+      <div class="row q-mt-md" style="margin-top: 0px; margin-bottom: 0px;">
         <div class="col-3" style="position: relative;">
-          <div class="text-subtitle1" style="margin-left: 16px;">插件</div>
+          <div class="text-subtitle1" style="margin-left: 16px; margin-top: 22px; margin-bottom: 16px;">插件</div>
           <div class="plugin-list-container" style="height: 400px; overflow-y: auto;">
             <q-list class="rounded-borders">
               <q-item
@@ -46,9 +46,9 @@
           <q-separator vertical style="position: absolute; right: 0; top: 0; height: 100%;" />
         </div>
         
-        <div class="col-9 q-pl-md">
-          <div class="row items-center justify-between">
-            <div class="text-subtitle1">依赖库列表</div>
+        <div class="col-9 q-pl-md" style="padding-left: 0px;">
+          <div class="row items-center justify-between" style="padding-top: 16px;">
+            <div class="text-subtitle1" style="margin-left: 16px;">依赖库列表</div>
             <q-btn color="grey-7" style="margin-right: 16px; border-radius: var(--border-radius-md);" outline icon="build" label="一键修复" @click="installAllMissingDependencies" :loading="installingAll" />
           </div>
           
@@ -277,3 +277,9 @@ export default defineComponent({
   }
 });
 </script>
+<style scoped>
+.text-subtitle1 {
+  color: var(--text-important);
+  font-size: 18px;
+}
+</style>
