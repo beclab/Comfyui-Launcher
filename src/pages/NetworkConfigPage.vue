@@ -8,137 +8,122 @@
     </div>
 
     <template v-else>
-      <div class="config-card q-mb-md">
-        <div class="row items-center">
-          <q-avatar size="40px" class="q-mr-md">
-            <img src="https://github.githubassets.com/assets/github-mark-9be88460eaa6.svg" />
-          </q-avatar>
-          <div>
-            <div class="text-subtitle1">Github</div>
-            <div class="text-caption">代理</div>
+      <!-- Github 配置卡片 -->
+      <q-card class="q-mb-md" flat bordered style="border-radius: var(--border-radius-xl);">
+        <q-card-section class="relative-position">
+          <div class="absolute-top-right q-pa-sm">
+            <q-btn outline color="grey-7" style="border-radius: var(--border-radius-md); margin-right: 8px; margin-top: 16px;" @click="checkNetworkStatus('github')">
+              <q-icon :name="networkStatus.github ? 'wifi' : 'wifi_off'" style="margin-right: 12px;"/>
+              检测
+            </q-btn>
           </div>
-          <q-space />
-          <q-chip v-if="networkStatus.github" dense color="positive" text-color="white" class="q-mr-md">
-            可访问
-          </q-chip>
-          <q-chip v-else dense color="negative" text-color="white" class="q-mr-md">
-            不可访问
-          </q-chip>
-          <q-btn flat round icon="refresh" size="sm" @click="checkNetworkStatus('github')">
-            <q-tooltip>检测可用性</q-tooltip>
-          </q-btn>
-        </div>
-        <div class="q-mt-sm">
-          <div class="text-caption q-mb-xs">选择访问GitHub的基本URL</div>
-          <q-input 
-            outlined 
-            dense 
-            v-model="githubUrl" 
-            placeholder="http://gh.proxy.com/"
-          >
-            <template v-slot:append>
-              <q-btn 
-                flat 
-                round 
-                icon="check" 
-                size="sm"
-                @click="saveGithubConfig" 
-                :disable="isSaving.github"
-              >
-                <q-tooltip>保存</q-tooltip>
-              </q-btn>
-            </template>
-          </q-input>
-        </div>
-      </div>
+          <div class="row items-center">
+            <q-avatar size="40px" class="q-mr-md">
+              <q-img src="../assets/github-logo.png" />
+            </q-avatar>
+            <div>
+              <div class="text-subtitle1">Github</div>
+              <div class="text-caption" :class="networkStatus.github ? 'text-positive' : 'text-negative'">
+                {{ networkStatus.github ? '可访问' : '访问超时' }}
+              </div>
+            </div>
+            <q-space />
+          </div>
+        </q-card-section>
+        
+        <q-separator />
+        
+        <q-card-section>
+          <div class="text-caption q-mb-xs">选择访问的 URL 地址</div>
+          <q-select
+            outlined
+            dense
+            v-model="githubUrl"
+            :options="['https://github.com/','http://gh-proxy.com/', 'https://hub.fastgit.xyz/', 'https://github.com.cnpmjs.org/']"
+            placeholder="http://gh-proxy.com/"
+            dropdown-icon="expand_more"
+            @update:model-value="saveGithubConfig"
+          />
+        </q-card-section>
+      </q-card>
 
-      <div class="config-card q-mb-md">
-        <div class="row items-center">
-          <q-avatar size="40px" class="q-mr-md">
-            <img src="https://pypi.org/static/images/logo-small.svg" />
-          </q-avatar>
-          <div>
-            <div class="text-subtitle1">PyPI</div>
-            <div class="text-caption">代理</div>
+      <!-- PyPI 配置卡片 -->
+      <q-card class="q-mb-md" flat bordered style="border-radius: var(--border-radius-xl);">
+        <q-card-section class="relative-position">
+          <div class="absolute-top-right q-pa-sm">
+            <q-btn outline color="grey-7" style="border-radius: var(--border-radius-md); margin-right: 8px; margin-top: 16px;" @click="checkNetworkStatus('pip')">
+              <q-icon :name="networkStatus.pip ? 'wifi' : 'wifi_off'" style="margin-right: 12px;" />
+              检测
+            </q-btn>
           </div>
-          <q-space />
-          <q-chip v-if="networkStatus.pip" dense color="positive" text-color="white" class="q-mr-md">
-            可访问
-          </q-chip>
-          <q-chip v-else dense color="negative" text-color="white" class="q-mr-md">
-            不可访问
-          </q-chip>
-          <q-btn flat round icon="refresh" size="sm" @click="checkNetworkStatus('pip')">
-            <q-tooltip>检测可用性</q-tooltip>
-          </q-btn>
-        </div>
-        <div class="q-mt-sm">
-          <div class="text-caption q-mb-xs">选择访问PyPI的基本URL</div>
-          <q-input 
-            outlined 
-            dense 
-            v-model="pypiUrl" 
-            placeholder="https://pypi.tuna.tsinghua.edu.cn"
-          >
-            <template v-slot:append>
-              <q-btn 
-                flat 
-                round 
-                icon="check" 
-                size="sm"
-                @click="savePipConfig" 
-                :disable="isSaving.pip"
-              >
-                <q-tooltip>保存</q-tooltip>
-              </q-btn>
-            </template>
-          </q-input>
-        </div>
-      </div>
+          <div class="row items-center">
+            <q-avatar size="40px" class="q-mr-md">
+              <q-img src="../assets/pypi-logo.png" />
+            </q-avatar>
+            <div>
+              <div class="text-subtitle1">PyPI</div>
+              <div class="text-caption" :class="networkStatus.pip ? 'text-positive' : 'text-negative'">
+                {{ networkStatus.pip ? '可访问' : '访问超时' }}
+              </div>
+            </div>
+            <q-space />
+          </div>
+        </q-card-section>
+        
+        <q-separator />
+        
+        <q-card-section>
+          <div class="text-caption q-mb-xs">选择访问的 URL 地址</div>
+          <q-select
+            outlined
+            dense
+            v-model="pypiUrl"
+            :options="['https://pypi.joinolares.cn/root/olares3/+simple/', 'https://pypi.tuna.tsinghua.edu.cn', 'https://mirrors.aliyun.com/pypi/simple/', 'https://pypi.org/simple/']"
+            placeholder="https://pypi.joinolares.cn/root/olares3/+simple/"
+            dropdown-icon="expand_more"
+            @update:model-value="savePipConfig"
+          />
+        </q-card-section>
+      </q-card>
 
-      <div class="config-card q-mb-md">
-        <div class="row items-center">
-          <q-avatar size="40px" class="q-mr-md">
-            <img src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" />
-          </q-avatar>
-          <div>
-            <div class="text-subtitle1">HuggingFace</div>
-            <div class="text-caption">代理</div>
+      <!-- HuggingFace 配置卡片 -->
+      <q-card class="q-mb-md" flat bordered style="border-radius: var(--border-radius-xl);">
+        <q-card-section class="relative-position">
+          <div class="absolute-top-right q-pa-sm">
+            <q-btn outline color="grey-7" style="border-radius: var(--border-radius-md); margin-right: 8px; margin-top: 16px;" @click="checkNetworkStatus('huggingface')">
+              <q-icon :name="networkStatus.huggingface ? 'wifi' : 'wifi_off'" style="margin-right: 12px;" />
+              检测
+            </q-btn>
           </div>
-          <q-space />
-          <q-chip v-if="networkStatus.huggingface" dense color="positive" text-color="white" class="q-mr-md">
-            可访问
-          </q-chip>
-          <q-chip v-else dense color="negative" text-color="white" class="q-mr-md">
-            不可访问
-          </q-chip>
-          <q-btn flat round icon="refresh" size="sm" @click="checkNetworkStatus('huggingface')">
-            <q-tooltip>检测可用性</q-tooltip>
-          </q-btn>
-        </div>
-        <div class="q-mt-sm">
-          <div class="text-caption q-mb-xs">选择访问Hugging Face的基本URL</div>
-          <q-input 
-            outlined 
-            dense 
-            v-model="huggingfaceUrl" 
+          <div class="row items-center">
+            <q-avatar size="40px" class="q-mr-md">
+              <q-img src="../assets/huggingface-logo.png" />
+            </q-avatar>
+            <div>
+              <div class="text-subtitle1">HuggingFace</div>
+              <div class="text-caption" :class="networkStatus.huggingface ? 'text-positive' : 'text-negative'">
+                {{ networkStatus.huggingface ? '可访问' : '检测中' }}
+              </div>
+            </div>
+            <q-space />
+          </div>
+        </q-card-section>
+        
+        <q-separator />
+        
+        <q-card-section>
+          <div class="text-caption q-mb-xs">选择访问的 URL 地址</div>
+          <q-select
+            outlined
+            dense
+            v-model="huggingfaceUrl"
+            :options="['https://huggingface.co/', 'https://hf-mirror.com/']"
             placeholder="https://huggingface.co/"
-          >
-            <template v-slot:append>
-              <q-btn 
-                flat 
-                round 
-                icon="check" 
-                size="sm"
-                @click="saveHuggingFaceConfig" 
-                :disable="isSaving.huggingface"
-              >
-                <q-tooltip>保存</q-tooltip>
-              </q-btn>
-            </template>
-          </q-input>
-        </div>
-      </div>
+            dropdown-icon="expand_more"
+            @update:model-value="saveHuggingFaceConfig"
+          />
+        </q-card-section>
+      </q-card>
     </template>
 
     <q-dialog v-model="notifyDialog.show">
@@ -215,7 +200,7 @@ const fetchNetworkConfig = async () => {
       networkStatus.value.huggingface = config.huggingface.accessible;
     }
   } catch (error) {
-    console.error('获取网络配置失败:', error);
+    console.error('Failed to fetch network config:', error);
     showNotify('错误', '获取网络配置失败', 'negative');
   } finally {
     loading.value = false;
@@ -249,7 +234,7 @@ const checkNetworkStatus = async (service = null) => {
       }
     }
   } catch (error) {
-    console.error('检查网络状态失败:', error);
+    console.error('Failed to check network status:', error);
     showNotify('错误', '检查网络状态失败', 'negative');
   }
 };
@@ -273,7 +258,7 @@ const saveGithubConfig = async () => {
       checkNetworkStatus();
     }
   } catch (error) {
-    console.error('保存GitHub代理配置失败:', error);
+    console.error('Failed to save GitHub proxy config:', error);
     showNotify('错误', '保存GitHub代理配置失败', 'negative');
   } finally {
     isSaving.value.github = false;
@@ -299,7 +284,7 @@ const savePipConfig = async () => {
       checkNetworkStatus();
     }
   } catch (error) {
-    console.error('保存PIP源配置失败:', error);
+    console.error('Failed to save PIP source config:', error);
     showNotify('错误', '保存PIP源配置失败', 'negative');
   } finally {
     isSaving.value.pip = false;
@@ -325,7 +310,7 @@ const saveHuggingFaceConfig = async () => {
       checkNetworkStatus();
     }
   } catch (error) {
-    console.error('保存Hugging Face端点配置失败:', error);
+    console.error('Failed to save Hugging Face endpoint config:', error);
     showNotify('错误', '保存Hugging Face端点配置失败', 'negative');
   } finally {
     isSaving.value.huggingface = false;
@@ -339,11 +324,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.config-card {
-  background-color: white;
+.q-card {
   border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
 }
 </style> 

@@ -58,28 +58,7 @@
           </q-item-section>
           <q-item-section>python依赖管理</q-item-section>
         </q-item>
-
-        <q-item clickable to="/discovery">
-          <q-item-section avatar>
-            <q-icon name="sym_o_explore" />
-          </q-item-section>
-          <q-item-section>探索发现</q-item-section>
-        </q-item>
         
-        <q-item clickable to="/reset">
-          <q-item-section avatar>
-            <q-icon name="sym_o_restart_alt" />
-          </q-item-section>
-          <q-item-section>还原初始状态</q-item-section>
-        </q-item>
-
-        <q-item clickable to="/about">
-          <q-item-section avatar>
-            <q-icon name="sym_o_info" />
-          </q-item-section>
-          <q-item-section>关于</q-item-section>
-        </q-item>
-
         <q-item 
           to="/network-config" 
           exact 
@@ -92,6 +71,29 @@
           </q-item-section>
           <q-item-section>网络配置</q-item-section>
         </q-item>
+
+        <q-item clickable to="/discovery">
+          <q-item-section avatar>
+            <q-icon name="sym_o_explore" />
+          </q-item-section>
+          <q-item-section>探索发现</q-item-section>
+        </q-item>
+        
+        <!-- <q-item clickable to="/reset">
+          <q-item-section avatar>
+            <q-icon name="sym_o_restart_alt" />
+          </q-item-section>
+          <q-item-section>还原初始状态</q-item-section>
+        </q-item>
+
+        <q-item clickable to="/about">
+          <q-item-section avatar>
+            <q-icon name="sym_o_info" />
+          </q-item-section>
+          <q-item-section>关于</q-item-section>
+        </q-item> -->
+
+
       </q-list>
     </q-drawer>
 
