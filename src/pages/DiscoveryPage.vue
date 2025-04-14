@@ -1,40 +1,53 @@
 <template>
-  <q-page class="q-pa-md">    
+  <q-page class="q-pa-md">  
+    <div class="text-h4 q-mb-lg">灵感发现</div>  
     <!-- 标签页区域 -->
-    <div class="q-mt-md">
-      <q-tabs
-        v-model="tab"
-        class="text-primary"
-        active-color="primary"
-        indicator-color="primary"
-        align="justify"
-      >
-        <q-tab name="latestModels" label="最新模型" />
-        <q-tab name="hotModels" label="最火模型" />
-        <q-tab name="latestWorkflows" label="最新工作流" />
-        <q-tab name="hotWorkflows" label="最火工作流" />
-      </q-tabs>
 
-      <q-separator />
+    <q-card bordered flat style="border-radius: var(--border-radius-xl); padding-left: 0px; padding-right: 0px;">
+      <q-card-section class="d-flex justify-content-between align-items-center" style="padding-left: 0px; padding-right: 0px;">
+        <div class="text-h5" style="margin-left: 16px; margin-top: 8px; margin-bottom: 16px;">在Civitai.com上发现更多灵感</div>
+        <q-separator />
+        
+        <div class="q-mt-md" style="padding-left: 18px; padding-right: 18px;">
+          <q-tabs
+            v-model="tab"
+            class="text-primary"
+            active-color="primary"
+            indicator-color="primary"
+            align="justify"
+          >
+            <q-tab name="latestModels" label="最新模型" />
+            <q-tab name="hotModels" label="最火模型" />
+            <q-tab name="latestWorkflows" label="最新工作流" />
+            <q-tab name="hotWorkflows" label="最火工作流" />
+          </q-tabs>
 
-      <q-tab-panels v-model="tab" animated>
-        <q-tab-panel name="latestModels">
-          <LatestModels />
-        </q-tab-panel>
+          <q-separator />
 
-        <q-tab-panel name="hotModels">
-          <HotModels />
-        </q-tab-panel>
+          <q-tab-panels v-model="tab" animated>
+            <q-tab-panel name="latestModels">
+              <LatestModels />
+            </q-tab-panel>
 
-        <q-tab-panel name="latestWorkflows">
-          <LatestWorkflows />
-        </q-tab-panel>
+            <q-tab-panel name="hotModels">
+              <HotModels />
+            </q-tab-panel>
 
-        <q-tab-panel name="hotWorkflows">
-          <HotWorkflows />
-        </q-tab-panel>
-      </q-tab-panels>
-    </div>
+            <q-tab-panel name="latestWorkflows">
+              <LatestWorkflows />
+            </q-tab-panel>
+
+            <q-tab-panel name="hotWorkflows">
+              <HotWorkflows />
+            </q-tab-panel>
+          </q-tab-panels>
+        </div>
+
+      </q-card-section>
+
+    </q-card>
+
+
   </q-page>
 </template>
 
