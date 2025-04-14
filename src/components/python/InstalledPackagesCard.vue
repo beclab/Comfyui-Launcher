@@ -105,18 +105,18 @@
   <!-- 安装库对话框 -->
   <q-dialog v-model="showInstallDialog">
     <q-card style="min-width: 400px">
-      <q-card-section style="padding-left: 0; padding-right: 0;">
+      <q-card-section >
         <div class="text-h6">安装新库</div>
       </q-card-section>
       
-      <q-card-section style="padding-left: 0; padding-right: 0;">
+      <q-card-section >
         <q-input v-model="packageToInstall" label="库名称" outlined autofocus />
         <q-input v-model="packageVersion" label="版本 (可选)" outlined class="q-mt-sm" hint="例如: ==1.0.0, >=2.0.0, 留空安装最新版本" />
       </q-card-section>
       
-      <q-card-actions align="right">
-        <q-btn flat label="取消" color="primary" v-close-popup />
-        <q-btn label="安装" color="primary" @click="installPackage" :loading="installing" />
+      <q-card-actions align="right" style="margin-right: 8px; margin-bottom: 8px;">
+        <q-btn outline style="border-radius: var(--border-radius-md);" label="取消" color="grey-7" v-close-popup />
+        <q-btn label="安装" color="primary" style="border-radius: var(--border-radius-md);" @click="installPackage" :loading="installing" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -124,17 +124,17 @@
   <!-- 确认卸载对话框 -->
   <q-dialog v-model="showUninstallDialog">
     <q-card>
-      <q-card-section style="padding-left: 0; padding-right: 0;">
+      <q-card-section >
         <div class="text-h6">确认卸载</div>
       </q-card-section>
       
-      <q-card-section style="padding-left: 0; padding-right: 0;">
+      <q-card-section>
         确定要卸载 <strong>{{ packageToUninstall.name }}</strong> 吗？这可能会影响依赖该库的插件。
       </q-card-section>
       
       <q-card-actions align="right">
-        <q-btn flat label="取消" color="primary" v-close-popup />
-        <q-btn flat label="卸载" color="negative" @click="uninstallPackage" :loading="uninstalling" />
+        <q-btn outline label="取消" color="grey-7" v-close-popup style="border-radius: var(--border-radius-md);"/>
+        <q-btn label="卸载" color="negative" @click="uninstallPackage" :loading="uninstalling" style="border-radius: var(--border-radius-md);"/>
       </q-card-actions>
     </q-card>
   </q-dialog>

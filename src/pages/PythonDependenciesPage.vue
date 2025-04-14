@@ -17,7 +17,7 @@
 
       <!-- 错误信息展示区域 -->
       <q-card v-if="errorMessage" class="q-mb-md bg-red-1">
-        <q-card-section style="padding-left: 0; padding-right: 0;">
+        <q-card-section >
           <div class="text-h6 text-negative">安装错误</div>
           <pre class="error-message">{{ errorMessage }}</pre>
           <div v-if="errorMessage.includes('Internal Server Error')" class="q-mt-md">
