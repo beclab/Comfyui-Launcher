@@ -1,10 +1,10 @@
 <template>
   <q-page padding>
-    <div class="text-h4 q-mb-lg">网络配置</div>
+    <div class="text-h4 q-mb-lg">{{ $t('network.config') }}</div>
 
     <div v-if="loading" class="text-center q-pa-lg">
       <q-spinner size="3em" color="primary" />
-      <div class="q-mt-md">加载配置中...</div>
+      <div class="q-mt-md">{{ $t('network.loading') }}</div>
     </div>
 
     <template v-else>
@@ -14,7 +14,7 @@
           <div class="absolute-top-right q-pa-sm">
             <q-btn outline color="grey-7" style="border-radius: var(--border-radius-md); margin-right: 8px; margin-top: 16px;" @click="checkNetworkStatus('github')">
               <q-icon :name="networkStatus.github ? 'wifi' : 'wifi_off'" style="margin-right: 12px;"/>
-              检测
+              {{ $t('network.checkNetwork') }}
             </q-btn>
           </div>
           <div class="row items-center">
@@ -22,9 +22,9 @@
               <q-img src="../assets/github-logo.png" />
             </q-avatar>
             <div>
-              <div class="text-subtitle1">Github</div>
+              <div class="text-subtitle1">{{ $t('network.github.title') }}</div>
               <div class="text-caption" :class="networkStatus.github ? 'text-positive' : 'text-negative'">
-                {{ networkStatus.github ? '可访问' : '访问超时' }}
+                {{ networkStatus.github ? $t('network.github.accessible') : $t('network.github.inaccessible') }}
               </div>
             </div>
             <q-space />
@@ -34,7 +34,7 @@
         <q-separator />
         
         <q-card-section>
-          <div class="text-caption q-mb-xs">选择访问的 URL 地址</div>
+          <div class="text-caption q-mb-xs">{{ $t('network.github.selectUrl') }}</div>
           <q-select
             outlined
             dense
@@ -53,7 +53,7 @@
           <div class="absolute-top-right q-pa-sm">
             <q-btn outline color="grey-7" style="border-radius: var(--border-radius-md); margin-right: 8px; margin-top: 16px;" @click="checkNetworkStatus('pip')">
               <q-icon :name="networkStatus.pip ? 'wifi' : 'wifi_off'" style="margin-right: 12px;" />
-              检测
+              {{ $t('network.checkNetwork') }}
             </q-btn>
           </div>
           <div class="row items-center">
@@ -61,9 +61,9 @@
               <q-img src="../assets/pypi-logo.png" />
             </q-avatar>
             <div>
-              <div class="text-subtitle1">PyPI</div>
+              <div class="text-subtitle1">{{ $t('network.pypi.title') }}</div>
               <div class="text-caption" :class="networkStatus.pip ? 'text-positive' : 'text-negative'">
-                {{ networkStatus.pip ? '可访问' : '访问超时' }}
+                {{ networkStatus.pip ? $t('network.pypi.accessible') : $t('network.pypi.inaccessible') }}
               </div>
             </div>
             <q-space />
@@ -73,7 +73,7 @@
         <q-separator />
         
         <q-card-section>
-          <div class="text-caption q-mb-xs">选择访问的 URL 地址</div>
+          <div class="text-caption q-mb-xs">{{ $t('network.pypi.selectUrl') }}</div>
           <q-select
             outlined
             dense
@@ -92,7 +92,7 @@
           <div class="absolute-top-right q-pa-sm">
             <q-btn outline color="grey-7" style="border-radius: var(--border-radius-md); margin-right: 8px; margin-top: 16px;" @click="checkNetworkStatus('huggingface')">
               <q-icon :name="networkStatus.huggingface ? 'wifi' : 'wifi_off'" style="margin-right: 12px;" />
-              检测
+              {{ $t('network.checkNetwork') }}
             </q-btn>
           </div>
           <div class="row items-center">
@@ -100,9 +100,9 @@
               <q-img src="../assets/huggingface-logo.png" />
             </q-avatar>
             <div>
-              <div class="text-subtitle1">HuggingFace</div>
+              <div class="text-subtitle1">{{ $t('network.huggingface.title') }}</div>
               <div class="text-caption" :class="networkStatus.huggingface ? 'text-positive' : 'text-negative'">
-                {{ networkStatus.huggingface ? '可访问' : '检测中' }}
+                {{ networkStatus.huggingface ? $t('network.huggingface.accessible') : $t('network.huggingface.inaccessible') }}
               </div>
             </div>
             <q-space />
@@ -112,7 +112,7 @@
         <q-separator />
         
         <q-card-section>
-          <div class="text-caption q-mb-xs">选择访问的 URL 地址</div>
+          <div class="text-caption q-mb-xs">{{ $t('network.huggingface.selectUrl') }}</div>
           <q-select
             outlined
             dense
@@ -228,7 +228,7 @@ const checkNetworkStatus = async (service = null) => {
         const isAccessible = networkStatus.value[service];
         showNotify(
           '网络检测结果', 
-          `${serviceNames[service]}${isAccessible ? '可以访问' : '无法访问'}`, 
+          `${serviceNames[service]}${isAccessible ? $t('network.canAccess') : $t('network.cannotAccess')}`, 
           isAccessible ? 'positive' : 'warning'
         );
       }
@@ -253,13 +253,13 @@ const saveGithubConfig = async () => {
     });
     
     if (response.data.code === 200) {
-      showNotify('成功', 'GitHub代理配置已保存', 'positive');
+      showNotify('成功', $t('network.saveSuccess'), 'positive');
       // 更新网络状态
       checkNetworkStatus();
     }
   } catch (error) {
     console.error('Failed to save GitHub proxy config:', error);
-    showNotify('错误', '保存GitHub代理配置失败', 'negative');
+    showNotify('错误', $t('network.saveError'), 'negative');
   } finally {
     isSaving.value.github = false;
   }
@@ -279,13 +279,13 @@ const savePipConfig = async () => {
     });
     
     if (response.data.code === 200) {
-      showNotify('成功', 'PIP源配置已保存', 'positive');
+      showNotify('成功', $t('network.saveSuccess'), 'positive');
       // 更新网络状态
       checkNetworkStatus();
     }
   } catch (error) {
     console.error('Failed to save PIP source config:', error);
-    showNotify('错误', '保存PIP源配置失败', 'negative');
+    showNotify('错误', $t('network.saveError'), 'negative');
   } finally {
     isSaving.value.pip = false;
   }
@@ -305,13 +305,13 @@ const saveHuggingFaceConfig = async () => {
     });
     
     if (response.data.code === 200) {
-      showNotify('成功', 'Hugging Face端点配置已保存', 'positive');
+      showNotify('成功', $t('network.saveSuccess'), 'positive');
       // 更新网络状态
       checkNetworkStatus();
     }
   } catch (error) {
     console.error('Failed to save Hugging Face endpoint config:', error);
-    showNotify('错误', '保存Hugging Face端点配置失败', 'negative');
+    showNotify('错误', $t('network.saveError'), 'negative');
   } finally {
     isSaving.value.huggingface = false;
   }

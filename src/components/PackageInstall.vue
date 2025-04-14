@@ -3,7 +3,7 @@
     <q-card class="package-container" bordered>
       <!-- 标题区域 -->
       <div class="q-px-md q-pt-md q-pb-xs">
-        <div class="text-subtitle1">资源包安装</div>
+        <div class="text-subtitle1">{{ $t('packageInstall.title') }}</div>
         
       </div>
       <q-separator class="q-my-sm" />
@@ -18,14 +18,17 @@
             
             <div class="col">
               <div class="row items-center">
-                <div class="text-weight-medium">基础模型包</div>
-                <q-chip dense size="xs" color="blue" text-color="white" class="q-ml-sm">热门</q-chip>
-                <q-chip dense size="xs" color="pink" text-color="white" class="q-ml-xs">绝版</q-chip>
+                <div class="text-weight-medium">{{ $t('packageInstall.essentialPackage') }}</div>
+                <q-chip dense size="xs" color="blue" text-color="white" class="q-ml-sm">{{ $t('packageInstall.popular') }}</q-chip>
+                <q-chip dense size="xs" color="pink" text-color="white" class="q-ml-xs">{{ $t('packageInstall.outOfPrint') }}</q-chip>
               </div>
-              <div class="text-caption text-grey-7">包含ComfyUI能工作所需的基础模型</div>
+              <div class="text-caption text-grey-7">{{ $t('packageInstall.essentialModelsDesc') }}</div>
             </div>
             
-            <q-btn outline rounded label="下载" class="download-btn q-ml-sm" @click="showEssentialModelsDialog = true" />
+            <q-btn outline rounded label="" class="download-btn q-ml-sm" @click="showEssentialModelsDialog = true" >
+              {{ $t('packageInstall.download') }}
+              </q-btn>
+              
           </div>
         </div>
         
@@ -43,13 +46,15 @@
             
             <div class="col">
               <div class="row items-center">
-                <div class="text-weight-medium">ControlNet模型包</div>
-                <q-chip dense size="xs" color="pink" text-color="white" class="q-ml-sm">绝版</q-chip>
+                <div class="text-weight-medium">{{ $t('packageInstall.controlNetPackage') }}</div>
+                <q-chip dense size="xs" color="pink" text-color="white" class="q-ml-sm">{{ $t('packageInstall.outOfPrint') }}</q-chip>
               </div>
-              <div class="text-caption text-grey-7">包含ControlNet所需全部模型</div>
+              <div class="text-caption text-grey-7">{{ $t('packageInstall.controlNetModelsDesc') }}</div>
             </div>
             
-            <q-btn outline rounded label="下载" class="download-btn q-ml-sm" @click="downloadPackage('ControlNet模型包')" />
+            <q-btn outline rounded class="download-btn q-ml-sm" @click="downloadPackage($t('packageInstall.controlNetPackage'))" >
+              {{ $t('packageInstall.download') }}
+            </q-btn>
           </div>
         </div>
       </div>

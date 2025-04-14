@@ -13,7 +13,7 @@
         />
 
         <q-toolbar-title class="text-black">
-          ComfyUI 管理器
+          {{ $t('common.title') }}
         </q-toolbar-title>
 
       </q-toolbar>
@@ -29,34 +29,34 @@
       :offset="isInIframe ? 0 : undefined"
     >
       <q-list class="custom-menu">
-        <q-item-label header>导航菜单</q-item-label>
+        <q-item-label header>{{ $t('menu.navigation') }}</q-item-label>
 
         <q-item clickable to="/" exact>
           <q-item-section avatar>
             <q-icon name="sym_o_home" />
           </q-item-section>
-          <q-item-section>首页</q-item-section>
+          <q-item-section>{{ $t('menu.home') }}</q-item-section>
         </q-item>
 
         <q-item clickable to="/models">
           <q-item-section avatar>
             <q-icon name="sym_o_database" />
           </q-item-section>
-          <q-item-section>模型管理</q-item-section>
+          <q-item-section>{{ $t('menu.modelManagement') }}</q-item-section>
         </q-item>
 
         <q-item clickable to="/plugins">
           <q-item-section avatar>
             <q-icon name="sym_o_extension" />
           </q-item-section>
-          <q-item-section>插件管理</q-item-section>
+          <q-item-section>{{ $t('menu.pluginManagement') }}</q-item-section>
         </q-item>
 
         <q-item clickable to="/python-dependencies">
           <q-item-section avatar>
             <q-icon name="sym_o_code" />
           </q-item-section>
-          <q-item-section>python依赖管理</q-item-section>
+          <q-item-section>{{ $t('menu.pythonDependencies') }}</q-item-section>
         </q-item>
         
         <q-item 
@@ -69,14 +69,14 @@
           <q-item-section avatar>
             <q-icon name="settings_ethernet" />
           </q-item-section>
-          <q-item-section>网络配置</q-item-section>
+          <q-item-section>{{ $t('menu.networkConfig') }}</q-item-section>
         </q-item>
 
         <q-item clickable to="/discovery">
           <q-item-section avatar>
             <q-icon name="sym_o_explore" />
           </q-item-section>
-          <q-item-section>探索发现</q-item-section>
+          <q-item-section>{{ $t('menu.discovery') }}</q-item-section>
         </q-item>
         
         <!-- <q-item clickable to="/reset">

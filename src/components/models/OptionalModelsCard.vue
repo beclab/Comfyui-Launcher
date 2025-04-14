@@ -4,15 +4,15 @@
       <div class="row items-center justify-between">
         <div class="col-auto">
           <div class="text-subtitle1 text-weight-medium q-mb-xs">
-            可用模型
+            {{ $t('optionalModels.title') }}
           </div>
-          <div class="text-caption text-grey-7">查看HuggingFace上的可用模型</div>
+          <div class="text-caption text-grey-7">{{ $t('optionalModels.subtitle') }}</div>
         </div>
         
         <div class="row items-center col-auto">
           <q-input
             v-model="searchQuery"
-            placeholder="搜索模型..."
+            :placeholder="$t('optionalModels.searchPlaceholder')"
             dense
             outlined
             clearable
@@ -33,7 +33,7 @@
             outlined
             class="bg-white text-black q-mr-md"
             style="width: 180px"
-            label="存储数据源"
+            :label="$t('optionalModels.databaseSource')"
             @update:model-value="onDatabaseModeChange"
           />
           
@@ -41,7 +41,7 @@
             color="grey-7"
             outline
             icon="refresh" 
-            label="刷新"
+            :label="$t('optionalModels.refresh')"
             @click="onRefresh"
             :loading="isLoading"
             size="md"
@@ -58,27 +58,27 @@
       indicator-color="primary"
       class="text-grey-7"
     >
-      <q-tab name="all" label="全部" />
-      <q-tab name="sd" label="SD 模型" />
-      <q-tab name="lora" label="LORA" />
-      <q-tab name="controlnet" label="CONTROLNET" />
-      <q-tab name="vae" label="VAE" />
-      <q-tab name="upscaler" label="超分辨率" />
+      <q-tab name="all" :label="$t('optionalModels.tabs.all')" />
+      <q-tab name="sd" :label="$t('optionalModels.tabs.sd')" />
+      <q-tab name="lora" :label="$t('optionalModels.tabs.lora')" />
+      <q-tab name="controlnet" :label="$t('optionalModels.tabs.controlnet')" />
+      <q-tab name="vae" :label="$t('optionalModels.tabs.vae')" />
+      <q-tab name="upscaler" :label="$t('optionalModels.tabs.upscaler')" />
     </q-tabs>
     
     <q-separator />
     
     <q-tab-panels v-model="activeTab" animated>
-      <!-- 模型列表面板 - 改为表格布局 -->
+      <!-- 模型列表面板 - 表格布局 -->
       <q-tab-panel :name="tabName" v-for="tabName in ['all', 'sd', 'lora', 'controlnet', 'vae', 'upscaler']" :key="tabName">
         <div v-if="isLoading" class="text-center q-pa-lg">
           <q-spinner color="primary" size="3em" />
-          <div class="q-mt-md">加载模型中...</div>
+          <div class="q-mt-md">{{ $t('optionalModels.loadingModels') }}</div>
         </div>
         
         <!-- 根据tabName过滤显示对应类型的模型 -->
         <div v-else-if="getFilteredModelsByTab(tabName).length === 0" class="text-center q-pa-lg text-grey">
-          没有找到匹配的模型
+          {{ $t('optionalModels.noModelsFound') }}
         </div>
         
         <div v-else>
@@ -115,7 +115,7 @@
                 </q-td>
                 
                 <!-- 大小列 -->
-                <q-td key="size" :props="props">{{ props.row.size || '大小未知' }}</q-td>
+                <q-td key="size" :props="props">{{ props.row.size || $t('models.modelDetails.noDescription') }}</q-td>
                 
                 <!-- 底模列 -->
                 <q-td key="baseModel" :props="props">{{ props.row.baseModel || 'FLUX.1' }}</q-td>
@@ -125,7 +125,7 @@
                 
                 <!-- 说明列 -->
                 <q-td key="description" :props="props">
-                  <div class="description text-grey-8">{{ props.row.description || '无描述' }}</div>
+                  <div class="description text-grey-8">{{ props.row.description || $t('models.modelDetails.noDescription') }}</div>
                 </q-td>
                 
                 <!-- 操作列 -->
@@ -155,7 +155,7 @@
                         icon="visibility"
                         @click="viewModelDetails(props.row.name)"
                       >
-                        <q-tooltip>查看详情</q-tooltip>
+                        <q-tooltip>{{ $t('optionalModels.actions.viewDetails') }}</q-tooltip>
                       </q-btn>
                       
                       <!-- 下载/安装按钮 -->
@@ -169,7 +169,7 @@
                         @click="handleInstallModel(props.row.name)"
                         :disable="props.row.installed"
                       >
-                        <q-tooltip>{{ props.row.installed ? '已安装' : '安装' }}</q-tooltip>
+                        <q-tooltip>{{ props.row.installed ? $t('optionalModels.actions.installed') : $t('optionalModels.actions.install') }}</q-tooltip>
                       </q-btn>
                     </div>
                   </template>
@@ -181,7 +181,7 @@
             <template v-slot:pagination="scope">
               <div class="row items-center justify-between q-px-md">
                 <div class="text-caption text-grey-8">
-                  每页记录数: {{ scope.pagination.rowsPerPage }}
+                  {{ $t('optionalModels.pagination.rowsPerPage') }}: {{ scope.pagination.rowsPerPage }}
                 </div>
                 <div>
                   <q-pagination
@@ -209,23 +209,23 @@
     <q-card class="confirmation-dialog">
       <!-- 修改标题样式但保留文案 -->
       <q-card-section>
-        <div class="text-h6 text-weight-bold">确认安装</div>
+        <div class="text-h6 text-weight-bold">{{ $t('optionalModels.dialog.confirmTitle') }}</div>
       </q-card-section>
 
       <q-card-section>
-        您确定要安装模型"{{ modelToInstall }}"吗？
+        {{ $t('optionalModels.dialog.confirmMessage', { model: modelToInstall }) }}
       </q-card-section>
 
       <q-card-actions align="right" class="q-pa-md">
         <q-btn 
-          label="取消" 
+          :label="$t('optionalModels.dialog.cancel')" 
           color="grey-7" 
           class="dialog-btn" 
           v-close-popup 
           @click="cancelInstall" 
         />
         <q-btn 
-          label="确定" 
+          :label="$t('optionalModels.dialog.confirm')" 
           color="primary" 
           class="dialog-btn q-ml-sm" 
           v-close-popup 
@@ -238,60 +238,63 @@
   <q-dialog v-model="modelInfoDialog">
     <q-card style="min-width: 350px">
       <q-card-section>
-        <div class="text-h6">模型详情</div>
+        <div class="text-h6">{{ $t('optionalModels.dialog.modelDetails') }}</div>
       </q-card-section>
       <q-card-section v-if="selectedModel">
         <q-list>
           <q-item>
             <q-item-section>
-              <q-item-label overline>名称</q-item-label>
+              <q-item-label overline>{{ $t('models.modelDetails.name') }}</q-item-label>
               <q-item-label>{{ selectedModel.name }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item>
             <q-item-section>
-              <q-item-label overline>类型</q-item-label>
+              <q-item-label overline>{{ $t('models.modelDetails.type') }}</q-item-label>
               <q-item-label>{{ selectedModel.type }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item>
             <q-item-section>
-              <q-item-label overline>大小</q-item-label>
+              <q-item-label overline>{{ $t('models.modelDetails.size') }}</q-item-label>
               <q-item-label>{{ selectedModel.size }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item>
             <q-item-section>
-              <q-item-label overline>底模</q-item-label>
+              <q-item-label overline>{{ $t('models.modelDetails.baseModel') }}</q-item-label>
               <q-item-label>{{ selectedModel.baseModel || 'FLUX.1' }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item>
             <q-item-section>
-              <q-item-label overline>来源</q-item-label>
+              <q-item-label overline>{{ $t('models.modelDetails.source') }}</q-item-label>
               <q-item-label>{{ selectedModel.source || 'local' }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item>
             <q-item-section>
-              <q-item-label overline>说明</q-item-label>
-              <q-item-label>{{ selectedModel.description || '无描述' }}</q-item-label>
+              <q-item-label overline>{{ $t('models.modelDetails.description') }}</q-item-label>
+              <q-item-label>{{ selectedModel.description || $t('models.modelDetails.noDescription') }}</q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
       </q-card-section>
       <q-card-actions align="right">
-        <q-btn flat label="关闭" color="primary" v-close-popup />
+        <q-btn flat color="primary" v-close-popup>
+          {{ $t('optionalModels.dialog.close') }}
+        </q-btn> 
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch, onMounted, onUnmounted } from 'vue';
+import { defineComponent, ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import api from '../../api';
 import DataCenter from 'src/api/DataCenter';
+import { useI18n } from 'vue-i18n';
 
 // 本地模型接口定义
 interface Model {
@@ -420,7 +423,8 @@ export default defineComponent({
   name: 'OptionalModelsCard',
   setup() {
     const $q = useQuasar();
-    
+    const t = useI18n().t;
+
     // 本地状态
     const models = ref<Model[]>([]);
     const filteredModels = ref<Model[]>([]);
@@ -437,29 +441,32 @@ export default defineComponent({
     const modelInfoDialog = ref(false);
     const selectedModel = ref<Model | null>(null);
     
-    const databaseModeOptions = [
-      {label: '通道 (1天缓存)', value: 'cache' as ModelFetchMode},
-      {label: '本地', value: 'local' as ModelFetchMode},
-      {label: '远程', value: 'remote' as ModelFetchMode}
-    ];
+    const databaseModeOptions = computed(() => [
+      {label: t('optionalModels.dataSource.cache'), value: 'cache' as ModelFetchMode},
+      {label: t('optionalModels.dataSource.local'), value: 'local' as ModelFetchMode},
+      {label: t('optionalModels.dataSource.remote'), value: 'remote' as ModelFetchMode}
+    ]);
     
     // 添加对话框状态
     const confirmDialogVisible = ref(false);
     const modelToInstall = ref('');
     
     // 添加下载源选择
-    const downloadSource = ref('HuggingFace中国镜像站');
-    const downloadSourceOptions = ['HuggingFace中国镜像站', 'HuggingFace官方'];
+    const downloadSource = ref(t('optionalModels.download.source.mirror'));
+    const downloadSourceOptions = computed(() => [
+      t('optionalModels.download.source.mirror'), 
+      t('optionalModels.download.source.official')
+    ]);
     
-    // 修正列定义为正确的类型
-    const columns = ref<TableColumn[]>([
-      { name: 'name', label: '名称', field: 'name', align: 'left', sortable: true },
-      { name: 'type', label: '类型', field: 'type', align: 'center' },
-      { name: 'size', label: '大小', field: 'size', align: 'center', sortable: true },
-      { name: 'baseModel', label: '底模', field: 'baseModel', align: 'center' },
-      { name: 'source', label: '来源', field: 'source', align: 'center' },
-      { name: 'description', label: '说明', field: 'description', align: 'left' },
-      { name: 'actions', label: '操作', field: 'actions', align: 'center' }
+    // 修改列定义为使用i18n并添加明确的类型声明
+    const columns = computed<TableColumn[]>(() => [
+      { name: 'name', label: t('optionalModels.columns.name'), field: 'name', align: 'left', sortable: true },
+      { name: 'type', label: t('optionalModels.columns.type'), field: 'type', align: 'center' },
+      { name: 'size', label: t('optionalModels.columns.size'), field: 'size', align: 'center', sortable: true },
+      { name: 'baseModel', label: t('optionalModels.columns.baseModel'), field: 'baseModel', align: 'center' },
+      { name: 'source', label: t('optionalModels.columns.source'), field: 'source', align: 'center' },
+      { name: 'description', label: t('optionalModels.columns.description'), field: 'description', align: 'left' },
+      { name: 'actions', label: t('optionalModels.columns.actions'), field: 'actions', align: 'center' }
     ]);
     
     // 获取模型列表
@@ -642,7 +649,7 @@ export default defineComponent({
             }
           }
         } catch (error) {
-          console.error('获取下载进度失败:', error);
+          console.error('Failed to get download progress:', error);
         }
       }, 1000);
     };
@@ -675,7 +682,7 @@ export default defineComponent({
         installing.value = modelName;
         
         // 根据选择的下载源确定API参数
-        const source = downloadSource.value === 'HuggingFace官方' ? 'hf' : 'mirror';
+        const source = downloadSource.value === t('optionalModels.download.source.official') ? 'hf' : 'mirror';
         
         // 使用适当的 API 调用方式，并传递下载源参数
         const response = await api.post(`models/install/${modelName}`, { source }); 
@@ -701,16 +708,16 @@ export default defineComponent({
           
           $q.notify({
             type: 'info',
-            message: `开始安装模型: ${modelName}`
+            message: t('optionalModels.download.startInstall', { model: modelName })
           });
         } else {
           throw new Error('服务器未返回有效任务ID');
         }
       } catch (error) {
-        console.error('安装模型失败:', error);
+        console.error('Installing model failed:', error);
         $q.notify({
           type: 'negative',
-          message: '安装模型失败'
+          message: t('optionalModels.download.installFailed', { error: error instanceof Error ? error.message : String(error) })
         });
       } finally {
         isLoading.value = false;
@@ -754,23 +761,8 @@ export default defineComponent({
     
     // 获取模型类型标签
     const getTypeLabel = (type: string): string => {
-      const typeLabels: Record<string, string> = {
-        checkpoint: 'SD模型',
-        vae: 'VAE',
-        vae_approx: '预览解码器',
-        lora: 'LoRA',
-        controlnet: 'ControlNet',
-        upscaler: '超分模型',
-        embedding: '词嵌入',
-        ipadapter: 'IP-Adapter',
-        motion: '动画模型',
-        facerestore: '人脸修复',
-        detector: '检测器',
-        segmentation: '分割模型',
-        other: '其他'
-      };
-      
-      return typeLabels[type] || type;
+      // 使用 i18n 获取模型类型标签
+      return t(`optionalModels.modelTypes.${type}`) || type;
     };
     
     // 获取模型类型颜色
@@ -803,7 +795,7 @@ export default defineComponent({
       
       $q.notify({
         type: 'info',
-        message: '正在刷新模型列表...'
+        message: t('optionalModels.download.refreshing')
       });
     };
     

@@ -11,7 +11,7 @@
         <div class="content-container">
           <div class="header-row">
             <div class="title-section">
-              <div class="comfyui-title">ComfyUI</div>
+              <div class="comfyui-title">{{ $t('comfyuiStatus.title') }}</div>
 
               <!-- 添加状态指示器 -->
               <q-chip 
@@ -27,23 +27,23 @@
                   class="q-mr-xs status-icon"
                   :class="isConnected ? 'running-icon' : 'stopped-icon'"
                 />
-                <span class="status-text">{{ isConnected ? '运行中' : '已停止' }}</span>
+                <span class="status-text">{{ isConnected ? $t('comfyuiStatus.running') : $t('comfyuiStatus.stopped') }}</span>
               </q-chip>
             </div>
           </div>
           
           <div class="version-row">
             <q-chip dense size="sm" class="version-chip">
-              <span class="version-text">comfyui {{ versions.comfyui }}</span>
+              <span class="version-text">{{ $t('comfyuiStatus.version.comfyui') }} {{ versions.comfyui }}</span>
             </q-chip>
             <q-chip dense size="sm" class="version-chip">
-              <span class="version-text">frontend {{ versions.frontend }}</span>
+              <span class="version-text">{{ $t('comfyuiStatus.version.frontend') }} {{ versions.frontend }}</span>
             </q-chip>
             <q-chip dense size="sm" class="version-chip">
-              <span class="version-text">launcher {{ versions.app }}</span>
+              <span class="version-text">{{ $t('comfyuiStatus.version.launcher') }} {{ versions.app }}</span>
             </q-chip>
             <q-chip dense size="sm" class="version-chip">
-              <span class="version-text">GPU: {{ gpuMode }}</span>
+              <span class="version-text">{{ $t('comfyuiStatus.version.gpu') }}: {{ gpuMode }}</span>
             </q-chip>
           </div>
           
@@ -61,7 +61,7 @@
               class="open-btn"
               @click="openComfyUI"
             >
-              <span class="btn-text">打开</span>
+              <span class="btn-text">{{ $t('comfyuiStatus.buttons.open') }}</span>
             </q-btn>
             
             <q-btn 
@@ -72,7 +72,7 @@
               @click="stopComfyUI"
               :loading="isStopping"
             >
-              <span class="btn-text">停止</span>
+              <span class="btn-text">{{ $t('comfyuiStatus.buttons.stop') }}</span>
             </q-btn>
           </template>
           
@@ -86,7 +86,7 @@
               @click="checkAndStartComfyUI"
               :loading="isStarting"
             >
-              <span class="start-btn-text">启动</span>
+              <span class="start-btn-text">{{ $t('comfyuiStatus.buttons.start') }}</span>
             </q-btn>
           </template>
           
@@ -105,14 +105,14 @@
                   <q-item-section avatar>
                     <q-icon name="visibility" />
                   </q-item-section>
-                  <q-item-section>查看日志</q-item-section>
+                  <q-item-section>{{ $t('comfyuiStatus.menu.viewLogs') }}</q-item-section>
                 </q-item>
                 
                 <q-item clickable v-close-popup @click="resetComfyUI">
                   <q-item-section avatar>
                     <q-icon name="refresh" />
                   </q-item-section>
-                  <q-item-section>抹掉并还原</q-item-section>
+                  <q-item-section>{{ $t('comfyuiStatus.menu.reset') }}</q-item-section>
                 </q-item>
               </q-list>
             </q-menu>
@@ -126,7 +126,7 @@
       <q-card class="log-dialog-card">
         <q-card-section class="log-dialog-header">
           <div class="row items-center justify-between full-width">
-            <div class="text-h6">ComfyUI 日志</div>
+            <div class="text-h6">{{ $t('comfyuiStatus.logs.title') }}</div>
             <q-btn flat round dense icon="close" @click="showLogs = false" />
           </div>
         </q-card-section>
@@ -138,7 +138,7 @@
                 {{ log }}
               </div>
               <div v-if="logs.length === 0" class="text-grey-6 text-center q-pa-md">
-                正在加载日志...
+                {{ $t('comfyuiStatus.logs.loading') }}
               </div>
             </div>
           </q-scroll-area>
@@ -147,10 +147,10 @@
         <q-card-actions align="right" class="log-dialog-actions">
           <div class="row items-center full-width justify-end q-gutter-md">
             <q-btn flat round color="primary" icon="refresh" @click="fetchLogs">
-              <q-tooltip>刷新日志</q-tooltip>
+              <q-tooltip>{{ $t('comfyuiStatus.logs.refresh') }}</q-tooltip>
             </q-btn>
             <q-btn flat round color="primary" icon="file_download" @click="downloadLogs">
-              <q-tooltip>下载日志</q-tooltip>
+              <q-tooltip>{{ $t('comfyuiStatus.logs.download') }}</q-tooltip>
             </q-btn>
           </div>
         </q-card-actions>
@@ -162,21 +162,21 @@
         <!-- 删除左上角图标 -->
         <q-card-section class="row items-center">
           <!-- <q-avatar icon="warning" color="warning" text-color="white" /> -->
-          <span class="q-ml-sm" style="color: var(--text-important); font-weight: bold;">缺少基础模型</span>
+          <span class="q-ml-sm" style="color: var(--text-important); font-weight: bold;">{{ $t('comfyuiStatus.dialog.missingModelsTitle') }}</span>
           <!-- 右上角增加 ❌ 关闭按钮 -->
           <q-btn flat round dense icon="close" @click="showConfirmDialog = false" style="margin-left: auto;" />
         </q-card-section>
         <q-card-section style="color: var(--text-normal); padding-top: 8px; padding-bottom: 8px; padding-left: 24px;">
-          您尚未安装所有必要的基础模型，这可能导致ComfyUI无法正常生成图像。是否继续启动？
+          {{ $t('comfyuiStatus.dialog.missingModelsMessage') }}
         </q-card-section>
         <!-- 提示文案下方增加单选框“记住我的选择, 下次无需弹窗确认” -->
         <q-card-section style="color: var(--text-normal)">
-          <q-checkbox v-model="rememberChoice" label="记住我的选择, 下次无需弹窗确认" />
+          <q-checkbox v-model="rememberChoice" label="{{ $t('comfyuiStatus.dialog.rememberChoice') }}" />
         </q-card-section>
         <q-card-actions align="right" style="margin-right: 10px; margin-bottom: 10px;">
           <!-- 下方按钮 去安装模型 和 仍然启动 对调位置 -->
-          <q-btn flat label="仍然启动" style="color: var(--text-normal); border: 1px solid var(--text-normal); border-radius: var(--border-radius-md);" @click="confirmStartComfyUI" />
-          <q-btn label="安装模型" color="primary" @click="goToModels" style="box-shadow: none; border-radius: var(--border-radius-md);" />
+          <q-btn flat label="{{ $t('comfyuiStatus.dialog.confirmStart') }}" style="color: var(--text-normal); border: 1px solid var(--text-normal); border-radius: var(--border-radius-md);" @click="confirmStartComfyUI" />
+          <q-btn label="{{ $t('comfyuiStatus.dialog.installModels') }}" color="primary" @click="goToModels" style="box-shadow: none; border-radius: var(--border-radius-md);" />
           
           
         </q-card-actions>

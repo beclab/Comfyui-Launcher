@@ -4,16 +4,16 @@
       <div class="row items-center justify-between">
         <div class="col-md-6 col-sm-12">
           <div class="text-subtitle1 text-weight-medium q-mb-xs">
-            已安装模型
+            {{ $t('installedModelsCard.installedModels') }}
           </div>
           <div class="row q-gutter-md items-center">
             <div class="row items-center">
               <q-icon name="circle" size="8px" color="primary" class="q-mr-xs" />
-              <span class="text-caption text-grey-8">已安装 {{ installedModelsCount }} 个模型</span>
+              <span class="text-caption text-grey-8">{{ $t('installedModelsCard.installedCount', { installedModelsCount } ) }}</span>
             </div>
             <div class="row items-center">
               <q-icon name="circle" size="8px" color="green" class="q-mr-xs" />
-              <span class="text-caption text-grey-8">占用存储空间: {{ totalStorageUsed }}</span>
+              <span class="text-caption text-grey-8">{{ $t('installedModelsCard.storageUsed', { totalStorageUsed }) }}</span>
             </div>
           </div>
         </div>
@@ -21,7 +21,7 @@
         <div class="col-md-6 col-sm-12 row items-center justify-end q-gutter-sm">
           <q-input
             v-model="searchQuery"
-            placeholder="搜索模型..."
+            :placeholder="$t('installedModelsCard.searchPlaceholder')"
             dense
             outlined
             class="search-input"
@@ -32,9 +32,9 @@
             </template>
           </q-input>
           
-          <q-btn color="grey-7" outline icon="search" label="扫描模型" 
+          <q-btn color="grey-7" outline icon="search" :label="$t('installedModelsCard.scanModels')" 
                  @click="onScanModels" :loading="isScanning" />
-          <q-btn color="grey-7" outline icon="refresh" label="刷新" @click="onRefresh" />
+          <q-btn color="grey-7" outline icon="refresh" :label="$t('installedModelsCard.refresh')" @click="onRefresh" />
         </div>
       </div>
     </q-card-section>
@@ -65,13 +65,13 @@
         
         <template v-slot:body-cell-size="props">
           <q-td :props="props" class="text-center">
-            {{ props.row.size || '未知' }}
+            {{ props.row.size || $t('installedModelsCard.unknown') }}
           </q-td>
         </template>
         
         <template v-slot:body-cell-mode="props">
           <q-td :props="props" class="text-center">
-            {{ props.row.mode || '未知' }}
+            {{ props.row.mode || $t('installedModelsCard.unknown') }}
           </q-td>
         </template>
         
@@ -144,11 +144,11 @@
       <q-card>
         <q-card-section class="row items-center">
           <q-avatar icon="warning" color="negative" text-color="white" />
-          <span class="q-ml-sm">确认删除模型</span>
+          <span class="q-ml-sm">{{ $t('installedModelsCard.confirmDelete') }}</span>
         </q-card-section>
         
         <q-card-section>
-          您确定要删除模型 <strong>{{ selectedModel?.name }}</strong> 吗？此操作不可撤销。
+          {{ $t('installedModelsCard.deleteMessage', { 'selectedModel?.name': selectedModel?.name }) }}
         </q-card-section>
         
         <q-card-actions align="right">
@@ -161,7 +161,7 @@
     <q-dialog v-model="modelInfoDialog">
       <q-card style="min-width: 350px">
         <q-card-section>
-          <div class="text-h6">模型详情</div>
+          <div class="text-h6">{{ $t('installedModelsCard.modelInfo') }}</div>
         </q-card-section>
         
         <q-card-section v-if="selectedModel">

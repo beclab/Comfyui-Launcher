@@ -3,7 +3,7 @@
     <q-card flat bordered class="network-status" style="padding-left: 0px; padding-right: 0px;">
       <q-card-section style="width: 100%; margin-left: 0px; margin-right: 0px; padding-left: 0px; padding-right: 0px;">
         <div class="row justify-between items-center q-mb-sm" style="margin-left: 16px;margin-right: 16px;">
-          <div class="text-subtitle1" style="color: var(--text-important);">网络环境</div>
+          <div class="text-subtitle1" style="color: var(--text-important);">{{ $t('network.environment') }}</div>
           <q-icon :name="allAccessible ? 'wifi' : 'wifi_off'" size="sm" color="grey-7" />
         </div>
         <q-separator class="q-mb-md" style="width: 100%;" />
@@ -56,7 +56,7 @@ export default defineComponent({
           {
             name: 'Github',
             available: result.github.accessible,
-            statusText: result.github.accessible ? '可访问' : '不可访问',
+            statusText: result.github.accessible ? this.$t('network.github.accessible') : this.$t('network.github.inaccessible'),
             statusColor: result.github.accessible ? 'green' : 'red',
             textColorClass: result.github.accessible ? 'text-green' : 'text-red',
             logo: githubLogo
@@ -64,7 +64,7 @@ export default defineComponent({
           {
             name: 'PyPI',
             available: result.pip.accessible,
-            statusText: result.pip.accessible ? '可访问' : '不可访问',
+            statusText: result.pip.accessible ? this.$t('network.pypi.accessible') : this.$t('network.pypi.inaccessible'),
             statusColor: result.pip.accessible ? 'green' : 'red',
             textColorClass: result.pip.accessible ? 'text-green' : 'text-red',
             logo: pypiLogo
@@ -72,7 +72,7 @@ export default defineComponent({
           {
             name: 'HuggingFace',
             available: result.huggingface.accessible,
-            statusText: result.huggingface.accessible ? '可访问' : '不可访问',
+            statusText: result.huggingface.accessible ? this.$t('network.huggingface.accessible') : this.$t('network.huggingface.inaccessible'),
             statusColor: result.huggingface.accessible ? 'green' : 'red',
             textColorClass: result.huggingface.accessible ? 'text-green' : 'text-red',
             logo: huggingfaceLogo

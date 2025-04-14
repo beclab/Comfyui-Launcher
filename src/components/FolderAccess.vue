@@ -2,7 +2,7 @@
   <div class="q-mb-lg">
     <q-card flat bordered>
       <q-card-section class="q-pb-xs">
-        <div class="text-subtitle1">文件类</div>
+        <div class="text-subtitle1">{{ $t('folderAccess.fileType') }}</div>
       </q-card-section>
       
       <q-separator />
@@ -18,14 +18,16 @@
                     {{ folder.name }}
                   </div>
                   <div v-if="folder.used && folder.available" class="text-caption" style="color: var(--text-normal);">
-                    已安装 {{ folder.used }} 可用 {{ folder.available }}
+                    {{ $t('folderAccess.installed') }} {{ folder.used }} {{ $t('folderAccess.available') }} {{ folder.available }}
                   </div>
                 </div>
               </div>
               
               <div class="row items-center justify-between q-mt-md">
                 <div class="path-badge text-caption flex-grow-1 mr-2" style="color: var(--text-normal);">{{ folder.path }}</div>
-                <q-btn outline rounded label="打开" class="open-btn" size="sm" @click="openFolder(folder.path)" />
+                <q-btn outline rounded class="open-btn" size="sm" @click="openFolder(folder.path)" >
+                  {{ $t('folderAccess.open') }}
+                </q-btn>
               </div>
             </div>
           </div>
@@ -45,11 +47,11 @@ export default defineComponent({
   data() {
     return {
       folders: [
-        { name: '根目录', path: '/Files/External/ai/comfyui/ComfyUI', used: null, available: null },
-        { name: '插件目录', path: '/Files/External/ai/comfyui/ComfyUI/custom_nodes/', used: '128', available: '541' },
-        { name: '模型目录', path: '/Files/External/ai/model/', used: null, available: null },
-        { name: '输出目录', path: '/Files/External/ai/output/comfyui/', used: null, available: null },
-        { name: '输入目录', path: '/Files/External/ai/comfyui/ComfyUI/input/', used: null, available: null }
+        { name: this.$t('folderAccess.rootDir'), path: '/Files/External/ai/comfyui/ComfyUI', used: null, available: null },
+        { name: this.$t('folderAccess.pluginDir'), path: '/Files/External/ai/comfyui/ComfyUI/custom_nodes/', used: '128', available: '541' },
+        { name: this.$t('folderAccess.modelDir'), path: '/Files/External/ai/model/', used: null, available: null },
+        { name: this.$t('folderAccess.outputDir'), path: '/Files/External/ai/output/comfyui/', used: null, available: null },
+        { name: this.$t('folderAccess.inputDir'), path: '/Files/External/ai/comfyui/ComfyUI/input/', used: null, available: null }
       ]
     }
   },
