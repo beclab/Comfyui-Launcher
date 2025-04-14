@@ -229,5 +229,160 @@ export default {
       rowsPerPage: 'Rows per page',
       of: '{from}-{to} of {total}'
     }
+  },
+  downloadHistory: {
+    title: 'Model Download History',
+    clearHistory: 'Clear History',
+    refresh: 'Refresh',
+    loading: 'Loading history...',
+    noHistory: 'No download history',
+    columns: {
+      modelName: 'Name',
+      startTime: 'Time',
+      source: 'Source',
+      fileSize: 'Size',
+      duration: 'Duration',
+      speed: 'Average Speed',
+      status: 'Status',
+      actions: 'Actions'
+    },
+    actions: {
+      deleteRecord: 'Delete this record'
+    },
+    dialog: {
+      confirmClear: {
+        title: 'Confirm Clear',
+        message: 'Are you sure you want to clear all download history? This action cannot be undone.'
+      },
+      confirmDelete: {
+        title: 'Confirm Delete',
+        message: 'Are you sure you want to delete the download record for "{modelName}"?'
+      },
+      success: {
+        cleared: 'History cleared',
+        deleted: 'Record deleted'
+      },
+      error: {
+        clearFailed: 'Failed to clear history',
+        deleteFailed: 'Failed to delete record'
+      }
+    },
+    status: {
+      success: 'Success',
+      failed: 'Failed',
+      canceled: 'Canceled',
+      downloading: 'Downloading',
+      unknown: 'Unknown'
+    },
+    time: {
+      unknown: 'Unknown time',
+      seconds: '{count} sec',
+      minutes: '{minutes} min {seconds} sec',
+      hours: '{hours} hr {minutes} min'
+    },
+    size: {
+      unknown: 'Unknown size'
+    },
+    speed: {
+      unknown: 'Unknown speed'
+    }
+  },
+  plugins: {
+    title: 'Plugin Management',
+    tabs: {
+      pluginLibrary: 'Plugin Library',
+      operationHistory: 'Operation History'
+    },
+    actions: {
+      updateAll: 'Update All Plugins',
+      openDirectory: 'Open Plugin Directory',
+      install: 'Install',
+      uninstall: 'Uninstall',
+      enable: 'Enable',
+      disable: 'Disable',
+      showInfo: 'Details',
+      refresh: 'Refresh',
+      clearFilters: 'Clear Filters',
+      loadMore: 'Load More',
+      search: 'Search',
+      retryInstall: 'Retry Installation'
+    },
+    loadingPlugins: 'Loading plugins list...',
+    noPluginsFound: 'No matching plugins found',
+    availablePlugins: 'Available Plugins',
+    registeredPlugins: 'Available plugins registered in ComfyUI Manager',
+    searchPlaceholder: 'Search plugins...',
+    refreshTooltip: 'Refresh plugin list',
+    columns: {
+      id: 'ID',
+      name: 'Name',
+      version: 'Version',
+      status: 'Status',
+      author: 'Author',
+      description: 'Description',
+      actions: 'Actions',
+      tags: 'Tags'
+    },
+    pagination: {
+      rowsPerPage: 'Rows per page',
+      pageInfo: 'Page {currentPage} / {totalPages} ({total} plugins total)'
+    },
+    status: {
+      installed: 'Installed',
+      notInstalled: 'Not Installed',
+      disabled: 'Disabled',
+      enabled: 'Enabled',
+      all: 'All'
+    },
+    history: {
+      pluginId: 'Plugin ID',
+      operationType: 'Operation Type',
+      time: 'Time',
+      status: 'Status',
+      actions: 'Actions',
+      viewLogs: 'View Logs',
+      retry: 'Retry',
+      logs: 'Operation Logs'
+    },
+    notifications: {
+      installSuccess: 'Installed {name} successfully!',
+      installFail: 'Failed to install {name}: {message}',
+      uninstallSuccess: 'Uninstalled {name} successfully!',
+      uninstallFail: 'Failed to uninstall {name}: {message}',
+      enableSuccess: 'Enabled {name} successfully!',
+      enableFail: 'Failed to enable {name}: {message}',
+      disableSuccess: 'Disabled {name} successfully!',
+      disableFail: 'Failed to disable {name}: {message}',
+      updateAllStart: 'Checking for updates...',
+      updateAllSuccess: 'Updated {count} plugins',
+      updateAllNoPlugins: 'No installed plugins to update',
+      updateAllFail: 'Failed to update plugins, please try again later',
+      fetchFail: 'Failed to fetch plugin list, please try again later',
+      progressRequestFail: 'Progress request failed: {message}',
+      folderOpenFail: 'Failed to open plugin directory'
+    },
+    dialog: {
+      operationLogs: 'Operation Logs',
+      pluginInfo: 'Plugin Information',
+      logsFetchFail: 'Failed to fetch log details',
+      details: {
+        name: 'Name',
+        description: 'Description',
+        author: 'Author',
+        version: 'Version',
+        github: 'GitHub',
+        installed: 'Installation Status',
+        installedOn: 'Installed On',
+        status: 'Status',
+        tags: 'Tags'
+      }
+    },
+    progress: {
+      preparing: 'Preparing to install {name}...',
+      installing: 'Installing...',
+      uninstalling: 'Uninstalling {name}...',
+      enabling: 'Enabling...',
+      disabling: 'Disabling...'
+    }
   }
 };

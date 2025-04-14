@@ -1,6 +1,6 @@
 <template>
   <q-page padding>
-    <div class="text-h5 q-mb-md">模型管理</div>
+    <div class="text-h5 q-mb-md">{{ $t('modelsPage.title') }}</div>
     <q-separator class="q-mb-md" style="margin-bottom: 40px; margin-top: 30px;"/>
 
     <div class="row items-center justify-between q-mb-md">
@@ -8,8 +8,8 @@
         <TabToggle
           v-model="activeTab"
           :options="[
-            {label: '模型库', value: 'models'},
-            {label: '操作历史', value: 'history'}
+            {label: $t('modelsPage.modelLibrary'), value: 'models'},
+            {label: $t('modelsPage.operationHistory'), value: 'history'}
           ]"
         />
       </div>
@@ -18,11 +18,12 @@
         <q-btn
           color="primary"
           icon="folder_open"
-          label="打开模型目录"
+          label=""
           @click="openModelFolder"
           flat
           style="color: var(--button-text-color);"
-        />
+        >{{ $t('modelsPage.openModelDir') }}</q-btn>
+        
       </div>
     </div>
 

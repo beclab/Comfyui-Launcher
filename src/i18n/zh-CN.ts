@@ -229,5 +229,160 @@ export default {
       rowsPerPage: '每页记录数',
       of: '第{from}-{to}条，共{total}条'
     }
+  },
+  downloadHistory: {
+    title: '模型下载记录',
+    clearHistory: '清空历史记录',
+    refresh: '刷新',
+    loading: '加载历史记录...',
+    noHistory: '暂无下载历史记录',
+    columns: {
+      modelName: '名称',
+      startTime: '时间',
+      source: '来源',
+      fileSize: '大小',
+      duration: '耗时',
+      speed: '平均速度',
+      status: '状态',
+      actions: '操作'
+    },
+    actions: {
+      deleteRecord: '删除此记录'
+    },
+    dialog: {
+      confirmClear: {
+        title: '确认清空',
+        message: '确定要清空所有下载历史记录吗？此操作不可恢复。'
+      },
+      confirmDelete: {
+        title: '确认删除',
+        message: '确定要删除"{modelName}"的下载记录吗？'
+      },
+      success: {
+        cleared: '历史记录已清空',
+        deleted: '记录已删除'
+      },
+      error: {
+        clearFailed: '清空历史记录失败',
+        deleteFailed: '删除记录失败'
+      }
+    },
+    status: {
+      success: '成功',
+      failed: '失败',
+      canceled: '已取消',
+      downloading: '下载中',
+      unknown: '未知'
+    },
+    time: {
+      unknown: '未知时间',
+      seconds: '{count}秒',
+      minutes: '{minutes}分{seconds}秒',
+      hours: '{hours}小时{minutes}分'
+    },
+    size: {
+      unknown: '未知大小'
+    },
+    speed: {
+      unknown: '未知速度'
+    }
+  },
+  plugins: {
+    title: '插件管理',
+    tabs: {
+      pluginLibrary: '插件库',
+      operationHistory: '操作历史'
+    },
+    actions: {
+      updateAll: '更新全部插件',
+      openDirectory: '打开插件目录',
+      install: '安装',
+      uninstall: '卸载',
+      enable: '启用',
+      disable: '禁用',
+      showInfo: '详细信息',
+      refresh: '刷新',
+      clearFilters: '清除筛选',
+      loadMore: '加载更多',
+      search: '搜索',
+      retryInstall: '重试安装'
+    },
+    loadingPlugins: '加载插件列表...',
+    noPluginsFound: '未找到匹配的插件',
+    availablePlugins: '可用插件',
+    registeredPlugins: '来自ComfyUI Manager上注册的可用插件',
+    searchPlaceholder: '搜索插件...',
+    refreshTooltip: '刷新插件列表',
+    columns: {
+      id: 'ID',
+      name: '名称',
+      version: '版本',
+      status: '状态',
+      author: '作者',
+      description: '描述',
+      actions: '操作',
+      tags: '标签'
+    },
+    pagination: {
+      rowsPerPage: '每页显示',
+      pageInfo: '第{{currentPage}}页 / 共{{totalPages}}页 (共{{total}}个插件)'
+    },
+    status: {
+      installed: '已安装',
+      notInstalled: '未安装',
+      disabled: '已禁用',
+      enabled: '已启用',
+      all: '全部'
+    },
+    history: {
+      pluginId: '插件ID',
+      operationType: '操作类型',
+      time: '时间',
+      status: '状态',
+      actions: '操作',
+      viewLogs: '查看日志',
+      retry: '重试',
+      logs: '操作日志'
+    },
+    notifications: {
+      installSuccess: '安装 {name} 成功!',
+      installFail: '安装 {name} 失败: {message}',
+      uninstallSuccess: '卸载 {name} 成功!',
+      uninstallFail: '卸载 {name} 失败: {message}',
+      enableSuccess: '启用 {name} 成功!',
+      enableFail: '启用 {name} 失败: {message}',
+      disableSuccess: '禁用 {name} 成功!',
+      disableFail: '禁用 {name} 失败: {message}',
+      updateAllStart: '正在检查更新...',
+      updateAllSuccess: '已更新 {count} 个插件',
+      updateAllNoPlugins: '没有已安装的插件可更新',
+      updateAllFail: '更新插件失败，请稍后重试',
+      fetchFail: '获取插件列表失败，请稍后重试',
+      progressRequestFail: '进度请求失败: {message}',
+      folderOpenFail: '无法打开插件目录'
+    },
+    dialog: {
+      operationLogs: '操作日志',
+      pluginInfo: '插件信息',
+      logsFetchFail: '无法获取日志详情',
+      details: {
+        name: '名称',
+        description: '描述',
+        author: '作者',
+        version: '版本',
+        github: 'GitHub',
+        installed: '安装状态',
+        installedOn: '安装时间',
+        status: '状态',
+        tags: '标签'
+      }
+    },
+    progress: {
+      preparing: '正在准备安装 {name}...',
+      installing: '安装中...',
+      uninstalling: '正在卸载 {name}...',
+      enabling: '启用中...',
+      disabling: '禁用中...'
+    }
   }
 };

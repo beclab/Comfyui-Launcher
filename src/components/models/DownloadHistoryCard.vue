@@ -1,22 +1,22 @@
 <template>
   <q-card flat bordered class="q-mb-md">
     <q-card-section class="row items-center justify-between">
-      <div class="text-h6">模型下载记录</div>
+      <div class="text-h6">{{ $t('downloadHistory.title') }}</div>
       <div>
-        <q-btn outline color="grey-7" icon="delete_sweep" label="清空历史记录" @click="confirmClearHistory" class="q-mr-sm" />
-        <q-btn outline color="grey-7" icon="refresh" label="刷新" @click="refreshHistory" :loading="loading" />
+        <q-btn outline color="grey-7" icon="delete_sweep" :label="$t('downloadHistory.clearHistory')" @click="confirmClearHistory" class="q-mr-sm" />
+        <q-btn outline color="grey-7" icon="refresh" :label="$t('downloadHistory.refresh')" @click="refreshHistory" :loading="loading" />
       </div>
     </q-card-section>
 
     <q-card-section>
       <div v-if="loading" class="text-center q-pa-md">
         <q-spinner color="primary" size="2em" />
-        <div class="q-mt-sm">加载历史记录...</div>
+        <div class="q-mt-sm">{{ $t('downloadHistory.loading') }}</div>
       </div>
       
       <div v-else-if="!history.length" class="text-center q-pa-md text-grey">
         <q-icon name="history" size="2em" />
-        <div class="q-mt-sm">暂无下载历史记录</div>
+        <div class="q-mt-sm">{{ $t('downloadHistory.noHistory') }}</div>
       </div>
       
       <q-table
@@ -85,7 +85,7 @@
         <template v-slot:body-cell-actions="props">
           <q-td :props="props" class="q-gutter-xs">
             <q-btn flat round dense color="grey" icon="delete" @click="confirmDeleteItem(props.row)">
-              <q-tooltip>删除此记录</q-tooltip>
+              <q-tooltip>{{ $t('downloadHistory.actions.deleteRecord') }}</q-tooltip>
             </q-btn>
           </q-td>
         </template>
@@ -95,9 +95,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, watch } from 'vue';
+import { defineComponent, ref, onMounted, watch, computed } from 'vue';
 import api from '../../api';
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 
 // Define download history item type interface
 interface DownloadHistoryItem {
@@ -139,6 +140,7 @@ export default defineComponent({
   
   setup(props) {
     const $q = useQuasar();
+    const { t } = useI18n();
     const history = ref<DownloadHistoryItem[]>([]);
     const loading = ref(false);
     const selectedLanguage = ref(props.preferredLanguage);
@@ -150,12 +152,12 @@ export default defineComponent({
       descending: true
     });
     
-    // Table columns
-    const columns = [
+    // Table columns with i18n
+    const columns = computed<TableColumn[]>(() => [
       {
         name: 'modelName',
         required: true,
-        label: '名称',
+        label: t('downloadHistory.columns.modelName'),
         align: 'left',
         field: 'modelName',
         sortable: true
@@ -163,7 +165,7 @@ export default defineComponent({
       {
         name: 'startTime',
         required: true,
-        label: '时间',
+        label: t('downloadHistory.columns.startTime'),
         align: 'left',
         field: 'startTime',
         sortable: true
@@ -171,7 +173,7 @@ export default defineComponent({
       {
         name: 'source',
         required: true,
-        label: '来源',
+        label: t('downloadHistory.columns.source'),
         align: 'left',
         field: 'source',
         sortable: true
@@ -179,7 +181,7 @@ export default defineComponent({
       {
         name: 'fileSize',
         required: true,
-        label: '大小',
+        label: t('downloadHistory.columns.fileSize'),
         align: 'left',
         field: 'fileSize',
         sortable: true
@@ -187,7 +189,7 @@ export default defineComponent({
       {
         name: 'duration',
         required: true,
-        label: '耗时',
+        label: t('downloadHistory.columns.duration'),
         align: 'left',
         field: (row: DownloadHistoryItem) => row.endTime && row.startTime ? row.endTime - row.startTime : 0,
         sortable: true
@@ -195,7 +197,7 @@ export default defineComponent({
       {
         name: 'speed',
         required: true,
-        label: '平均速度',
+        label: t('downloadHistory.columns.speed'),
         align: 'left',
         field: 'speed',
         sortable: true
@@ -203,7 +205,7 @@ export default defineComponent({
       {
         name: 'status',
         required: true,
-        label: '状态',
+        label: t('downloadHistory.columns.status'),
         align: 'left',
         field: 'status',
         sortable: true
@@ -211,12 +213,12 @@ export default defineComponent({
       {
         name: 'actions',
         required: true,
-        label: '操作',
+        label: t('downloadHistory.columns.actions'),
         align: 'center',
         field: 'actions',
         sortable: false
       }
-    ] as TableColumn[];
+    ]);
     
     // Fetch download history
     const fetchHistory = async () => {
@@ -247,8 +249,8 @@ export default defineComponent({
     // Confirm clear history
     const confirmClearHistory = () => {
       $q.dialog({
-        title: '确认清空',
-        message: '确定要清空所有下载历史记录吗？此操作不可恢复。',
+        title: t('downloadHistory.dialog.confirmClear.title'),
+        message: t('downloadHistory.dialog.confirmClear.message'),
         cancel: true,
         persistent: true
       }).onOk(async () => {
@@ -258,14 +260,14 @@ export default defineComponent({
           history.value = [];
           $q.notify({
             color: 'positive',
-            message: '历史记录已清空',
+            message: t('downloadHistory.dialog.success.cleared'),
             icon: 'check_circle'
           });
         } catch (error) {
           console.error('Failed to clear history:', error);
           $q.notify({
             color: 'negative',
-            message: '清空历史记录失败',
+            message: t('downloadHistory.dialog.error.clearFailed'),
             icon: 'error'
           });
         }
@@ -275,8 +277,8 @@ export default defineComponent({
     // Confirm delete single item
     const confirmDeleteItem = (item: DownloadHistoryItem) => {
       $q.dialog({
-        title: '确认删除',
-        message: `确定要删除"${item.modelName}"的下载记录吗？`,
+        title: t('downloadHistory.dialog.confirmDelete.title'),
+        message: t('downloadHistory.dialog.confirmDelete.message', { modelName: item.modelName }),
         cancel: true,
         persistent: true
       }).onOk(async () => {
@@ -287,14 +289,14 @@ export default defineComponent({
           history.value = history.value.filter(record => record.id !== item.id);
           $q.notify({
             color: 'positive',
-            message: '记录已删除',
+            message: t('downloadHistory.dialog.success.deleted'),
             icon: 'check_circle'
           });
         } catch (error) {
           console.error('Failed to delete record:', error);
           $q.notify({
             color: 'negative',
-            message: '删除记录失败',
+            message: t('downloadHistory.dialog.error.deleteFailed'),
             icon: 'error'
           });
         }
@@ -315,24 +317,24 @@ export default defineComponent({
     // Get status text
     const getStatusText = (status: string) => {
       switch (status) {
-        case 'success': return '成功';
-        case 'failed': return '失败';
-        case 'canceled': return '已取消';
-        case 'downloading': return '下载中';
-        default: return '未知';
+        case 'success': return t('downloadHistory.status.success');
+        case 'failed': return t('downloadHistory.status.failed');
+        case 'canceled': return t('downloadHistory.status.canceled');
+        case 'downloading': return t('downloadHistory.status.downloading');
+        default: return t('downloadHistory.status.unknown');
       }
     };
     
     // Format date time
     const formatDate = (timestamp: number) => {
-      if (!timestamp) return '未知时间';
+      if (!timestamp) return t('downloadHistory.time.unknown');
       const date = new Date(timestamp);
-      return date.toLocaleString('zh-CN');
+      return date.toLocaleString();
     };
     
     // Format file size
     const formatSize = (bytes: number) => {
-      if (!bytes) return '未知大小';
+      if (!bytes) return t('downloadHistory.size.unknown');
       const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
       if (bytes === 0) return '0 B';
       const i = Math.floor(Math.log(bytes) / Math.log(1024));
@@ -341,24 +343,24 @@ export default defineComponent({
     
     // Format download speed
     const formatSpeed = (bytesPerSecond: number) => {
-      if (!bytesPerSecond) return '未知速度';
+      if (!bytesPerSecond) return t('downloadHistory.speed.unknown');
       return formatSize(bytesPerSecond) + '/s';
     };
     
     // Format duration
     const formatDuration = (ms: number) => {
-      if (!ms) return '未知时间';
+      if (!ms) return t('downloadHistory.time.unknown');
       
       const seconds = Math.floor(ms / 1000);
-      if (seconds < 60) return `${seconds}秒`;
+      if (seconds < 60) return t('downloadHistory.time.seconds', { count: seconds });
       
       const minutes = Math.floor(seconds / 60);
       const remainingSeconds = seconds % 60;
-      if (minutes < 60) return `${minutes}分${remainingSeconds}秒`;
+      if (minutes < 60) return t('downloadHistory.time.minutes', { minutes, seconds: remainingSeconds });
       
       const hours = Math.floor(minutes / 60);
       const remainingMinutes = minutes % 60;
-      return `${hours}小时${remainingMinutes}分`;
+      return t('downloadHistory.time.hours', { hours, minutes: remainingMinutes });
     };
     
     // Watch for preferredLanguage property changes
@@ -386,7 +388,8 @@ export default defineComponent({
       formatDate,
       formatSize,
       formatSpeed,
-      formatDuration
+      formatDuration,
+      t
     };
   }
 });

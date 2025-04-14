@@ -2,7 +2,7 @@
   <q-page padding>
     <!-- 顶部标题 -->
     <div>
-      <div class="text-h5 q-mb-md">插件管理</div>
+      <div class="text-h5 q-mb-md">{{ $t('plugins.title') }}</div>
     </div>
     
     <!-- 分割线 -->
@@ -15,8 +15,8 @@
         <TabToggle
           v-model="activeTab"
           :options="[
-            {label: '插件库', value: 'plugins'},
-            {label: '操作历史', value: 'history'}
+            {label: $t('plugins.tabs.pluginLibrary'), value: 'plugins'},
+            {label: $t('plugins.tabs.operationHistory'), value: 'history'}
           ]"
         />
       </div>
@@ -26,7 +26,7 @@
         <q-btn 
           icon="upgrade" 
           color="primary" 
-          label="更新全部插件" 
+          :label="$t('plugins.actions.updateAll')" 
           flat
           @click="updateAllPlugins" 
           class="q-mr-sm"
@@ -34,7 +34,7 @@
         <q-btn 
           icon="folder_open" 
           color="primary" 
-          label="打开插件目录" 
+          :label="$t('plugins.actions.openDirectory')" 
           flat
           @click="openPluginsFolder" 
         />
@@ -65,8 +65,6 @@
 
     <!-- 历史记录标签页内容 -->
     <div v-if="activeTab === 'history'">
-
-
       <!-- 历史记录表格 -->
       <operation-history-table
         :operations="operationHistory"
@@ -103,6 +101,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, watch, computed } from 'vue';
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 import api from 'src/api';
 import { QTableColumn } from 'quasar';
 import DataCenter from 'src/api/DataCenter';
@@ -125,6 +124,7 @@ const components = {
 };
 
 const $q = useQuasar();
+const { t } = useI18n();
 
 // 插件类型定义
 interface Plugin {
@@ -164,7 +164,7 @@ interface PluginOperation {
 const plugins = ref<Plugin[]>([]);
 const loading = ref(false);
 const searchQuery = ref('');
-const statusFilter = ref({ label: '全部', value: 'all' });
+const statusFilter = ref({ label: t('plugins.status.all'), value: 'all' });
 const tagFilter = ref<string[]>([]);
 const tagOptions = ref<string[]>([]);
 const selectedPlugin = ref<Plugin | null>(null);
@@ -190,7 +190,6 @@ const logsDialogVisible = ref(false);
 const selectedOperation = ref<PluginOperation | null>(null);
 const operationLogs = ref<string[]>([]);
 
-
 // 延迟加载相关状态
 const isInitialLoad = ref(true);
 const initialLoadCount = 50;
@@ -205,7 +204,7 @@ const historyColumns: QTableColumn[] = [
   {
     name: 'pluginId',
     required: true,
-    label: '插件ID',
+    label: t('plugins.history.pluginId'),
     align: 'left',
     field: (row: PluginOperation) => row.pluginName || row.pluginId,
     sortable: true
@@ -213,7 +212,7 @@ const historyColumns: QTableColumn[] = [
   {
     name: 'type',
     required: true,
-    label: '操作类型',
+    label: t('plugins.history.operationType'),
     align: 'center',
     field: 'type',
     sortable: true
@@ -221,7 +220,7 @@ const historyColumns: QTableColumn[] = [
   {
     name: 'time',
     required: true,
-    label: '时间',
+    label: t('plugins.history.time'),
     align: 'left',
     field: 'startTime',
     sortable: true
@@ -229,7 +228,7 @@ const historyColumns: QTableColumn[] = [
   {
     name: 'status',
     required: true,
-    label: '状态',
+    label: t('plugins.history.status'),
     align: 'center',
     field: 'status',
     sortable: true
@@ -237,7 +236,7 @@ const historyColumns: QTableColumn[] = [
   {
     name: 'actions',
     required: true,
-    label: '操作',
+    label: t('plugins.history.actions'),
     align: 'center',
     field: () => '',
     sortable: false
@@ -275,7 +274,6 @@ const handleSearch = (query: string) => {
   filterPlugins();
 };
 
-
 // 过滤插件
 const filterPlugins = () => {
   if (isInitialLoad.value) {
@@ -291,7 +289,7 @@ const filterPlugins = () => {
 // 清除筛选条件
 const clearFilters = () => {
   searchQuery.value = '';
-  statusFilter.value = { label: '全部', value: 'all' };
+  statusFilter.value = { label: t('plugins.status.all'), value: 'all' };
   tagFilter.value = [];
   filterPlugins();
 };
@@ -304,10 +302,10 @@ const fetchPlugins = async (forceUpdate = false) => {
     plugins.value = response;
     filterPlugins();
   } catch (error) {
-    console.error('获取插件列表失败:', error);
+    console.error('Failed to fetch plugin list:', error);
     $q.notify({
       color: 'negative',
-      message: '获取插件列表失败，请稍后重试',
+      message: t('plugins.notifications.fetchFail'),
       icon: 'error'
     });
   } finally {
@@ -324,7 +322,7 @@ const installPlugin = async (plugin: Plugin) => {
     
     installationInProgress[plugin.id] = true;
     overallProgress.value = 0;
-    installationMessage.value = `正在准备安装 ${plugin.name}...`;
+    installationMessage.value = t('plugins.progress.preparing', { name: plugin.name });
     progressVisible.value = true;
     
     const response = await api.installPlugin(plugin.id, githubProxy.value);
@@ -332,10 +330,13 @@ const installPlugin = async (plugin: Plugin) => {
     
     await pollProgress(activeTaskId.value, plugin.id, 'install');
   } catch (error) {
-    console.error('发起安装请求失败:', error);
+    console.error('Failed to start installation:', error);
     $q.notify({
       color: 'negative',
-      message: `无法开始安装 ${plugin.name}`,
+      message: t('plugins.notifications.installFail', { 
+        name: plugin.name, 
+        message: error instanceof Error ? error.message : 'Connection error' 
+      }),
       icon: 'error',
       position: 'top',
       timeout: 5000
@@ -354,7 +355,7 @@ const uninstallPlugin = async (plugin: Plugin) => {
     uninstallationInProgress[plugin.id] = true;
     
     progressVisible.value = true;
-    installationMessage.value = `正在卸载 ${plugin.name}...`;
+    installationMessage.value = t('plugins.progress.uninstalling', { name: plugin.name });
     overallProgress.value = 0;
     
     const response = await api.uninstallPlugin(plugin.id);
@@ -363,10 +364,13 @@ const uninstallPlugin = async (plugin: Plugin) => {
     await pollProgress(activeTaskId.value, plugin.id, 'uninstall');
     
   } catch (error) {
-    console.error('卸载插件失败:', error);
+    console.error('Failed to uninstall plugin:', error);
     $q.notify({
       color: 'negative',
-      message: `卸载 ${plugin.name} 失败，请稍后重试`,
+      message: t('plugins.notifications.uninstallFail', { 
+        name: plugin.name, 
+        message: error instanceof Error ? error.message : 'Connection error'
+      }),
       icon: 'error'
     });
     progressVisible.value = false;
@@ -386,7 +390,7 @@ const pollProgress = async (taskId: string, pluginId: string, type: 'install' | 
         
         installationProgress[pluginId] = progress;
         overallProgress.value = progress;
-        installationMessage.value = message || `${type === 'install' ? '安装' : '卸载'}中...`;
+        installationMessage.value = message || t(`plugins.progress.${type === 'install' ? 'installing' : 'uninstalling'}`, { name: pluginId });
         
         if (completed) {
           clearInterval(interval);
@@ -394,14 +398,14 @@ const pollProgress = async (taskId: string, pluginId: string, type: 'install' | 
           if (progress === 100) {
             $q.notify({
               color: 'positive',
-              message: `${type === 'install' ? '安装' : '卸载'} ${pluginId} 成功!`,
+              message: t(`plugins.notifications.${type}Success`, { name: pluginId }),
               icon: 'check_circle',
               position: 'top'
             });
             resolve();
           } else {
-            const errorMsg = message || `${type === 'install' ? '安装' : '卸载'} ${pluginId} 失败`;
-            console.error(`操作失败: ${errorMsg}`);
+            const errorMsg = message || t(`plugins.notifications.${type}Fail`, { name: pluginId, message: '' });
+            console.error(`Operation failed: ${errorMsg}`);
             
             errorMessage.value = errorMsg;
             errorDialogVisible.value = true;
@@ -418,12 +422,14 @@ const pollProgress = async (taskId: string, pluginId: string, type: 'install' | 
           }
         }
       } catch (error) {
-        console.error(`获取${type === 'install' ? '安装' : '卸载'}进度失败:`, error);
+        console.error(`Failed to get ${type} progress:`, error);
         clearInterval(interval);
         
         $q.notify({
           color: 'negative',
-          message: `进度请求失败: ${error instanceof Error ? error.message : '连接错误'}`,
+          message: t('plugins.notifications.progressRequestFail', { 
+            message: error instanceof Error ? error.message : 'Connection error'
+          }),
           icon: 'error',
           position: 'top',
           timeout: 5000
@@ -445,10 +451,9 @@ const togglePluginState = async (plugin: Plugin) => {
     pluginStateChanging.value[plugin.id] = true;
     
     overallProgress.value = 0;
-    installationMessage.value = `正在${plugin.disabled ? '启用' : '禁用'} ${plugin.name}...`;
-    progressVisible.value = true;
-    
     const action = plugin.disabled ? 'enable' : 'disable';
+    installationMessage.value = t(`plugins.progress.${action}ing`, { name: plugin.name });
+    progressVisible.value = true;
     
     let response;
     if (action === 'enable') {
@@ -465,10 +470,13 @@ const togglePluginState = async (plugin: Plugin) => {
     await refreshInstalledPlugins();
     
   } catch (error) {
-    console.error(`${plugin.disabled ? '启用' : '禁用'}插件失败:`, error);
+    console.error(`Failed to ${plugin.disabled ? 'enable' : 'disable'} plugin:`, error);
     $q.notify({
       color: 'negative',
-      message: `${plugin.disabled ? '启用' : '禁用'} ${plugin.name} 失败，请稍后重试`,
+      message: t(`plugins.notifications.${plugin.disabled ? 'enable' : 'disable'}Fail`, {
+        name: plugin.name,
+        message: error instanceof Error ? error.message : 'Connection error'
+      }),
       icon: 'error',
       position: 'top',
       timeout: 5000
@@ -488,7 +496,7 @@ const pollPluginStateChange = async (taskId: string, pluginId: string, action: '
         const { progress, completed, message } = response.body;
         
         overallProgress.value = progress;
-        installationMessage.value = message || `${action === 'enable' ? '启用' : '禁用'}中...`;
+        installationMessage.value = message || t(`plugins.progress.${action}ing`, { name: pluginId });
         
         if (completed) {
           clearInterval(interval);
@@ -496,14 +504,14 @@ const pollPluginStateChange = async (taskId: string, pluginId: string, action: '
           if (progress === 100) {
             $q.notify({
               color: 'positive',
-              message: `${action === 'enable' ? '启用' : '禁用'} ${pluginId} 成功!`,
+              message: t(`plugins.notifications.${action}Success`, { name: pluginId }),
               icon: 'check_circle',
               position: 'top'
             });
             resolve();
           } else {
-            const errorMsg = message || `${action === 'enable' ? '启用' : '禁用'} ${pluginId} 失败`;
-            console.error(`操作失败: ${errorMsg}`);
+            const errorMsg = message || t(`plugins.notifications.${action}Fail`, { name: pluginId, message: '' });
+            console.error(`Operation failed: ${errorMsg}`);
             
             errorMessage.value = errorMsg;
             errorDialogVisible.value = true;
@@ -520,12 +528,14 @@ const pollPluginStateChange = async (taskId: string, pluginId: string, action: '
           }
         }
       } catch (error) {
-        console.error(`获取${action === 'enable' ? '启用' : '禁用'}进度失败:`, error);
+        console.error(`Failed to get ${action} progress:`, error);
         clearInterval(interval);
         
         $q.notify({
           color: 'negative',
-          message: `进度请求失败: ${error instanceof Error ? error.message : '连接错误'}`,
+          message: t('plugins.notifications.progressRequestFail', {
+            message: error instanceof Error ? error.message : 'Connection error'
+          }),
           icon: 'error',
           position: 'top',
           timeout: 5000
@@ -566,10 +576,10 @@ const refreshInstalledPlugins = async () => {
       filterPlugins();
     }
   } catch (error) {
-    console.error('刷新插件列表失败:', error);
+    console.error('Failed to refresh plugin list:', error);
     $q.notify({
       color: 'negative',
-      message: '刷新插件列表失败',
+      message: t('plugins.notifications.fetchFail'),
       icon: 'error',
       position: 'top'
     });
@@ -582,14 +592,12 @@ const showPluginInfo = (plugin: Plugin) => {
   pluginInfoDialog.value = true;
 };
 
-
-
 // 批量功能
 const updateAllPlugins = async () => {
   try {
     $q.notify({
       color: 'primary',
-      message: '正在检查更新...',
+      message: t('plugins.notifications.updateAllStart'),
       icon: 'update'
     });
     
@@ -597,7 +605,7 @@ const updateAllPlugins = async () => {
     if (installedPlugins.length === 0) {
       $q.notify({
         color: 'warning',
-        message: '没有已安装的插件可更新',
+        message: t('plugins.notifications.updateAllNoPlugins'),
         icon: 'info'
       });
       return;
@@ -606,22 +614,18 @@ const updateAllPlugins = async () => {
     // 实际实现中应该调用批量更新API
     $q.notify({
       color: 'positive',
-      message: `已更新 ${installedPlugins.length} 个插件`,
+      message: t('plugins.notifications.updateAllSuccess', { count: installedPlugins.length }),
       icon: 'check_circle'
     });
   } catch (error) {
-    console.error('更新插件失败:', error);
+    console.error('Failed to update plugins:', error);
     $q.notify({
       color: 'negative',
-      message: '更新插件失败，请稍后重试',
+      message: t('plugins.notifications.updateAllFail'),
       icon: 'error'
     });
   }
 };
-
-
-
-
 
 // 历史记录相关功能
 const fetchHistory = async () => {
@@ -634,15 +638,15 @@ const fetchHistory = async () => {
     } else {
       $q.notify({
         color: 'negative',
-        message: '获取历史记录失败',
+        message: t('plugins.notifications.fetchFail'),
         icon: 'error'
       });
     }
   } catch (error) {
-    console.error('获取历史记录失败:', error);
+    console.error('Failed to get operation history:', error);
     $q.notify({
       color: 'negative',
-      message: '获取历史记录失败',
+      message: t('plugins.notifications.fetchFail'),
       icon: 'error'
     });
   } finally {
@@ -659,27 +663,23 @@ const showOperationLogs = async (operation: PluginOperation) => {
     if (response.body.success) {
       operationLogs.value = response.body.logs || [];
     } else {
-      operationLogs.value = ['无法获取日志详情'];
+      operationLogs.value = [t('plugins.dialog.logsFetchFail')];
       $q.notify({
         color: 'warning',
-        message: '无法获取日志详情',
+        message: t('plugins.dialog.logsFetchFail'),
         icon: 'warning'
       });
     }
   } catch (error) {
-    console.error('获取操作日志失败:', error);
-    operationLogs.value = ['获取日志详情失败'];
+    console.error('Failed to get operation logs:', error);
+    operationLogs.value = [t('plugins.dialog.logsFetchFail')];
     $q.notify({
       color: 'negative',
-      message: '获取日志详情失败',
+      message: t('plugins.dialog.logsFetchFail'),
       icon: 'error'
     });
   }
 };
-
-
-
-
 
 const retryInstallation = (operation: PluginOperation) => {
   if (operation && operation.pluginId) {
@@ -688,9 +688,9 @@ const retryInstallation = (operation: PluginOperation) => {
     const pluginToInstall: Plugin = {
       id: operation.pluginId,
       name: operation.pluginName || operation.pluginId,
-      description: '从历史记录中重试安装',
+      description: t('plugins.dialog.retryInstallation'),
       version: '0.0.0',
-      author: '未知',
+      author: t('common.unknown'),
       github: '',
       installed: false
     };
@@ -707,10 +707,6 @@ const loadMorePlugins = () => {
   );
   visiblePlugins.value = [...visiblePlugins.value, ...newPlugins];
 };
-
-//const changeHistoryLanguage = () => {
-//  fetchHistory();
-//};
 
 // 监听标签页切换，加载历史记录
 watch(activeTab, (newValue) => {
@@ -741,15 +737,15 @@ const openPluginsFolder = async () => {
     if (!response.body.success) {
       $q.notify({
         color: 'negative',
-        message: '无法打开插件目录',
+        message: t('plugins.notifications.folderOpenFail'),
         icon: 'error'
       });
     }
   } catch (error) {
-    console.error('打开插件目录失败:', error);
+    console.error('Failed to open plugin directory:', error);
     $q.notify({
       color: 'negative',
-      message: '打开插件目录失败',
+      message: t('plugins.notifications.folderOpenFail'),
       icon: 'error'
     });
   }

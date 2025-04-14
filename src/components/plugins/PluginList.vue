@@ -2,17 +2,17 @@
   <div class="plugin-list-container">
     <div v-if="loading" class="row items-center justify-center q-py-lg">
       <q-spinner color="primary" size="3em" />
-      <span class="q-ml-sm text-subtitle1">加载插件列表...</span>
+      <span class="q-ml-sm text-subtitle1">{{ $t('plugins.loadingPlugins') }}</span>
     </div>
     
     <div v-else>
       <div v-if="plugins.length === 0" class="text-center q-py-xl">
         <q-icon name="info" size="3rem" color="grey-7" />
-        <p class="text-h6 text-grey-7">未找到匹配的插件</p>
+        <p class="text-h6 text-grey-7">{{ $t('plugins.noPluginsFound') }}</p>
         <q-btn 
           color="primary" 
           outline 
-          label="清除筛选" 
+          :label="$t('plugins.actions.clearFilters')" 
           @click="onClearFilters" 
           class="q-mt-sm"
         />
@@ -23,9 +23,9 @@
         <div class="row items-center justify-between q-mb-sm">
           <!-- 左侧标题 -->
           <div class="row items-center">
-            <div class="text-h6">可用插件</div>
+            <div class="text-h6">{{ $t('plugins.availablePlugins') }}</div>
             <div class="text-caption q-ml-sm text-grey">
-              来自ComfyUI Manager上注册的可用插件
+              {{ $t('plugins.registeredPlugins') }}
             </div>
           </div>
           
@@ -35,7 +35,7 @@
               v-model="searchQuery" 
               outlined 
               dense
-              placeholder="搜索插件..." 
+              :placeholder="$t('plugins.searchPlaceholder')" 
               class="q-mr-sm"
               style="width: 200px"
               @update:model-value="onSearch"
@@ -50,7 +50,7 @@
               :options="statusOptions"
               outlined
               dense
-              label="状态"
+              :label="$t('plugins.columns.status')"
               class="q-mr-sm"
               style="width: 120px"
               @update:model-value="onFilter"
@@ -61,7 +61,7 @@
               :options="tagOptions"
               outlined
               dense
-              label="标签"
+              :label="$t('plugins.columns.tags')"
               class="q-mr-sm"
               style="width: 120px"
               @update:model-value="onFilter"
@@ -72,13 +72,13 @@
             color="grey-7"
             outline
             icon="refresh" 
-            label="刷新"
+            :label="$t('plugins.actions.refresh')"
             @click="onRefresh"
             :loading="loading"
             size="md"
             style="border-radius: var(--border-radius-md);"
             >
-              <q-tooltip>刷新插件列表</q-tooltip>
+              <q-tooltip>{{ $t('plugins.refreshTooltip') }}</q-tooltip>
             </q-btn>
           </div>
         </div>
@@ -88,13 +88,13 @@
         
         <!-- 表头 -->
         <div class="row items-center q-py-sm q-px-md text-weight-medium">
-          <div class="col-1">ID</div>
-          <div class="col-2">名称</div>
-          <div class="col-1 text-center">版本</div>
-          <div class="col-1 text-center">状态</div>
-          <div class="col-1">作者</div>
-          <div class="col-4">描述</div>
-          <div class="col-2 text-right">操作</div>
+          <div class="col-1">{{ $t('plugins.columns.id') }}</div>
+          <div class="col-2">{{ $t('plugins.columns.name') }}</div>
+          <div class="col-1 text-center">{{ $t('plugins.columns.version') }}</div>
+          <div class="col-1 text-center">{{ $t('plugins.columns.status') }}</div>
+          <div class="col-1">{{ $t('plugins.columns.author') }}</div>
+          <div class="col-4">{{ $t('plugins.columns.description') }}</div>
+          <div class="col-2 text-right">{{ $t('plugins.columns.actions') }}</div>
         </div>
         
         <!-- 表头和条目之间的分割线 -->
@@ -119,7 +119,7 @@
         
         <!-- 分页控制 -->
         <div class="row items-center justify-end q-py-sm q-mt-md">
-          <span class="q-mr-sm">每页显示:</span>
+          <span class="q-mr-sm">{{ $t('plugins.pagination.rowsPerPage') }}:</span>
           <q-select
             v-model="rowsPerPage"
             :options="[10, 20, 50]"
@@ -130,8 +130,11 @@
             style="min-width: 60px"
           />
           <span class="q-mx-md">
-            1 / {{ Math.ceil(plugins.length / rowsPerPage) }} 页
-            (共 {{ plugins.length }} 个插件)
+            {{ $t('plugins.pagination.pageInfo', { 
+              currentPage: 1, 
+              totalPages: Math.ceil(plugins.length / rowsPerPage),
+              total: plugins.length 
+            }) }}
           </span>
           <q-btn
             icon="chevron_left"

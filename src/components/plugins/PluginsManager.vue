@@ -32,8 +32,9 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts">
 import PluginList from './PluginList.vue';
+import { useI18n } from 'vue-i18n';
 
 // 插件类型定义
 interface Plugin {
@@ -59,113 +60,134 @@ interface ProgressState {
   [key: string]: boolean | number;
 }
 
-// Props
-defineProps({
-  plugins: {
-    type: Array as () => Plugin[],
-    required: true
+export default {
+  components: {
+    PluginList
   },
-  loading: {
-    type: Boolean,
-    default: false
+  props: {
+    plugins: {
+      type: Array as () => Plugin[],
+      required: true
+    },
+    loading: {
+      type: Boolean,
+      default: false
+    },
+    installationInProgress: {
+      type: Object as () => ProgressState,
+      default: () => ({})
+    },
+    uninstallationInProgress: {
+      type: Object as () => ProgressState,
+      default: () => ({})
+    },
+    stateChanging: {
+      type: Object as () => ProgressState,
+      default: () => ({})
+    },
+    installationProgress: {
+      type: Object as () => ProgressState,
+      default: () => ({})
+    },
+    visiblePlugins: {
+      type: Array as () => Plugin[],
+      required: true
+    },
+    hasMorePlugins: {
+      type: Boolean,
+      default: false
+    },
+    // statusOptions: {
+    //   type: Array,
+    //   default: () => []
+    // },
+    tagOptions: {
+      type: Array,
+      default: () => []
+    },
+    searchQuery: {
+      type: String,
+      default: ''
+    },
+    // statusFilter: {
+    //   type: Object,
+    //   default: () => ({})
+    // },
+    tagFilter: {
+      type: Array,
+      default: () => []
+    }
   },
-  installationInProgress: {
-    type: Object as () => ProgressState,
-    default: () => ({})
-  },
-  uninstallationInProgress: {
-    type: Object as () => ProgressState,
-    default: () => ({})
-  },
-  stateChanging: {
-    type: Object as () => ProgressState,
-    default: () => ({})
-  },
-  installationProgress: {
-    type: Object as () => ProgressState,
-    default: () => ({})
-  },
-  visiblePlugins: {
-    type: Array as () => Plugin[],
-    required: true
-  },
-  hasMorePlugins: {
-    type: Boolean,
-    default: false
-  },
-  statusOptions: {
-    type: Array,
-    default: () => [
-      { label: '全部', value: 'all' },
-      { label: '已安装', value: 'installed' },
-      { label: '未安装', value: 'not-installed' }
-    ]
-  },
-  tagOptions: {
-    type: Array,
-    default: () => []
-  },
-  searchQuery: {
-    type: String,
-    default: ''
-  },
-  statusFilter: {
-    type: Object,
-    default: () => ({ label: '全部', value: 'all' })
-  },
-  tagFilter: {
-    type: Array,
-    default: () => []
+  emits: [
+    'install', 
+    'uninstall', 
+    'toggle-state', 
+    'show-info', 
+    'clear-filters', 
+    'load-more',
+    'search',
+    'filter',
+    'refresh'
+  ],
+  setup(props, { emit }) {
+    const { t } = useI18n();
+    const statusOptions = [
+      { label: t('plugins.status.all'), value: 'all' },
+      { label: t('plugins.status.installed'), value: 'installed' },
+      { label: t('plugins.status.notInstalled'), value: 'not-installed' }
+    ];
+    const statusFilter = { label: t('plugins.status.all'), value: 'all' };
+
+    // 方法转发
+    const onInstall = (plugin: Plugin): void => {
+      emit('install', plugin);
+    };
+
+    const onUninstall = (plugin: Plugin): void => {
+      emit('uninstall', plugin);
+    };
+
+    const onToggleState = (plugin: Plugin): void => {
+      emit('toggle-state', plugin);
+    };
+
+    const onShowInfo = (plugin: Plugin): void => {
+      emit('show-info', plugin);
+    };
+
+    const onClearFilters = (): void => {
+      emit('clear-filters');
+    };
+
+    const onLoadMore = (): void => {
+      emit('load-more');
+    };
+
+    const onSearch = (query: string): void => {
+      emit('search', query);
+    };
+
+    const onFilter = (filters: { statusFilter: { label: string; value: string }; tagFilter: string[] }): void => {
+      emit('filter', filters);
+    };
+
+    const onRefresh = (): void => {
+      emit('refresh');
+    };
+
+    return {
+      onInstall,
+      onUninstall,
+      onToggleState,
+      onShowInfo,
+      onClearFilters,
+      onLoadMore,
+      onSearch,
+      onFilter,
+      onRefresh,
+      statusOptions,
+      statusFilter
+    };
   }
-});
-
-// Emits
-const emit = defineEmits([
-  'install', 
-  'uninstall', 
-  'toggle-state', 
-  'show-info', 
-  'clear-filters', 
-  'load-more',
-  'search',
-  'filter',
-  'refresh'
-]);
-
-// 方法转发
-const onInstall = (plugin: Plugin): void => {
-  emit('install', plugin);
 };
-
-const onUninstall = (plugin: Plugin): void => {
-  emit('uninstall', plugin);
-};
-
-const onToggleState = (plugin: Plugin): void => {
-  emit('toggle-state', plugin);
-};
-
-const onShowInfo = (plugin: Plugin): void => {
-  emit('show-info', plugin);
-};
-
-const onClearFilters = (): void => {
-  emit('clear-filters');
-};
-
-const onLoadMore = (): void => {
-  emit('load-more');
-};
-
-const onSearch = (query: string): void => {
-  emit('search', query);
-};
-
-const onFilter = (filters: { statusFilter: { label: string; value: string }; tagFilter: string[] }): void => {
-  emit('filter', filters);
-};
-
-const onRefresh = (): void => {
-  emit('refresh');
-};
-</script> 
+</script>
