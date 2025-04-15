@@ -81,7 +81,77 @@ export default {
     packageName: '包名',
     version: '版本',
     status: '状态',
-    action: '操作'
+    action: '操作',
+    environmentManagement: '环境管理',
+    tabs: {
+      dependencies: 'Python依赖库',
+      analysis: '依赖分析'
+    },
+    errors: {
+      installationError: '安装错误',
+      serverErrorCauses: '服务器内部错误可能是由以下原因导致：',
+      envConfigProblem: 'Python环境配置问题 - 可能是虚拟环境或系统环境配置有误',
+      permissionProblem: '权限问题 - 当前用户可能没有安装包的权限',
+      networkProblem: '网络问题 - 无法连接到PyPI源',
+      dependencyConflict: '依赖冲突 - 可能与已安装的其他包存在版本冲突',
+      installTips: '如需安装Python包：',
+      useVirtualEnv: '使用虚拟环境',
+      useUserInstall: '使用用户级安装'
+    },
+    installedPackages: {
+      title: '已安装Python库',
+      subtitle: '本地Python环境已安装的Python库',
+      search: '搜索Python库',
+      install: '安装新库',
+      refresh: '刷新',
+      tableCols: {
+        name: '库名称',
+        version: '版本',
+        actions: '操作'
+      },
+      pagination: {
+        rowsPerPage: '每页记录数',
+        range: '第{start}-{end}条，共{total}条'
+      },
+      dialog: {
+        install: {
+          title: '安装新库',
+          packageName: '库名称',
+          version: '版本 (可选)',
+          versionHint: '例如: ==1.0.0, >=2.0.0, 留空安装最新版本',
+          cancel: '取消',
+          confirmInstall: '安装'
+        },
+        uninstall: {
+          title: '确认卸载',
+          message: '确定要卸载 {name} 吗？这可能会影响依赖该库的插件。',
+          cancel: '取消',
+          confirmUninstall: '卸载'
+        }
+      },
+      notifications: {
+        loadFailed: '加载已安装库失败: {message}',
+        installSuccess: '{name} 安装成功',
+        installFailed: '安装失败: {message}',
+        uninstallSuccess: '{name} 已卸载',
+        uninstallFailed: '卸载失败: {message}',
+        upgradeSuccess: '{name} 已升级',
+        upgradeFailed: '升级失败: {message}'
+      }
+    },
+    pluginDependencies: {
+      title: '插件依赖分析',
+      subtitle: '自动分析已安装插件依赖的Python库是否安装正确',
+      analyze: '立即分析',
+      pluginsColumn: '插件',
+      dependenciesColumn: '依赖库列表',
+      fixAll: '一键修复',
+      versionRequired: '版本要求:',
+      install: '安装',
+      installed: '已安装',
+      analyzing: '正在分析依赖...',
+      noDependenciesFound: '没有找到依赖库'
+    }
   },
   comfyuiStatus: {
     title: 'ComfyUI',
@@ -335,14 +405,28 @@ export default {
       all: '全部'
     },
     history: {
+      title: '操作历史',
+      clearHistory: '清除历史',
+      refresh: '刷新',
       pluginId: '插件ID',
       operationType: '操作类型',
+      startTime: '开始时间',
+      endTime: '结束时间',
+      duration: '耗时',
       time: '时间',
       status: '状态',
       actions: '操作',
       viewLogs: '查看日志',
+      deleteRecord: '删除记录',
       retry: '重试',
-      logs: '操作日志'
+      logs: '操作日志',
+      noHistory: '暂无操作历史记录',
+      running: '进行中',
+      success: '成功',
+      failed: '失败',
+      milliseconds: '毫秒',
+      seconds: '{count}秒',
+      minutes: '{minutes}分{seconds}秒'
     },
     notifications: {
       installSuccess: '安装 {name} 成功!',
@@ -383,6 +467,44 @@ export default {
       uninstalling: '正在卸载 {name}...',
       enabling: '启用中...',
       disabling: '禁用中...'
+    },
+    operations: {
+      install: '安装',
+      uninstall: '卸载',
+      disable: '禁用',
+      enable: '启用',
+      unknown: '未知'
+    },
+    pluginStatus: {
+      unknown: '未知'
+    }
+  },
+  discovery: {
+    title: '探索发现',
+    inspireFrom: '在Civitai.com上发现更多灵感',
+    tabs: {
+      latestModels: '最新模型',
+      hotModels: '最火模型',
+      latestWorkflows: '最新工作流',
+      hotWorkflows: '最火工作流'
+    },
+    loading: '加载中',
+    loadMore: '上拉加载更多',
+    noMoreData: '没有更多数据了',
+    retry: '重试',
+    invalidData: '返回数据格式不正确',
+    tryingDirectAccess: '正在尝试直接访问Civitai...',
+    switchedToDirectMode: '已切换到直接访问Civitai模式',
+    fetchError: '获取模型列表失败，请检查网络连接后重试',
+    viewingModel: '查看模型 ID: {modelId}',
+    noVersionsAvailable: '没有可用的模型版本',
+    startDownloading: '开始下载模型: {model}',
+    unknownDate: '未知日期',
+    invalidDate: '日期格式错误',
+    noDescription: '暂无描述',
+    unknownAuthor: '未知作者',
+    pagination: {
+      page: '页码: {current}/{total}'
     }
   }
 };

@@ -19,7 +19,7 @@
               <q-img 
                 :src="getWorkflowImage(item)" 
                 :style="{ aspectRatio: item.ratio || '16/9' }"
-                :placeholder-src="'https://placehold.co/300x300?text=加载中'"
+                :placeholder-src="'https://placehold.co/300x300?text=' + $t('discovery.loading')"
               >
                 <template v-slot:error>
                   <div class="absolute-full flex flex-center bg-grey-3 text-grey-8">
@@ -77,13 +77,13 @@
         <q-spinner v-if="loadingMore" color="primary" size="2em" />
         <div v-else-if="loadingError && retryCount >= MAX_RETRIES" class="text-negative">
           <q-icon name="error" />
-          <span class="q-ml-xs">加载失败</span>
-          <q-btn flat dense color="primary" class="q-ml-sm" label="重试" @click="retryLoadMore" />
+          <span class="q-ml-xs">{{ $t('discovery.fetchError') }}</span>
+          <q-btn flat dense color="primary" class="q-ml-sm" :label="$t('discovery.retry')" @click="retryLoadMore" />
         </div>
         <div v-else-if="hasMore" class="text-grey-7">
-          <q-icon name="arrow_upward" /> 上拉加载更多（页码: {{currentPage}}/{{totalPages}}）
+          <q-icon name="arrow_upward" /> {{ $t('discovery.pagination.page', { current: currentPage, total: totalPages }) }}
         </div>
-        <div v-else class="text-grey-7">没有更多数据了</div>
+        <div v-else class="text-grey-7">{{ $t('discovery.noMoreData') }}</div>
       </div>
     </div>
     
@@ -91,7 +91,7 @@
     <div v-if="errorMessage" class="text-center q-mt-lg text-negative">
       <q-icon name="error" size="2rem" />
       <p>{{ errorMessage }}</p>
-      <q-btn color="primary" label="重试" @click="resetAndRetry" />
+      <q-btn color="primary" :label="$t('discovery.retry')" @click="resetAndRetry" />
     </div>
   </div>
 </template>
@@ -101,6 +101,7 @@ import { defineComponent, ref, onMounted, onUnmounted, nextTick } from 'vue';
 import MasonryWall from '@yeger/vue-masonry-wall';
 import { civitaiApi } from '../../api';
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 
 // 定义Civitai模型接口
 interface CivitaiImage {
@@ -165,6 +166,7 @@ export default defineComponent({
   },
   setup() {
     const $q = useQuasar();
+    const { t } = useI18n();
     const items = ref<CivitaiModel[]>([]);
     const loading = ref(true);
     const errorMessage = ref('');
@@ -207,7 +209,7 @@ export default defineComponent({
     // 直接从Civitai API获取热门工作流数据
     const fetchDirectlyFromCivitai = async (page: number, limit: number) => {
       try {
-        console.log('正在直接从Civitai API获取热门工作流数据...');
+        console.log('Fetching hot workflows directly from Civitai API...');
         
         // Civitai API基础URL
         const CIVITAI_API_URL = 'https://civitai.com/api/v1';
@@ -226,12 +228,12 @@ export default defineComponent({
         const response = await fetch(`${CIVITAI_API_URL}/models?${params.toString()}`);
         
         if (!response.ok) {
-          throw new Error(`API请求失败: ${response.status}`);
+          throw new Error(`API request failed: ${response.status}`);
         }
         
         return await response.json();
       } catch (error) {
-        console.error('直接从Civitai获取热门工作流数据失败:', error);
+        console.error('Failed to fetch hot workflows directly from Civitai:', error);
         throw error;
       }
     };
@@ -239,18 +241,18 @@ export default defineComponent({
     // 使用直接URL从Civitai获取数据
     const fetchDirectlyWithUrl = async (url: string) => {
       try {
-        console.log('正在使用完整URL直接从Civitai获取数据:', url);
+        console.log('Fetching data directly with URL from Civitai:', url);
         
         // 发起直接请求
         const response = await fetch(url);
         
         if (!response.ok) {
-          throw new Error(`API请求失败: ${response.status}`);
+          throw new Error(`API request failed: ${response.status}`);
         }
         
         return await response.json();
       } catch (error) {
-        console.error('使用URL直接从Civitai获取数据失败:', error);
+        console.error('Failed to fetch data directly with URL from Civitai:', error);
         throw error;
       }
     };
@@ -286,7 +288,7 @@ export default defineComponent({
           // 获取并记录这个卡片的ID
           if (lastVisibleCard) {
             lastVisibleItemId.value = lastVisibleCard.getAttribute('data-id');
-            console.log('记录最后可见项目ID:', lastVisibleItemId.value);
+            console.log('Recording last visible item ID:', lastVisibleItemId.value);
           }
         }
       }
@@ -298,7 +300,7 @@ export default defineComponent({
       // 如果传入的是字符串URL，直接使用
       if (typeof pageOrEvent === 'string' && pageOrEvent.startsWith('http')) {
         directUrl = pageOrEvent;
-        console.log('使用直接URL加载:', directUrl);
+        console.log('Loading with direct URL:', directUrl);
       } 
       // 如果是数字，用作页码
       else if (typeof pageOrEvent === 'number') {
@@ -327,7 +329,7 @@ export default defineComponent({
           }
         } else {
           // 默认通过后端代理
-          console.log('通过后端加载热门工作流，参数:', directUrl || `第${page}页`);
+          console.log('Loading hot workflows via backend, params:', directUrl || `Page ${page}`);
           
           // 根据是否有直接URL决定调用方式
           response = directUrl 
@@ -335,7 +337,7 @@ export default defineComponent({
             : await civitaiApi.getHotWorkflows(page, itemsPerPage) as CivitaiApiResponse;
         }
         
-        console.log('热门工作流加载结果:', response);
+        console.log('Hot workflows loading result:', response);
         loadingError.value = false; // 加载成功，重置错误状态
         retryCount.value = 0; // 重置重试计数
         
@@ -398,20 +400,20 @@ export default defineComponent({
             });
           }
         } else {
-          console.warn('API响应中缺少items数组');
+          console.warn('API response missing items array');
           if (!isLoadingMore) {
             items.value = [];
           }
           hasMore.value = false;
         }
       } catch (error) {
-        console.error('获取热门工作流失败:', error);
+        console.error('Failed to fetch hot workflows:', error);
         loadingError.value = true;
         retryCount.value++;
         
         // 如果不是通过直接访问且重试次数未超过最大值
         if (!isUsingDirectCivitai.value && retryCount.value <= MAX_RETRIES) {
-          console.log(`第${retryCount.value}次重试，尝试直接访问Civitai`);
+          console.log(`Retry ${retryCount.value}, attempting direct Civitai access`);
           
           // 尝试通过直接访问获取数据
           try {
@@ -477,7 +479,7 @@ export default defineComponent({
               
               // 通知用户
               $q.notify({
-                message: '已切换到直接访问Civitai模式',
+                message: t('discovery.switchedToDirectMode'),
                 color: 'positive',
                 timeout: 3000
               });
@@ -496,10 +498,10 @@ export default defineComponent({
               }
             }
           } catch (directError) {
-            console.error('直接访问Civitai也失败:', directError);
+            console.error('Direct Civitai access also failed:', directError);
             
             if (!isLoadingMore) {
-              errorMessage.value = '获取工作流列表失败，请检查网络连接后重试';
+              errorMessage.value = t('discovery.fetchError');
             }
             
             // 重置回代理模式
@@ -508,10 +510,10 @@ export default defineComponent({
         } else {
           // 如果已经是直接访问模式下失败，或者重试次数已达上限
           if (!isLoadingMore) {
-            errorMessage.value = '获取工作流列表失败，请检查网络连接后重试';
+            errorMessage.value = t('discovery.fetchError');
           }
           
-          console.log(`重试失败，当前重试次数:${retryCount.value}，最大重试次数:${MAX_RETRIES}`);
+          console.log(`Retry failed, current retry count: ${retryCount.value}, max retries: ${MAX_RETRIES}`);
         }
       } finally {
         if (isLoadingMore) {
@@ -549,7 +551,7 @@ export default defineComponent({
         if (loadMoreTrigger.value && observer) {
           observer.observe(loadMoreTrigger.value);
         } else {
-          console.log('未找到加载更多触发器元素');
+          console.log('Load more trigger element not found');
         }
       });
     };
@@ -576,7 +578,7 @@ export default defineComponent({
     const downloadModel = (model: CivitaiModel) => {
       if (!model.modelVersions || model.modelVersions.length === 0) {
         $q.notify({
-          message: '没有可用的模型版本',
+          message: t('discovery.noVersionsAvailable'),
           color: 'negative'
         });
         return;
@@ -587,14 +589,14 @@ export default defineComponent({
       window.open(downloadUrl, '_blank');
       
       $q.notify({
-        message: `开始下载工作流: ${model.name}`,
+        message: t('discovery.startDownloading', { model: model.name }),
         color: 'positive'
       });
     };
     
     // 展示信息的辅助函数
     const getAuthor = (model: CivitaiModel): string => {
-      return model.creator?.username || '未知作者';
+      return model.creator?.username || t('discovery.unknownAuthor');
     };
     
     const formatNumber = (num: number): string => {
@@ -653,13 +655,13 @@ export default defineComponent({
       
       // 重置错误状态，允许重试
       if (loadingError.value && retryCount.value < MAX_RETRIES) {
-        console.log(`重试加载数据，第${retryCount.value}次重试`);
+        console.log(`Retrying to load data, attempt ${retryCount.value}`);
         loadingError.value = false; // 重试前重置错误状态
       }
       
       if (nextPageUrl.value) {
         // 如果有nextPage URL，使用它
-        console.log('使用nextPage URL加载更多:', nextPageUrl.value);
+        console.log('Loading more using nextPage URL:', nextPageUrl.value);
         loadingMore.value = true;
         loadModels(nextPageUrl.value);
       } else {
@@ -686,7 +688,7 @@ export default defineComponent({
       if (!scrollContainer.value) return;
       
       isRestoringScroll = true;
-      console.log('尝试恢复滚动位置:', scrollPosition);
+      console.log('Attempting to restore scroll position:', scrollPosition);
       
       // 首先立即设置滚动位置
       if (scrollContainer.value) {
@@ -700,7 +702,7 @@ export default defineComponent({
           if (lastVisibleElement) {
             // 使用行为平滑滚动到元素
             lastVisibleElement.scrollIntoView({ block: 'center', behavior: 'auto' });
-            console.log('滚动到元素:', lastVisibleItemId.value);
+            console.log('Scrolled to element:', lastVisibleItemId.value);
           }
         }
       };
@@ -749,12 +751,12 @@ export default defineComponent({
       }
       
       // 最后使用默认图片
-      return 'https://placehold.co/600x400?text=工作流';
+      return 'https://placehold.co/600x400?text=' + t('discovery.loading');
     };
     
     onMounted(() => {
       loadModels();
-      console.log('热门工作流组件挂载完成');
+      console.log('Hot workflows component mounted');
       
       // 添加滚动事件监听器
       if (scrollContainer.value) {
@@ -767,7 +769,7 @@ export default defineComponent({
       // 初始化后使用nextTick确保DOM已更新
       nextTick(() => {
         setupIntersectionObserver();
-        console.log('已设置观察器，触发元素存在:', !!loadMoreTrigger.value);
+        console.log('Observer setup, trigger element exists:', !!loadMoreTrigger.value);
       });
     });
     
@@ -813,7 +815,8 @@ export default defineComponent({
       MAX_RETRIES,
       retryLoadMore,
       resetAndRetry,
-      restoreScrollPosition
+      restoreScrollPosition,
+      $t: t
     };
   }
 });

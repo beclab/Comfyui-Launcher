@@ -5,13 +5,13 @@
         
       <div class="row items-center justify-between" style="margin-left: 16px; margin-right: 16px;">
         <div>
-          <div class="text-h6">插件依赖分析</div>
-          <div class="text-caption">自动分析已安装插件依赖的Python库是否安装正确</div>
+          <div class="text-h6">{{ $t('python.pluginDependencies.title') }}</div>
+          <div class="text-caption">{{ $t('python.pluginDependencies.subtitle') }}</div>
         </div>
 
         
         <div class="row items-center justify-end q-mt-md">
-          <q-btn color="grey-7" style="border-radius: var(--border-radius-md);" outline icon="refresh" label="立即分析" @click="analyzePluginDependencies" :loading="analyzingDeps" />
+          <q-btn color="grey-7" style="border-radius: var(--border-radius-md);" outline icon="refresh" :label="$t('python.pluginDependencies.analyze')" @click="analyzePluginDependencies" :loading="analyzingDeps" />
         </div>
       </div>
 
@@ -21,7 +21,7 @@
       
       <div class="row q-mt-md" style="margin-top: 0px; margin-bottom: 0px;">
         <div class="col-3" style="position: relative;">
-          <div class="text-subtitle1" style="margin-left: 16px; margin-top: 22px; margin-bottom: 16px;">插件</div>
+          <div class="text-subtitle1" style="margin-left: 16px; margin-top: 22px; margin-bottom: 16px;">{{ $t('python.pluginDependencies.pluginsColumn') }}</div>
           <div class="plugin-list-container" style="height: 400px; overflow-y: auto;">
             <q-list class="rounded-borders">
               <q-item
@@ -48,8 +48,8 @@
         
         <div class="col-9 q-pl-md" style="padding-left: 0px;">
           <div class="row items-center justify-between" style="padding-top: 16px;">
-            <div class="text-subtitle1" style="margin-left: 16px;">依赖库列表</div>
-            <q-btn color="grey-7" style="margin-right: 16px; border-radius: var(--border-radius-md);" outline icon="build" label="一键修复" @click="installAllMissingDependencies" :loading="installingAll" />
+            <div class="text-subtitle1" style="margin-left: 16px;">{{ $t('python.pluginDependencies.dependenciesColumn') }}</div>
+            <q-btn color="grey-7" style="margin-right: 16px; border-radius: var(--border-radius-md);" outline icon="build" :label="$t('python.pluginDependencies.fixAll')" @click="installAllMissingDependencies" :loading="installingAll" />
           </div>
           
           <div class="dependency-list-container" style="height: 400px; overflow-y: auto;">
@@ -66,28 +66,28 @@
                 <q-item-section>
                   <q-item-label>{{ dep.name }}</q-item-label>
                   <q-item-label caption v-if="dep.version">
-                    版本要求: {{ dep.version }}
+                    {{ $t('python.pluginDependencies.versionRequired') }} {{ dep.version }}
                   </q-item-label>
                 </q-item-section>
                 
                 <q-item-section side v-if="dep.missing">
                   <q-btn 
                     color="primary" 
-                    label="安装" 
+                    :label="$t('python.pluginDependencies.install')" 
                     size="sm" 
                     @click="installMissingDependency(null, dep.name, dep.version)"
                     :loading="installingDep[dep.name]"
                   />
                 </q-item-section>
                 <q-item-section side v-else>
-                  <q-badge color="positive" label="已安装" />
+                  <q-badge color="positive" :label="$t('python.pluginDependencies.installed')" />
                 </q-item-section>
               </q-item>
             </q-list>
             
             <div v-if="filteredDependenciesByPlugin.length === 0" class="q-pa-md text-center">
               <q-icon name="info" size="2rem" color="grey-7" />
-              <p class="text-grey-7 q-mt-sm">{{ analyzingDeps ? '正在分析依赖...' : '没有找到依赖库' }}</p>
+              <p class="text-grey-7 q-mt-sm">{{ analyzingDeps ? $t('python.pluginDependencies.analyzing') : $t('python.pluginDependencies.noDependenciesFound') }}</p>
             </div>
           </div>
         </div>
@@ -109,16 +109,16 @@ export default defineComponent({
   setup(props, { emit }) {
     const $q = useQuasar();
     
-    // 插件依赖分析相关
+    // Plugin dependencies analysis related
     const pluginDependencies = ref([]);
     const analyzingDeps = ref(false);
     const selectedPlugin = ref(null);
     const installingAll = ref(false);
     
-    // 安装单个依赖相关
+    // Installing single dependency related
     const installingDep = reactive({});
     
-    // 获取插件列表
+    // Get plugin list
     const pluginList = computed(() => {
       return pluginDependencies.value.map(plugin => ({
         name: plugin.plugin,
@@ -126,14 +126,14 @@ export default defineComponent({
       }));
     });
     
-    // 检查插件是否有缺失的依赖
+    // Check if plugin has missing dependencies
     const hasPluginMissingDeps = (pluginName) => {
       const plugin = pluginDependencies.value.find(p => p.plugin === pluginName);
       if (!plugin) return false;
       return plugin.dependencies.some(dep => dep.missing);
     };
     
-    // 根据选中的插件过滤依赖
+    // Filter dependencies by selected plugin
     const filteredDependenciesByPlugin = computed(() => {
       if (!selectedPlugin.value) {
         return [];
@@ -145,12 +145,12 @@ export default defineComponent({
       return plugin.dependencies;
     });
     
-    // 分析插件依赖
+    // Analyze plugin dependencies
     const analyzePluginDependencies = async () => {
       analyzingDeps.value = true;
       try {
         pluginDependencies.value = await apiAnalyzeDeps();
-        // 如果没有选中插件或选中的插件不在列表中，则选择第一个
+        // If no plugin is selected or the selected plugin is not in the list, select the first one
         if (!selectedPlugin.value || !pluginDependencies.value.some(p => p.plugin === selectedPlugin.value)) {
           selectedPlugin.value = pluginDependencies.value.length > 0 ? pluginDependencies.value[0].plugin : null;
         }
@@ -165,7 +165,7 @@ export default defineComponent({
       }
     };
     
-    // 安装单个依赖
+    // Install single dependency
     const installMissingDependency = async (pluginName, depName, depVersion) => {
       installingDep[depName] = true;
       
@@ -179,42 +179,42 @@ export default defineComponent({
           icon: 'check'
         });
         
-        // 重新加载依赖分析
+        // Reload dependency analysis
         await analyzePluginDependencies();
       } catch (error) {
-        // 增强错误处理，优先获取error字段
+        // Enhanced error handling, prioritize error field
         let errorMsg = '';
         if (error.response) {
-          // 有响应但状态码不是2xx
+          // Response but status code is not 2xx
           if (error.response.status === 500) {
             errorMsg = `安装依赖库 ${depName} 失败：服务器内部错误。\n\n${error.response?.body?.error || error.response?.data?.message || '服务器未提供详细错误信息。'}`;
           } else {
             errorMsg = error.response?.body?.error || error.response?.data?.message || `请求错误 (${error.response.status})`;
           }
         } else if (error.request) {
-          // 请求已发送但未收到响应
+          // Request sent but no response received
           errorMsg = '未收到服务器响应，请检查网络连接或服务器状态。';
         } else {
-          // 其他错误
+          // Other errors
           errorMsg = error.message || '未知错误';
         }
         
-        // 发送错误到父组件
+        // Send error to parent component
         emit('error', errorMsg);
         
-        // 添加控制台日志以便调试
+        // Add console log for debugging
         console.error('Install dependency error details:', error.response?.data);
       } finally {
         installingDep[depName] = false;
       }
     };
     
-    // 安装所有缺失的依赖
+    // Install all missing dependencies
     const installAllMissingDependencies = async () => {
       installingAll.value = true;
       
       try {
-        // 获取所有缺失的依赖
+        // Get all missing dependencies
         const missingDeps = [];
         pluginDependencies.value.forEach(plugin => {
           plugin.dependencies.forEach(dep => {
@@ -233,7 +233,7 @@ export default defineComponent({
           return;
         }
         
-        // 逐个安装缺失的依赖
+        // Install missing dependencies one by one
         for (const dep of missingDeps) {
           await installMissingDependency(null, dep.name, dep.version);
         }
@@ -259,7 +259,7 @@ export default defineComponent({
     });
     
     return {
-      // 插件依赖分析相关
+      // Plugin dependencies analysis related
       pluginDependencies,
       analyzingDeps,
       analyzePluginDependencies,
@@ -268,7 +268,7 @@ export default defineComponent({
       filteredDependenciesByPlugin,
       hasPluginMissingDeps,
       
-      // 安装依赖相关
+      // Install dependencies related
       installingDep,
       installMissingDependency,
       installingAll,

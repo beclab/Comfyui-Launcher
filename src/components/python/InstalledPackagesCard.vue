@@ -5,15 +5,15 @@
       style="margin:16px;"
       >
         <div>
-          <div class="text-h6">已安装Python库</div>
-          <div class="text-caption">本地Python环境已安装的Python库</div>
+          <div class="text-h6">{{ $t('python.installedPackages.title') }}</div>
+          <div class="text-caption">{{ $t('python.installedPackages.subtitle') }}</div>
         </div>
         <div class="row items-center">
           <q-input 
             v-model="searchPackage" 
             outlined 
             dense 
-            placeholder="搜索Python库" 
+            :placeholder="$t('python.installedPackages.search')" 
             class="col-grow" 
             style="max-width: 300px; margin-left: auto;" 
           >
@@ -23,7 +23,7 @@
           </q-input>
           <q-btn 
             flat
-            label="安装新库" 
+            :label="$t('python.installedPackages.install')" 
             icon="add" 
             class="q-ml-sm" 
             @click="showInstallDialog = true" 
@@ -32,7 +32,7 @@
           <q-btn 
             flat 
             icon="refresh" 
-            label="刷新"
+            :label="$t('python.installedPackages.refresh')"
             class="q-ml-sm" 
             @click="loadInstalledPackages" 
             :loading="loading" 
@@ -64,7 +64,7 @@
         <template v-slot:bottom="scope">
           <div class="row items-center justify-end full-width">
             <div class="col-auto">
-              Records per page: 
+              {{ $t('python.installedPackages.pagination.rowsPerPage') }}: 
               <q-select 
                 v-model="scope.pagination.rowsPerPage" 
                 :options="[10, 20, 50]" 
@@ -76,7 +76,7 @@
               />
             </div>
             <div class="q-px-md">
-              {{ scope.pagination.rowsStart }}-{{ scope.pagination.rowsEnd }} of {{ scope.pagination.rowsNumber }}
+              {{ $t('python.installedPackages.pagination.range', { start: scope.pagination.rowsStart, end: scope.pagination.rowsEnd, total: scope.pagination.rowsNumber }) }}
             </div>
             <q-btn 
               icon="chevron_left" 
@@ -105,18 +105,18 @@
   <!-- 安装库对话框 -->
   <q-dialog v-model="showInstallDialog">
     <q-card style="min-width: 400px">
-      <q-card-section >
-        <div class="text-h6">安装新库</div>
+      <q-card-section>
+        <div class="text-h6">{{ $t('python.installedPackages.dialog.install.title') }}</div>
       </q-card-section>
       
-      <q-card-section >
-        <q-input v-model="packageToInstall" label="库名称" outlined autofocus />
-        <q-input v-model="packageVersion" label="版本 (可选)" outlined class="q-mt-sm" hint="例如: ==1.0.0, >=2.0.0, 留空安装最新版本" />
+      <q-card-section>
+        <q-input v-model="packageToInstall" :label="$t('python.installedPackages.dialog.install.packageName')" outlined autofocus />
+        <q-input v-model="packageVersion" :label="$t('python.installedPackages.dialog.install.version')" outlined class="q-mt-sm" :hint="$t('python.installedPackages.dialog.install.versionHint')" />
       </q-card-section>
       
       <q-card-actions align="right" style="margin-right: 8px; margin-bottom: 8px;">
-        <q-btn outline style="border-radius: var(--border-radius-md);" label="取消" color="grey-7" v-close-popup />
-        <q-btn label="安装" color="primary" style="border-radius: var(--border-radius-md);" @click="installPackage" :loading="installing" />
+        <q-btn outline style="border-radius: var(--border-radius-md);" :label="$t('python.installedPackages.dialog.install.cancel')" color="grey-7" v-close-popup />
+        <q-btn :label="$t('python.installedPackages.dialog.install.confirmInstall')" color="primary" style="border-radius: var(--border-radius-md);" @click="installPackage" :loading="installing" />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -124,17 +124,17 @@
   <!-- 确认卸载对话框 -->
   <q-dialog v-model="showUninstallDialog">
     <q-card>
-      <q-card-section >
-        <div class="text-h6">确认卸载</div>
+      <q-card-section>
+        <div class="text-h6">{{ $t('python.installedPackages.dialog.uninstall.title') }}</div>
       </q-card-section>
       
       <q-card-section>
-        确定要卸载 <strong>{{ packageToUninstall.name }}</strong> 吗？这可能会影响依赖该库的插件。
+        {{ $t('python.installedPackages.dialog.uninstall.message', { name: packageToUninstall.name }) }}
       </q-card-section>
       
       <q-card-actions align="right">
-        <q-btn outline label="取消" color="grey-7" v-close-popup style="border-radius: var(--border-radius-md);"/>
-        <q-btn label="卸载" color="negative" @click="uninstallPackage" :loading="uninstalling" style="border-radius: var(--border-radius-md);"/>
+        <q-btn outline :label="$t('python.installedPackages.dialog.uninstall.cancel')" color="grey-7" v-close-popup style="border-radius: var(--border-radius-md);"/>
+        <q-btn :label="$t('python.installedPackages.dialog.uninstall.confirmUninstall')" color="negative" @click="uninstallPackage" :loading="uninstalling" style="border-radius: var(--border-radius-md);"/>
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -143,6 +143,7 @@
 <script>
 import { defineComponent, ref, computed, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 import { getInstalledPackages, installPackage as apiInstallPackage, 
          uninstallPackage as apiUninstallPackage } from 'src/api';
 
@@ -153,6 +154,7 @@ export default defineComponent({
   
   setup(props, { emit }) {
     const $q = useQuasar();
+    const { t } = useI18n();
     
     // 已安装库相关
     const installedPackages = ref([]);
@@ -171,11 +173,11 @@ export default defineComponent({
     const uninstalling = ref(false);
     
     // 表格列定义
-    const packagesColumns = [
-      { name: 'name', label: '库名称', field: 'name', align: 'left', sortable: true },
-      { name: 'version', label: '版本', field: 'version', align: 'left', sortable: true },
-      { name: 'actions', label: '操作', field: 'actions', align: 'center' }
-    ];
+    const packagesColumns = computed(() => [
+      { name: 'name', label: t('python.installedPackages.tableCols.name'), field: 'name', align: 'left', sortable: true },
+      { name: 'version', label: t('python.installedPackages.tableCols.version'), field: 'version', align: 'left', sortable: true },
+      { name: 'actions', label: t('python.installedPackages.tableCols.actions'), field: 'actions', align: 'center' }
+    ]);
     
     // 已安装库相关
     const filteredPackages = computed(() => {
@@ -194,7 +196,7 @@ export default defineComponent({
       } catch (error) {
         $q.notify({
           color: 'negative',
-          message: '加载已安装库失败: ' + error.message,
+          message: t('python.installedPackages.notifications.loadFailed', { message: error.message }),
           icon: 'error'
         });
       } finally {
@@ -207,7 +209,7 @@ export default defineComponent({
       if (!packageToInstall.value.trim()) {
         $q.notify({
           color: 'warning',
-          message: '请输入库名称',
+          message: t('python.packageName') + ' ' + t('common.required'),
           icon: 'warning'
         });
         return;
@@ -221,7 +223,7 @@ export default defineComponent({
         
         $q.notify({
           color: 'positive',
-          message: `${packageToInstall.value} 安装成功`,
+          message: t('python.installedPackages.notifications.installSuccess', { name: packageToInstall.value }),
           icon: 'check'
         });
         
@@ -237,16 +239,16 @@ export default defineComponent({
         if (error.response) {
           // 有响应但状态码不是2xx
           if (error.response.status === 500) {
-            errorMsg = `服务器内部错误。\n\n${error.response?.body?.error || error.response?.data?.message || '服务器未提供详细错误信息。'}`;
+            errorMsg = `${t('python.errors.serverErrorCauses')}\n\n${error.response?.body?.error || error.response?.data?.message || t('python.errors.serverUnknown')}`;
           } else {
-            errorMsg = error.response?.body?.error || error.response?.data?.message || `请求错误 (${error.response.status})`;
+            errorMsg = error.response?.body?.error || error.response?.data?.message || `${t('network.requestError')} (${error.response.status})`;
           }
         } else if (error.request) {
           // 请求已发送但未收到响应
-          errorMsg = '未收到服务器响应，请检查网络连接或服务器状态。';
+          errorMsg = t('network.noResponse');
         } else {
           // 其他错误
-          errorMsg = error.message || '未知错误';
+          errorMsg = error.message || t('common.unknownError');
         }
         
         // 发送错误到父组件
@@ -273,7 +275,7 @@ export default defineComponent({
         
         $q.notify({
           color: 'positive',
-          message: `${packageToUninstall.value.name} 已卸载`,
+          message: t('python.installedPackages.notifications.uninstallSuccess', { name: packageToUninstall.value.name }),
           icon: 'check'
         });
         
@@ -284,7 +286,7 @@ export default defineComponent({
       } catch (error) {
         $q.notify({
           color: 'negative',
-          message: '卸载失败: ' + error.message,
+          message: t('python.installedPackages.notifications.uninstallFailed', { message: error.message }),
           icon: 'error'
         });
       } finally {
@@ -301,7 +303,7 @@ export default defineComponent({
         
         $q.notify({
           color: 'positive',
-          message: `${pkg.name} 已升级`,
+          message: t('python.installedPackages.notifications.upgradeSuccess', { name: pkg.name }),
           icon: 'check'
         });
         
@@ -313,16 +315,16 @@ export default defineComponent({
         if (error.response) {
           // 有响应但状态码不是2xx
           if (error.response.status === 500) {
-            errorMsg = `升级 ${pkg.name} 失败：服务器内部错误。\n\n${error.response?.body?.error || error.response?.data?.message || '服务器未提供详细错误信息。'}`;
+            errorMsg = `${t('python.installedPackages.notifications.upgradeFailed', { message: t('python.errors.serverErrorCauses') })}\n\n${error.response?.body?.error || error.response?.data?.message || t('python.errors.serverUnknown')}`;
           } else {
-            errorMsg = error.response?.body?.error || error.response?.data?.message || `请求错误 (${error.response.status})`;
+            errorMsg = error.response?.body?.error || error.response?.data?.message || `${t('network.requestError')} (${error.response.status})`;
           }
         } else if (error.request) {
           // 请求已发送但未收到响应
-          errorMsg = '未收到服务器响应，请检查网络连接或服务器状态。';
+          errorMsg = t('network.noResponse');
         } else {
           // 其他错误
-          errorMsg = error.message || '未知错误';
+          errorMsg = error.message || t('common.unknownError');
         }
         
         // 发送错误到父组件

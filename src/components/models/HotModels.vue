@@ -19,7 +19,7 @@
               <q-img 
                 :src="item.coverImage || item.images?.[0]?.url || ''" 
                 :style="{ aspectRatio: item.ratio }"
-                :placeholder-src="'https://placehold.co/300x300?text=加载中'"
+                :placeholder-src="'https://placehold.co/300x300?text=' + t('discovery.loading')"
               >
                 <template v-slot:error>
                   <div class="absolute-full flex flex-center bg-grey-3 text-grey-8">
@@ -75,9 +75,9 @@
       <div ref="loadMoreTrigger" class="text-center q-py-lg q-my-md load-more-trigger">
         <q-spinner v-if="loadingMore" color="primary" size="2em" />
         <div v-else-if="hasMore" class="text-grey-7">
-          <q-icon name="arrow_upward" /> 上拉加载更多（页码: {{currentPage}}/{{totalPages}}）
+          <q-icon name="arrow_upward" /> {{ t('discovery.loadMore') }}（{{ t('discovery.pagination.page', { current: currentPage, total: totalPages }) }}）
         </div>
-        <div v-else class="text-grey-7">没有更多数据了</div>
+        <div v-else class="text-grey-7">{{ t('discovery.noMoreData') }}</div>
       </div>
     </div>
     
@@ -96,7 +96,7 @@
     <div v-if="errorMessage" class="text-center q-mt-lg text-negative">
       <q-icon name="error" size="2rem" />
       <p>{{ errorMessage }}</p>
-      <q-btn color="primary" label="重试" @click="resetAndRetry" />
+      <q-btn color="primary" :label="t('discovery.retry')" @click="resetAndRetry" />
     </div>
   </div>
 </template>
@@ -106,6 +106,7 @@ import { defineComponent, ref, onMounted, onUnmounted, nextTick } from 'vue';
 import MasonryWall from '@yeger/vue-masonry-wall';
 import { civitaiApi } from '../../api';
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 
 // 使用与LatestModels相同的接口定义
 interface CivitaiImage {
@@ -169,6 +170,7 @@ export default defineComponent({
   },
   setup() {
     const $q = useQuasar();
+    const { t } = useI18n();
     const items = ref<CivitaiModel[]>([]);
     const loading = ref(true);
     const errorMessage = ref('');
@@ -190,7 +192,7 @@ export default defineComponent({
     // 直接从Civitai API获取热门模型
     const fetchDirectlyFromCivitai = async (page: number, limit: number) => {
       try {
-        console.log('正在直接从Civitai API获取热门数据...');
+        console.log('Fetching hot data directly from Civitai API...');
         
         // Civitai API基础URL
         const CIVITAI_API_URL = 'https://civitai.com/api/v1';
@@ -208,12 +210,12 @@ export default defineComponent({
         const response = await fetch(`${CIVITAI_API_URL}/models?${params.toString()}`);
         
         if (!response.ok) {
-          throw new Error(`API请求失败: ${response.status}`);
+          throw new Error(`API request failed: ${response.status}`);
         }
         
         return await response.json();
       } catch (error) {
-        console.error('直接从Civitai获取热门数据失败:', error);
+        console.error('Failed to fetch hot data directly from Civitai:', error);
         throw error;
       }
     };
@@ -221,18 +223,18 @@ export default defineComponent({
     // 使用直接URL从Civitai获取数据
     const fetchDirectlyWithUrl = async (url: string) => {
       try {
-        console.log('正在使用完整URL直接从Civitai获取数据:', url);
+        console.log('Fetching data directly with complete URL from Civitai:', url);
         
         // 发起直接请求
         const response = await fetch(url);
         
         if (!response.ok) {
-          throw new Error(`API请求失败: ${response.status}`);
+          throw new Error(`API request failed: ${response.status}`);
         }
         
         return await response.json();
       } catch (error) {
-        console.error('使用URL直接从Civitai获取数据失败:', error);
+        console.error('Failed to fetch data directly using URL from Civitai:', error);
         throw error;
       }
     };
@@ -244,7 +246,7 @@ export default defineComponent({
       
       if (isLoadingMore && scrollContainer.value) {
         scrollPosition = scrollContainer.value.scrollTop;
-        console.log('记录滚动位置:', scrollPosition);
+        console.log('Stored scroll position:', scrollPosition);
       }
       
       // 确定是使用页码还是直接URL
@@ -254,7 +256,7 @@ export default defineComponent({
       // 如果传入的是字符串URL，直接使用
       if (typeof pageOrEvent === 'string' && pageOrEvent.startsWith('http')) {
         directUrl = pageOrEvent;
-        console.log('使用直接URL加载:', directUrl);
+        console.log('Loading with direct URL:', directUrl);
       } 
       // 如果是数字，用作页码
       else if (typeof pageOrEvent === 'number') {
@@ -283,7 +285,7 @@ export default defineComponent({
           }
         } else {
           // 默认通过后端代理
-          console.log('加载热门模型，参数:', directUrl || `第${page}页`);
+          console.log('Loading hot models, params:', directUrl || `Page ${page}`);
           
           // 使用正确的API方法名称
           response = directUrl 
@@ -316,7 +318,7 @@ export default defineComponent({
               coverImage: item.coverImage || '', 
               images: firstVersion?.images || [],
               ratio: ratio,
-              description: item.description || '暂无描述',
+              description: item.description || t('discovery.noDescription'),
               _isNew: true, // 标记新项目，用于动画
             };
           });
@@ -350,7 +352,7 @@ export default defineComponent({
           
           // 更新分页信息
           if (response.metadata) {
-            console.log('API返回的metadata:', response.metadata);
+            console.log('API returned metadata:', response.metadata);
             
             // 确保正确计算totalPages
             totalPages.value = response.metadata.totalPages || 
@@ -359,7 +361,7 @@ export default defineComponent({
             // 保存下一页URL
             if (response.metadata.nextPage) {
               nextPageUrl.value = response.metadata.nextPage;
-              console.log('保存下一页URL:', nextPageUrl.value);
+              console.log('Saved next page URL:', nextPageUrl.value);
               hasMore.value = true;
             } else {
               nextPageUrl.value = '';
@@ -368,22 +370,22 @@ export default defineComponent({
           }
         } else {
           if (!isLoadingMore) {
-            errorMessage.value = '返回数据格式不正确';
+            errorMessage.value = t('discovery.invalidData');
             items.value = [];
           }
         }
       } catch (error) {
-        console.error('加载热门模型失败:', error);
+        console.error('Failed to load hot models:', error);
         
         // 如果当前不是直接访问模式，尝试切换到直接访问
         if (!isUsingDirectCivitai.value) {
           try {
             isUsingDirectCivitai.value = true;
-            console.log('通过后端访问失败，切换到直接访问Civitai...');
+            console.log('Failed via backend, switching to direct Civitai access...');
             
             // 显示提示
             $q.notify({
-              message: '正在尝试直接访问Civitai...',
+              message: t('discovery.tryingDirectAccess'),
               color: 'warning',
               timeout: 2000
             });
@@ -417,7 +419,7 @@ export default defineComponent({
                   coverImage: item.coverImage || '', 
                   images: firstVersion?.images || [],
                   ratio: ratio,
-                  description: item.description || '暂无描述',
+                  description: item.description || t('discovery.noDescription'),
                   _isNew: true,
                 };
               });
@@ -441,7 +443,7 @@ export default defineComponent({
               
               // 通知用户
               $q.notify({
-                message: '已切换到直接访问Civitai模式',
+                message: t('discovery.switchedToDirectMode'),
                 color: 'positive',
                 timeout: 3000
               });
@@ -450,10 +452,10 @@ export default defineComponent({
               errorMessage.value = '';
             }
           } catch (directError) {
-            console.error('直接访问Civitai也失败:', directError);
+            console.error('Direct access to Civitai also failed:', directError);
             
             if (!isLoadingMore) {
-              errorMessage.value = '获取热门模型列表失败，请检查网络连接后重试';
+              errorMessage.value = t('discovery.fetchError');
               items.value = [];
             }
             
@@ -463,7 +465,7 @@ export default defineComponent({
         } else {
           // 如果已经是直接访问模式下失败
           if (!isLoadingMore) {
-            errorMessage.value = '获取热门模型列表失败，请检查网络连接后重试';
+            errorMessage.value = t('discovery.fetchError');
             items.value = [];
           }
         }
@@ -479,7 +481,7 @@ export default defineComponent({
     // 实用工具函数（与LatestModels基本相同）
     const viewModel = (modelId: string) => {
       $q.notify({
-        message: `查看模型 ID: ${modelId}`,
+        message: t('discovery.viewingModel', { modelId }),
         color: 'info'
       });
     };
@@ -487,7 +489,7 @@ export default defineComponent({
     const downloadModel = (model: CivitaiModel) => {
       if (!model.modelVersions || model.modelVersions.length === 0) {
         $q.notify({
-          message: '没有可用的模型版本',
+          message: t('discovery.noVersionsAvailable'),
           color: 'negative'
         });
         return;
@@ -498,7 +500,7 @@ export default defineComponent({
       window.open(downloadUrl, '_blank');
       
       $q.notify({
-        message: `开始下载模型: ${model.name}`,
+        message: t('discovery.startDownloading', { model: model.name }),
         color: 'positive'
       });
     };
@@ -516,12 +518,12 @@ export default defineComponent({
         const date = new Date(dateString);
         return date.toLocaleDateString('zh-CN');
       } catch (e) {
-        return '日期格式错误';
+        return t('discovery.invalidDate');
       }
     };
     
     const truncateDescription = (description: string, maxLength = 100) => {
-      if (!description) return '暂无描述';
+      if (!description) return t('discovery.noDescription');
       const plainText = description.replace(/<[^>]*>/g, '');
       if (plainText.length <= maxLength) return plainText;
       return plainText.substring(0, maxLength) + '...';
@@ -562,11 +564,11 @@ export default defineComponent({
       
       observer = new IntersectionObserver(entries => {
         const [entry] = entries;
-        console.log('观察到的元素可见性:', entry.isIntersecting, 'loadingMore:', loadingMore.value, 'hasMore:', hasMore.value);
+        console.log('Observed element visibility:', entry.isIntersecting, 'loadingMore:', loadingMore.value, 'hasMore:', hasMore.value);
         
         // 只要元素有一点进入视口就触发
         if (entry.isIntersecting && !loadingMore.value && hasMore.value) {
-          console.log('触发加载更多');
+          console.log('Triggering load more');
           onLoadMore(); 
         }
       }, { 
@@ -579,10 +581,10 @@ export default defineComponent({
       // 确保元素存在再观察
       nextTick(() => {
         if (loadMoreTrigger.value && observer) {
-          console.log('开始观察加载更多触发器');
+          console.log('Starting observation on load more trigger');
           observer.observe(loadMoreTrigger.value);
         } else {
-          console.log('未找到加载更多触发器元素');
+          console.log('Load more trigger element not found');
         }
       });
     };
@@ -605,7 +607,7 @@ export default defineComponent({
     
     // 展示信息的辅助函数
     const getAuthor = (model: CivitaiModel): string => {
-      return model.creator?.username || '未知作者';
+      return model.creator?.username || t('discovery.unknownAuthor');
     };
 
     const formatNumber = (num: number): string => {
@@ -651,7 +653,7 @@ export default defineComponent({
       
       if (nextPageUrl.value) {
         // 如果有nextPage URL，使用它
-        console.log('使用nextPage URL加载更多:', nextPageUrl.value);
+        console.log('Loading more using nextPage URL:', nextPageUrl.value);
         loadingMore.value = true;
         loadModels(nextPageUrl.value);
       } else {
@@ -664,7 +666,7 @@ export default defineComponent({
     
     onMounted(() => {
       loadModels();
-      console.log('热门模型组件挂载完成');
+      console.log('Hot models component mounted');
       
       // 默认启用自动加载更多
       loadMore.value = true;
@@ -672,7 +674,7 @@ export default defineComponent({
       // 初始化后使用nextTick确保DOM已更新
       nextTick(() => {
         setupIntersectionObserver();
-        console.log('已设置观察器，触发元素存在:', !!loadMoreTrigger.value);
+        console.log('Observer setup, trigger element exists:', !!loadMoreTrigger.value);
       });
     });
     
@@ -713,7 +715,8 @@ export default defineComponent({
       getBaseModel,
       onLoadMore,
       nextPageUrl,
-      resetAndRetry
+      resetAndRetry,
+      t
     };
   }
 });

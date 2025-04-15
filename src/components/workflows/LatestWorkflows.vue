@@ -19,7 +19,7 @@
               <q-img 
                 :src="getWorkflowImage(item)" 
                 :style="{ aspectRatio: item.ratio || '16/9' }"
-                :placeholder-src="'https://placehold.co/300x300?text=加载中'"
+                :placeholder-src="'https://placehold.co/300x300?text='+$t('discovery.loading')"
               >
                 <template v-slot:error>
                   <div class="absolute-full flex flex-center bg-grey-3 text-grey-8">
@@ -76,9 +76,9 @@
       <div ref="loadMoreTrigger" class="text-center q-py-lg q-my-md load-more-trigger">
         <q-spinner v-if="loadingMore" color="primary" size="2em" />
         <div v-else-if="hasMore" class="text-grey-7">
-          <q-icon name="arrow_upward" /> 上拉加载更多（页码: {{currentPage}}/{{totalPages}}）
+          <q-icon name="arrow_upward" /> {{ $t('discovery.pagination.page', { current: currentPage, total: totalPages }) }}
         </div>
-        <div v-else class="text-grey-7">没有更多数据了</div>
+        <div v-else class="text-grey-7">{{ $t('discovery.noMoreData') }}</div>
       </div>
     </div>
     
@@ -86,7 +86,7 @@
     <div v-if="errorMessage" class="text-center q-mt-lg text-negative">
       <q-icon name="error" size="2rem" />
       <p>{{ errorMessage }}</p>
-      <q-btn color="primary" label="重试" @click="resetAndRetry" />
+      <q-btn color="primary" :label="$t('discovery.retry')" @click="resetAndRetry" />
     </div>
   </div>
 </template>
@@ -96,6 +96,7 @@ import { defineComponent, ref, onMounted, onUnmounted, nextTick } from 'vue';
 import MasonryWall from '@yeger/vue-masonry-wall';
 import { civitaiApi } from '../../api';
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 
 // 定义Civitai模型接口
 interface CivitaiImage {
@@ -160,6 +161,7 @@ export default defineComponent({
   },
   setup() {
     const $q = useQuasar();
+    const { t } = useI18n();
     const items = ref<CivitaiModel[]>([]);
     const loading = ref(true);
     const errorMessage = ref('');
@@ -232,18 +234,18 @@ export default defineComponent({
     // 使用直接URL从Civitai获取数据
     const fetchDirectlyWithUrl = async (url: string) => {
       try {
-        console.log('正在使用完整URL直接从Civitai获取数据:', url);
+        console.log('Fetching data directly from Civitai with URL:', url);
         
         // 发起直接请求
         const response = await fetch(url);
         
         if (!response.ok) {
-          throw new Error(`API请求失败: ${response.status}`);
+          throw new Error(`API request failed: ${response.status}`);
         }
         
         return await response.json();
       } catch (error) {
-        console.error('使用URL直接从Civitai获取数据失败:', error);
+        console.error('Failed to fetch data directly from Civitai with URL:', error);
         throw error;
       }
     };
@@ -294,7 +296,7 @@ export default defineComponent({
           }
         } else {
           // 默认通过后端代理
-          console.log('加载工作流，参数:', directUrl || `第${page}页`);
+          console.log('Loading workflows with params:', directUrl || `Page ${page}`);
           
           // 根据是否有直接URL决定调用方式
           response = directUrl 
@@ -302,7 +304,7 @@ export default defineComponent({
             : await civitaiApi.getLatestWorkflows(page, itemsPerPage) as CivitaiApiResponse;
         }
         
-        console.log('工作流加载结果:', response);
+        console.log('Workflow loading result:', response);
         loadingError.value = false; // 加载成功，重置错误状态
         
         // 确保响应中包含items数组
@@ -406,7 +408,7 @@ export default defineComponent({
           }
         }
       } catch (error) {
-        console.error('加载工作流失败:', error);
+        console.error('Failed to load workflows:', error);
         loadingError.value = true; // 设置错误状态
         retryCount.value++; // 增加重试计数
         
@@ -414,11 +416,11 @@ export default defineComponent({
         if (!isUsingDirectCivitai.value) {
           try {
             isUsingDirectCivitai.value = true;
-            console.log('通过后端访问失败，切换到直接访问Civitai...');
+            console.log('Backend access failed, switching to direct Civitai access...');
             
             // 显示提示
             $q.notify({
-              message: '正在尝试直接访问Civitai...',
+              message: t('discovery.tryingDirectAccess'),
               color: 'warning',
               timeout: 2000
             });
@@ -489,7 +491,7 @@ export default defineComponent({
               
               // 通知用户
               $q.notify({
-                message: '已切换到直接访问Civitai模式',
+                message: t('discovery.switchedToDirectMode'),
                 color: 'positive',
                 timeout: 3000
               });
@@ -500,10 +502,10 @@ export default defineComponent({
               errorMessage.value = '';
             }
           } catch (directError) {
-            console.error('直接访问Civitai也失败:', directError);
+            console.error('Direct access to Civitai also failed:', directError);
             
             if (!isLoadingMore) {
-              errorMessage.value = '获取工作流列表失败，请检查网络连接后重试';
+              errorMessage.value = t('discovery.fetchError');
               items.value = [];
             }
             
@@ -513,7 +515,7 @@ export default defineComponent({
         } else {
           // 如果已经是直接访问模式下失败
           if (!isLoadingMore) {
-            errorMessage.value = '获取工作流列表失败，请检查网络连接后重试';
+            errorMessage.value = t('discovery.fetchError');
             items.value = [];
           }
         }
@@ -574,13 +576,14 @@ export default defineComponent({
     // 打开模型页面
     const openModelPage = (modelId: string) => {
       window.open(`https://civitai.com/models/${modelId}`, '_blank');
+      console.log(t('discovery.viewingModel', { modelId }));
     };
     
     // 下载模型
     const downloadModel = (model: CivitaiModel) => {
       if (!model.modelVersions || model.modelVersions.length === 0) {
         $q.notify({
-          message: '没有可用的模型版本',
+          message: t('discovery.noVersionsAvailable'),
           color: 'negative'
         });
         return;
@@ -591,14 +594,14 @@ export default defineComponent({
       window.open(downloadUrl, '_blank');
       
       $q.notify({
-        message: `开始下载工作流: ${model.name}`,
+        message: t('discovery.startDownloading', { model: model.name }),
         color: 'positive'
       });
     };
     
     // 展示信息的辅助函数
     const getAuthor = (model: CivitaiModel): string => {
-      return model.creator?.username || '未知作者';
+      return model.creator?.username || t('discovery.unknownAuthor');
     };
     
     const formatNumber = (num: number): string => {
@@ -752,7 +755,8 @@ export default defineComponent({
       nextPageUrl,
       getWorkflowImage,
       getBaseModel,
-      resetAndRetry
+      resetAndRetry,
+      $t: t
     };
   }
 });

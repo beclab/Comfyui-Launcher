@@ -92,7 +92,77 @@ export default {
     packageName: 'Package Name',
     version: 'Version',
     status: 'Status',
-    action: 'Action'
+    action: 'Action',
+    environmentManagement: 'Environment Management',
+    tabs: {
+      dependencies: 'Python Dependencies',
+      analysis: 'Dependency Analysis'
+    },
+    errors: {
+      installationError: 'Installation Error',
+      serverErrorCauses: 'Internal server errors may be caused by:',
+      envConfigProblem: 'Python environment configuration issues - may be virtual or system environment issues',
+      permissionProblem: 'Permission problems - current user may not have permissions to install packages',
+      networkProblem: 'Network issues - unable to connect to PyPI source',
+      dependencyConflict: 'Dependency conflicts - may conflict with other installed packages',
+      installTips: 'To install Python packages:',
+      useVirtualEnv: 'Using virtual environment',
+      useUserInstall: 'Using user-level installation'
+    },
+    installedPackages: {
+      title: 'Installed Python Packages',
+      subtitle: 'Python packages installed in local Python environment',
+      search: 'Search Python packages',
+      install: 'Install New Package',
+      refresh: 'Refresh',
+      tableCols: {
+        name: 'Package Name',
+        version: 'Version',
+        actions: 'Actions'
+      },
+      pagination: {
+        rowsPerPage: 'Records per page',
+        range: '{start}-{end} of {total}'
+      },
+      dialog: {
+        install: {
+          title: 'Install New Package',
+          packageName: 'Package Name',
+          version: 'Version (optional)',
+          versionHint: 'Example: ==1.0.0, >=2.0.0, leave blank for latest version',
+          cancel: 'Cancel',
+          confirmInstall: 'Install'
+        },
+        uninstall: {
+          title: 'Confirm Uninstall',
+          message: 'Are you sure you want to uninstall {name}? This may affect plugins that depend on this package.',
+          cancel: 'Cancel',
+          confirmUninstall: 'Uninstall'
+        }
+      },
+      notifications: {
+        loadFailed: 'Failed to load installed packages: {message}',
+        installSuccess: '{name} installed successfully',
+        installFailed: 'Installation failed: {message}',
+        uninstallSuccess: '{name} has been uninstalled',
+        uninstallFailed: 'Uninstall failed: {message}',
+        upgradeSuccess: '{name} has been upgraded',
+        upgradeFailed: 'Upgrade failed: {message}'
+      }
+    },
+    pluginDependencies: {
+      title: 'Plugin Dependencies Analysis',
+      subtitle: 'Automatically analyze whether Python libraries required by installed plugins are correctly installed',
+      analyze: 'Analyze Now',
+      pluginsColumn: 'Plugins',
+      dependenciesColumn: 'Dependencies List',
+      fixAll: 'Fix All',
+      versionRequired: 'Version required:',
+      install: 'Install',
+      installed: 'Installed',
+      analyzing: 'Analyzing dependencies...',
+      noDependenciesFound: 'No dependencies found'
+    }
   },
   comfyuiStatus: {
     title: 'ComfyUI',
@@ -335,14 +405,28 @@ export default {
       all: 'All'
     },
     history: {
+      title: 'Operation History',
+      clearHistory: 'Clear History',
+      refresh: 'Refresh',
       pluginId: 'Plugin ID',
       operationType: 'Operation Type',
+      startTime: 'Start Time',
+      endTime: 'End Time',
+      duration: 'Duration',
       time: 'Time',
       status: 'Status',
       actions: 'Actions',
       viewLogs: 'View Logs',
+      deleteRecord: 'Delete Record',
       retry: 'Retry',
-      logs: 'Operation Logs'
+      logs: 'Operation Logs',
+      noHistory: 'No operation history records',
+      running: 'Running',
+      success: 'Success',
+      failed: 'Failed',
+      milliseconds: 'ms',
+      seconds: '{count} seconds',
+      minutes: '{minutes} min {seconds} sec'
     },
     notifications: {
       installSuccess: 'Installed {name} successfully!',
@@ -383,6 +467,44 @@ export default {
       uninstalling: 'Uninstalling {name}...',
       enabling: 'Enabling...',
       disabling: 'Disabling...'
+    },
+    operations: {
+      install: 'Install',
+      uninstall: 'Uninstall',
+      disable: 'Disable',
+      enable: 'Enable',
+      unknown: 'Unknown'
+    },
+    pluginStatus: {
+      unknown: 'Unknown'
+    }
+  },
+  discovery: {
+    title: 'Discovery',
+    inspireFrom: 'Find More Inspiration on Civitai.com',
+    tabs: {
+      latestModels: 'Latest Models',
+      hotModels: 'Hot Models',
+      latestWorkflows: 'Latest Workflows',
+      hotWorkflows: 'Hot Workflows'
+    },
+    loading: 'Loading',
+    loadMore: 'Pull up to load more',
+    noMoreData: 'No more data',
+    retry: 'Retry',
+    invalidData: 'Invalid data format returned',
+    tryingDirectAccess: 'Trying to access Civitai directly...',
+    switchedToDirectMode: 'Switched to direct Civitai access mode',
+    fetchError: 'Failed to fetch model list, please check your network connection and try again',
+    viewingModel: 'Viewing model ID: {modelId}',
+    noVersionsAvailable: 'No available model versions',
+    startDownloading: 'Started downloading model: {model}',
+    unknownDate: 'Unknown date',
+    invalidDate: 'Invalid date format',
+    noDescription: 'No description',
+    unknownAuthor: 'Unknown author',
+    pagination: {
+      page: 'page: {current}/{total}'
     }
   }
 };

@@ -2,12 +2,12 @@
   <div class="history-table-container rounded-borders">
     <!-- 标题和按钮区域 -->
     <div class="row justify-between items-center q-px-md q-py-md q-gutter-x-sm">
-      <div class="text-h6">操作历史记录</div>
+      <div class="text-h6">{{ $t('plugins.history.title') }}</div>
       <div class="row items-center">
         <q-btn 
           color="grey" 
           icon="delete" 
-          label="清除历史" 
+          :label="$t('plugins.history.clearHistory')" 
           outline 
           @click="confirmClearHistory" 
           class="custom-btn q-mr-sm"
@@ -16,7 +16,7 @@
         <q-btn
           color="grey"
           icon="refresh"
-          label="刷新"
+          :label="$t('plugins.history.refresh')"
           outline
           @click="fetchHistory"
           :loading="loading"
@@ -104,7 +104,7 @@
             size="sm"
             @click="onViewLogs(props.row)"
           >
-            <q-tooltip>查看详细日志</q-tooltip>
+            <q-tooltip>{{ $t('plugins.history.viewLogs') }}</q-tooltip>
           </q-btn>
           <q-btn
             dense
@@ -115,7 +115,7 @@
             size="sm"
             @click="onDeleteRecord(props.row)"
           >
-            <q-tooltip>删除记录</q-tooltip>
+            <q-tooltip>{{ $t('plugins.history.deleteRecord') }}</q-tooltip>
           </q-btn>
         </q-td>
       </template>
@@ -123,7 +123,7 @@
       <!-- 底部分页 -->
       <template v-slot:pagination="scope">
         <div class="row items-center justify-end q-py-sm">
-          <span class="q-mr-md text-caption">Records per page: </span>
+          <span class="q-mr-md text-caption">{{ $t('plugins.pagination.rowsPerPage') }}: </span>
           <q-select
             v-model="pagination.rowsPerPage"
             :options="[10, 20, 50]"
@@ -136,7 +136,7 @@
             @update:model-value="updatePagination(scope)"
           />
           <span class="q-mx-md text-caption">
-            {{ scope.pagesNumber > 0 ? scope.pagination.page : 0 }} of {{ scope.pagesNumber }}
+            {{ scope.pagesNumber > 0 ? scope.pagination.page : 0 }} {{ $t('plugins.pagination.of', {currentPage: scope.pagination.page, totalPages: scope.pagesNumber}) }}
           </span>
           <q-btn
             icon="chevron_left"
@@ -163,7 +163,7 @@
       <template v-slot:no-data>
         <div class="full-width row flex-center q-gutter-sm q-pa-lg">
           <q-icon name="history" size="2em" color="grey-7" />
-          <span class="text-grey-7">暂无操作历史记录</span>
+          <span class="text-grey-7">{{ $t('plugins.history.noHistory') }}</span>
         </div>
       </template>
     </q-table>
@@ -172,7 +172,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import type { QTableColumn } from 'quasar';
+
+// Setup i18n
+const { t } = useI18n();
 
 // 操作类型定义
 interface PluginOperation {
@@ -218,12 +222,12 @@ const pagination = ref({
   rowsPerPage: 10
 });
 
-// Table columns definition
+// Table columns definition - now using i18n
 const tableColumns = computed<QTableColumn[]>(() => [
   {
     name: 'name',
     required: true,
-    label: '名称',
+    label: t('plugins.columns.name'),
     align: 'left',
     field: row => row.pluginName || 'ComfyUI-Manager',
     sortable: true
@@ -231,7 +235,7 @@ const tableColumns = computed<QTableColumn[]>(() => [
   {
     name: 'type',
     required: true,
-    label: '操作类型',
+    label: t('plugins.history.operationType'),
     align: 'left',
     field: 'type',
     sortable: true
@@ -239,7 +243,7 @@ const tableColumns = computed<QTableColumn[]>(() => [
   {
     name: 'startTime',
     required: true,
-    label: '开始时间',
+    label: t('plugins.history.startTime'),
     align: 'left',
     field: 'startTime',
     sortable: true
@@ -247,7 +251,7 @@ const tableColumns = computed<QTableColumn[]>(() => [
   {
     name: 'endTime',
     required: true,
-    label: '结束时间',
+    label: t('plugins.history.endTime'),
     align: 'left',
     field: 'endTime',
     sortable: true
@@ -255,7 +259,7 @@ const tableColumns = computed<QTableColumn[]>(() => [
   {
     name: 'duration',
     required: true,
-    label: '耗时',
+    label: t('plugins.history.duration'),
     align: 'left',
     field: row => row.endTime ? (row.endTime - row.startTime) : 0,
     sortable: true
@@ -263,7 +267,7 @@ const tableColumns = computed<QTableColumn[]>(() => [
   {
     name: 'status',
     required: true,
-    label: '状态',
+    label: t('plugins.history.status'),
     align: 'left',
     field: 'status',
     sortable: true
@@ -271,7 +275,7 @@ const tableColumns = computed<QTableColumn[]>(() => [
   {
     name: 'actions',
     required: true,
-    label: '操作',
+    label: t('plugins.columns.actions'),
     align: 'center',
     field: 'actions',
     sortable: false
@@ -304,22 +308,22 @@ const getStatusLocalizedName = (row: PluginOperation): string => {
 };
 
 const getOperationName = (type: string): string => {
-  if (!type) return '未知';
+  if (!type) return t('plugins.operations.unknown');
   switch (type) {
-    case 'install': return '安装';
-    case 'uninstall': return '卸载';
-    case 'disable': return '禁用';
-    case 'enable': return '启用';
+    case 'install': return t('plugins.operations.install');
+    case 'uninstall': return t('plugins.operations.uninstall');
+    case 'disable': return t('plugins.operations.disable');
+    case 'enable': return t('plugins.operations.enable');
     default: return type;
   }
 };
 
 const getStatusName = (status: string): string => {
-  if (!status) return '未知';
+  if (!status) return t('plugins.pluginStatus.unknown');
   switch (status) {
-    case 'running': return '进行中';
-    case 'success': return '成功';
-    case 'failed': return '失败';
+    case 'running': return t('plugins.history.running');
+    case 'success': return t('plugins.history.success');
+    case 'failed': return t('plugins.history.failed');
     default: return status;
   }
 };
@@ -332,14 +336,16 @@ const formatTime = (timestamp: number): string => {
 const formatDuration = (startTime: number, endTime: number): string => {
   if (!startTime || !endTime) return '';
   const duration = endTime - startTime;
+  
+  // Use i18n for duration formatting
   if (duration < 1000) {
-    return `${duration}毫秒`;
+    return `${duration}${t('plugins.history.milliseconds')}`;
   } else if (duration < 60000) {
-    return `${Math.floor(duration / 1000)}秒`;
+    return t('plugins.history.seconds', { count: Math.floor(duration / 1000) });
   } else {
     const minutes = Math.floor(duration / 60000);
     const seconds = Math.floor((duration % 60000) / 1000);
-    return `${minutes}分${seconds}秒`;
+    return t('plugins.history.minutes', { minutes, seconds });
   }
 };
 

@@ -1,7 +1,7 @@
 <template>
   <q-page padding>
     <div class="q-pa-md">
-      <div class="text-h5 q-mb-md">环境管理</div>
+      <div class="text-h5 q-mb-md">{{ $t('python.environmentManagement') }}</div>
       <q-separator class="q-mb-md" />
       
       <!-- 选项卡 -->
@@ -9,8 +9,8 @@
         <TabToggle
           v-model="activeTab"
           :options="[
-            { label: 'Python依赖库', value: 'deps' },
-            { label: '依赖分析', value: 'plugins' }
+            { label: $t('python.tabs.dependencies'), value: 'deps' },
+            { label: $t('python.tabs.analysis'), value: 'plugins' }
           ]"
         />
       </div>
@@ -18,29 +18,29 @@
       <!-- 错误信息展示区域 -->
       <q-card v-if="errorMessage" class="q-mb-md bg-red-1">
         <q-card-section >
-          <div class="text-h6 text-negative">安装错误</div>
+          <div class="text-h6 text-negative">{{ $t('python.errors.installationError') }}</div>
           <pre class="error-message">{{ errorMessage }}</pre>
           <div v-if="errorMessage.includes('Internal Server Error')" class="q-mt-md">
-            <p class="text-negative">服务器内部错误可能是由以下原因导致：</p>
+            <p class="text-negative">{{ $t('python.errors.serverErrorCauses') }}</p>
             <ul class="q-ml-md">
-              <li>Python环境配置问题 - 可能是虚拟环境或系统环境配置有误</li>
-              <li>权限问题 - 当前用户可能没有安装包的权限</li>
-              <li>网络问题 - 无法连接到PyPI源</li>
-              <li>依赖冲突 - 可能与已安装的其他包存在版本冲突</li>
+              <li>{{ $t('python.errors.envConfigProblem') }}</li>
+              <li>{{ $t('python.errors.permissionProblem') }}</li>
+              <li>{{ $t('python.errors.networkProblem') }}</li>
+              <li>{{ $t('python.errors.dependencyConflict') }}</li>
             </ul>
-            <p>如需安装Python包：</p>
+            <p>{{ $t('python.errors.installTips') }}</p>
             <pre class="suggestion-code">
-# 使用虚拟环境：
+# {{ $t('python.errors.useVirtualEnv') }}:
 python -m venv myenv
 source myenv/bin/activate  # Windows上使用: myenv\Scripts\activate
 pip install 包名
 
-# 使用用户级安装：
+# {{ $t('python.errors.useUserInstall') }}:
 pip install --user 包名</pre>
           </div>
         </q-card-section>
         <q-card-actions align="right">
-          <q-btn flat color="negative" icon="close" label="关闭" @click="errorMessage = ''" />
+          <q-btn flat color="negative" icon="close" :label="$t('common.cancel')" @click="errorMessage = ''" />
         </q-card-actions>
       </q-card>
       
