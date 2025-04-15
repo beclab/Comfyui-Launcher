@@ -151,15 +151,22 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+    
+    <!-- 引入独立的重置弹窗组件 -->
+    <ResetDialogs ref="resetDialogs" />
   </q-page>
 </template>
 
 <script>
 import { ref, nextTick, onBeforeUnmount } from 'vue'
 import api from '../api'
+import ResetDialogs from '../components/reset/ResetDialogs.vue'
 
 export default {
   name: 'ResetPage',
+  components: {
+    ResetDialogs
+  },
   setup() {
     const confirmText = ref('')
     const showConfirmDialog = ref(false)
@@ -267,6 +274,14 @@ export default {
       }
     }
     
+    // 添加对重置弹窗组件的引用
+    const resetDialogs = ref(null)
+    
+    // 可以添加一个方法来打开重置弹窗
+    const openResetDialogs = () => {
+      resetDialogs.value.openResetDialog(selectedLanguage.value.value)
+    }
+    
     // 组件卸载前清除定时器
     onBeforeUnmount(() => {
       if (logsIntervalId) {
@@ -290,7 +305,9 @@ export default {
       showLastResetLogs,
       fetchResetLogs,
       restartApp,
-      watchLanguageChange
+      watchLanguageChange,
+      resetDialogs,
+      openResetDialogs
     }
   }
 }

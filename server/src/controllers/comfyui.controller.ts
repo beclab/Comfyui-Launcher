@@ -120,39 +120,68 @@ export class ComfyUIController {
     const result: { comfyui?: string; frontend?: string } = {};
     
     try {
-      // 获取ComfyUI版本 - 从ComfyUI目录下的version文件或git信息
+      // 获取ComfyUI版本 - 首先尝试从comfyui_version.py文件获取
       const comfyuiPath = paths.comfyui;
       if (comfyuiPath && fs.existsSync(comfyuiPath)) {
-        // 尝试从version文件获取
-        const versionFilePath = path.join(comfyuiPath, 'version');
+        // 尝试从comfyui_version.py文件获取
+        const versionFilePath = path.join(comfyuiPath, 'comfyui_version.py');
         if (fs.existsSync(versionFilePath)) {
-          result.comfyui = fs.readFileSync(versionFilePath, 'utf8').trim();
-        } else {
-          // 尝试从git获取
-          try {
-            const { stdout } = await execPromise('git describe --tags', { cwd: comfyuiPath });
-            if (stdout.trim()) {
-              result.comfyui = stdout.trim();
-            }
-          } catch (gitError) {
-            // 如果git命令失败，尝试从package.json获取
-            const packageJsonPath = path.join(comfyuiPath, 'package.json');
-            if (fs.existsSync(packageJsonPath)) {
-              try {
-                const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-                if (packageJson.version) {
-                  result.comfyui = packageJson.version;
+          const versionFileContent = fs.readFileSync(versionFilePath, 'utf8');
+          // 使用正则表达式从文件内容中提取版本号
+          const versionMatch = versionFileContent.match(/__version__\s*=\s*["']([^"']+)["']/);
+          if (versionMatch && versionMatch[1]) {
+            result.comfyui = versionMatch[1];
+            logger.info(`[API] 从comfyui_version.py文件获取到ComfyUI版本: ${result.comfyui}`);
+          }
+        }
+        
+        // 如果从comfyui_version.py获取失败，尝试从version文件获取
+        if (!result.comfyui) {
+          const legacyVersionFilePath = path.join(comfyuiPath, 'version');
+          if (fs.existsSync(legacyVersionFilePath)) {
+            result.comfyui = fs.readFileSync(legacyVersionFilePath, 'utf8').trim();
+            logger.info(`[API] 从version文件获取到ComfyUI版本: ${result.comfyui}`);
+          } else {
+            // 尝试从git获取
+            try {
+              const { stdout } = await execPromise('git describe --tags', { cwd: comfyuiPath });
+              if (stdout.trim()) {
+                result.comfyui = stdout.trim();
+                logger.info(`[API] 从git标签获取到ComfyUI版本: ${result.comfyui}`);
+              }
+            } catch (gitError) {
+              // 如果git命令失败，尝试从package.json获取
+              const packageJsonPath = path.join(comfyuiPath, 'package.json');
+              if (fs.existsSync(packageJsonPath)) {
+                try {
+                  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+                  if (packageJson.version) {
+                    result.comfyui = packageJson.version;
+                    logger.info(`[API] 从package.json获取到ComfyUI版本: ${result.comfyui}`);
+                  }
+                } catch (e) {
+                  logger.warn(`[API] 无法从package.json解析ComfyUI版本: ${e}`);
                 }
-              } catch (e) {
-                logger.warn(`[API] 无法从package.json解析ComfyUI版本: ${e}`);
               }
             }
           }
         }
       }
       
-      // 获取前端版本 - 从web/index.html或web/scripts/app.js中查找
-      if (comfyuiPath && fs.existsSync(comfyuiPath)) {
+      // 获取前端版本 - 首先尝试从环境变量CLI_ARGS中获取
+      const cliArgs = process.env.CLI_ARGS;
+      if (cliArgs) {
+        // 尝试从CLI_ARGS中提取前端版本
+        // 格式例如: --normalvram --disable-smart-memory --front-end-version Comfy-Org/ComfyUI_frontend@v1.12.6
+        const frontendVersionMatch = cliArgs.match(/--front-end-version\s+[^@]+@(v[\d.]+)/);
+        if (frontendVersionMatch && frontendVersionMatch[1]) {
+          result.frontend = frontendVersionMatch[1];
+          logger.info(`[API] 从环境变量CLI_ARGS获取到前端版本: ${result.frontend}`);
+        }
+      }
+      
+      // 如果从环境变量获取失败，尝试从web/index.html或web/scripts/app.js中查找
+      if (!result.frontend && comfyuiPath && fs.existsSync(comfyuiPath)) {
         const indexHtmlPath = path.join(comfyuiPath, 'web', 'index.html');
         if (fs.existsSync(indexHtmlPath)) {
           const indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
@@ -194,12 +223,12 @@ export class ComfyUIController {
     // 检查环境变量NVSHARE_MANAGED_MEMORY
     const nvshareMode = process.env.NVSHARE_MANAGED_MEMORY;
     
-    if (nvshareMode === '1') {
+    if (nvshareMode === '0') {
       return '独立模式';
-    } else if (nvshareMode === '0'){
+    } else if (nvshareMode === '1'){
       return '共享模式';
     } else {
-      return '未知';
+      return '共享模式';
     }
   }
 

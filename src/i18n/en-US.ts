@@ -181,6 +181,7 @@ export default {
     },
     menu: {
       viewLogs: 'View Logs',
+      viewResetLogs: 'View Reset Logs',
       reset: 'Wipe and Restore'
     },
     logs: {
@@ -505,6 +506,42 @@ export default {
     unknownAuthor: 'Unknown author',
     pagination: {
       page: 'page: {current}/{total}'
+    }
+  },
+  reset: {
+    dialog1: {
+      title: 'Confirm Wipe and Restore',
+      message: 'Do you really want to restore ComfyUI? This operation will:',
+      effects: {
+        settings: 'Erase all user configurations',
+        plugins: 'Remove all installed plugins',
+        workflows: 'Reset all workflows and projects',
+        models: 'Downloaded models will still be preserved'
+      },
+      confirmButton: 'Wipe and Restore'
+    },
+    dialog2: {
+      warning: 'This operation is irreversible, please proceed with caution',
+      restartTip: 'If you are experiencing temporary issues, you can try restarting ComfyUI instead of completely resetting it.',
+      confirmInput: 'Please type \'CONFIRM\' to proceed with this operation'
+    },
+    progress: {
+      title: 'Restoring...',
+      starting: 'Starting reset operation, please wait...',
+      failed: 'Reset operation failed',
+      error: 'Reset operation error',
+      unknownError: 'Unknown error'
+    },
+    complete: {
+      title: 'Restore operation completed!',
+      message: 'ComfyUI has been successfully restored to its initial state.',
+      restartTip: 'It is recommended to restart the application to ensure all changes take effect.',
+      backButton: 'Back to Home',
+      restartButton: 'Restart Application'
+    },
+    logs: {
+      title: 'Last Reset Operation Logs',
+      noLogs: 'No reset logs found'
     }
   }
 };

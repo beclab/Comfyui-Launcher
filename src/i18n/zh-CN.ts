@@ -170,6 +170,7 @@ export default {
     },
     menu: {
       viewLogs: '查看日志',
+      viewResetLogs: '查看重置日志',
       reset: '抹掉并还原'
     },
     logs: {
@@ -505,6 +506,42 @@ export default {
     unknownAuthor: '未知作者',
     pagination: {
       page: '页码: {current}/{total}'
+    }
+  },
+  reset: {
+    dialog1: {
+      title: '确认抹掉并还原',
+      message: '您真的要还原ComfyUI吗？此操作会：',
+      effects: {
+        settings: '抹掉所有用户配置',
+        plugins: '删除所有已安装插件',
+        workflows: '重置所有工作流和项目',
+        models: '已下载的模型仍会被保留'
+      },
+      confirmButton: '抹掉并还原'
+    },
+    dialog2: {
+      warning: '此操作不可逆，请谨慎操作',
+      restartTip: '如果您遇到临时问题，可以尝试重启ComfyUI而不是完全重置。',
+      confirmInput: '请输入 \'CONFIRM\' 确认此操作'
+    },
+    progress: {
+      title: '正在还原...',
+      starting: '开始重置操作，请等待...',
+      failed: '重置操作失败',
+      error: '重置操作错误',
+      unknownError: '未知错误'
+    },
+    complete: {
+      title: '还原操作已完成！',
+      message: 'ComfyUI已被成功还原至初始状态。',
+      restartTip: '建议重启应用以确保所有更改生效。',
+      backButton: '返回主页',
+      restartButton: '重启应用'
+    },
+    logs: {
+      title: '上次重置操作日志',
+      noLogs: '没有找到重置日志记录'
     }
   }
 };

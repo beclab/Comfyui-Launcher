@@ -108,6 +108,13 @@
                   <q-item-section>{{ $t('comfyuiStatus.menu.viewLogs') }}</q-item-section>
                 </q-item>
                 
+                <q-item clickable v-close-popup @click="showResetLog">
+                  <q-item-section avatar>
+                    <q-icon name="history" />
+                  </q-item-section>
+                  <q-item-section>{{ $t('comfyuiStatus.menu.viewResetLogs') }}</q-item-section>
+                </q-item>
+                
                 <q-item clickable v-close-popup @click="resetComfyUI">
                   <q-item-section avatar>
                     <q-icon name="refresh" />
@@ -169,7 +176,7 @@
         <q-card-section style="color: var(--text-normal); padding-top: 8px; padding-bottom: 8px; padding-left: 24px;">
           {{ $t('comfyuiStatus.dialog.missingModelsMessage') }}
         </q-card-section>
-        <!-- 提示文案下方增加单选框“记住我的选择, 下次无需弹窗确认” -->
+        <!-- 提示文案下方增加单选框"记住我的选择, 下次无需弹窗确认" -->
         <q-card-section style="color: var(--text-normal)">
           <q-checkbox v-model="rememberChoice" label="{{ $t('comfyuiStatus.dialog.rememberChoice') }}" />
         </q-card-section>
@@ -182,6 +189,12 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- 添加重置日志对话框组件 -->
+    <ResetLogDialog ref="resetLogDialog" />
+
+    <!-- 添加重置弹窗组件 -->
+    <ResetDialogs ref="resetDialogs" />
   </div>
 </template>
 
@@ -191,6 +204,10 @@ import { modelsApi, Model } from '../api';
 import api from '../api';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
+// 引入重置弹窗组件类型
+import ResetDialogs from '../components/reset/ResetDialogs.vue';
+// 引入重置日志对话框组件
+import ResetLogDialog from '../components/reset/ResetLogDialog.vue';
 
 // 定义模型接口
 interface EssentialModel {
@@ -208,6 +225,16 @@ interface InstalledModel {
   size?: number | string;
 }
 
+// 定义 ResetDialogs 组件实例类型
+interface ResetDialogsInstance {
+  openResetDialog: (language?: string) => void;
+}
+
+// 定义 ResetLogDialog 组件实例类型
+interface ResetLogDialogInstance {
+  openDialog: (language?: string) => void;
+}
+
 // 定义版本信息接口
 interface VersionInfo {
   comfyui: string;
@@ -217,6 +244,11 @@ interface VersionInfo {
 
 export default defineComponent({
   name: 'ComfyUIStatus',
+  // 注册组件
+  components: {
+    ResetDialogs,
+    ResetLogDialog
+  },
   
   setup() {
     const $q = useQuasar();
@@ -257,6 +289,12 @@ export default defineComponent({
     const showLogs = ref(false);
     const logsExpanded = ref(true);
     const logs = ref<string[]>([]);
+    
+    // 添加对重置弹窗组件的引用，并指定类型
+    const resetDialogs = ref<ResetDialogsInstance | null>(null);
+    
+    // 添加对重置日志对话框组件的引用
+    const resetLogDialog = ref<ResetLogDialogInstance | null>(null);
     
     const checkConnection = async () => {
       try {
@@ -472,13 +510,12 @@ export default defineComponent({
       logsExpanded.value = true;
     };
     
-    // 添加重置ComfyUI方法
+    // 修改重置ComfyUI方法，改为打开重置弹窗
     const resetComfyUI = () => {
-      router.push('/reset');
-      // 如果没有专门的重置页面，可以改为通过API调用重置功能
-      // api.resetComfyUI().then(() => { 
-      //   $q.notify({ type: 'positive', message: 'ComfyUI已重置' });
-      // });
+      // 调用重置弹窗组件的方法
+      if (resetDialogs.value) {
+        resetDialogs.value.openResetDialog('zh');
+      }
     };
     
     // 添加下载日志方法
@@ -514,6 +551,13 @@ export default defineComponent({
       window.open('/comfyui', '_blank');
     };
     
+    // 添加打开重置日志对话框的方法
+    const showResetLog = () => {
+      if (resetLogDialog.value) {
+        resetLogDialog.value.openDialog('zh');
+      }
+    };
+    
     return {
       isConnected,
       installedModelsCount,
@@ -541,7 +585,10 @@ export default defineComponent({
       gpuMode,
       // 添加打开ComfyUI方法
       openComfyUI,
-      rememberChoice
+      rememberChoice,
+      resetDialogs,
+      resetLogDialog,
+      showResetLog
     };
   }
 });
@@ -702,8 +749,8 @@ export default defineComponent({
 /* 按钮通用样式 */
 .start-btn, .open-btn, .stop-btn {
   border-radius: var(--border-radius-md) !important;
-  padding: 0px 24px !important;
-  height: 28px !important;
+  padding: 6px 24px !important;
+  /* height: 28px !important; */
   font-weight: normal !important;
 }
 
