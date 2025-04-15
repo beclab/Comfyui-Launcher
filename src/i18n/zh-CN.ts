@@ -224,7 +224,14 @@ export default {
     confirmDelete: '确认删除模型',
     deleteMessage: '您确定要删除模型 "{ selectedModel?.name }" 吗？此操作不可撤销。',
     modelInfo: '模型详情',
-    unknown: '未知'
+    unknown: '未知',
+    viewDetails: '查看详情',
+    deleteModel: '删除模型',
+    modelName: '名称',
+    modelType: '类型',
+    modelSize: '大小',
+    installedDate: '安装日期',
+    path: '路径'
   },
   optionalModels: {
     title: '可用模型',

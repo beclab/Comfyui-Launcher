@@ -65,13 +65,13 @@
         
         <template v-slot:body-cell-size="props">
           <q-td :props="props" class="text-center">
-            {{ props.row.size || $t('installedModelsCard.unknown') }}
+            {{ props.row.fileSize ? formatFileSize(props.row.fileSize) : (props.row.size || $t('installedModelsCard.unknown')) }}
           </q-td>
         </template>
         
         <template v-slot:body-cell-mode="props">
           <q-td :props="props" class="text-center">
-            {{ props.row.mode || $t('installedModelsCard.unknown') }}
+            {{ props.row.base || $t('installedModelsCard.unknown') }}
           </q-td>
         </template>
         
@@ -90,10 +90,10 @@
         <template v-slot:body-cell-actions="props">
           <q-td :props="props" class="text-center">
             <q-btn size="sm" flat dense round icon="visibility" color="grey-7" @click="onInfoClick(props.row)">
-              <q-tooltip>查看详情</q-tooltip>
+              <q-tooltip>{{ $t('installedModelsCard.viewDetails') }}</q-tooltip>
             </q-btn>
             <q-btn size="sm" flat dense round icon="delete_outline" color="grey-7" @click="onDeleteClick(props.row)">
-              <q-tooltip>删除模型</q-tooltip>
+              <q-tooltip>{{ $t('installedModelsCard.deleteModel') }}</q-tooltip>
             </q-btn>
           </q-td>
         </template>
@@ -160,52 +160,60 @@
     
     <q-dialog v-model="modelInfoDialog">
       <q-card style="min-width: 350px">
-        <q-card-section>
+        <q-card-section class="row items-center">
           <div class="text-h6">{{ $t('installedModelsCard.modelInfo') }}</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
         </q-card-section>
         
         <q-card-section v-if="selectedModel">
           <q-list>
             <q-item>
+              <q-item-section side>
+                <q-item-label class="text-weight-medium">{{ $t('installedModelsCard.modelName') }}</q-item-label>
+              </q-item-section>
               <q-item-section>
-                <q-item-label overline>名称</q-item-label>
                 <q-item-label>{{ selectedModel.name }}</q-item-label>
               </q-item-section>
             </q-item>
             
             <q-item>
+              <q-item-section side>
+                <q-item-label class="text-weight-medium">{{ $t('installedModelsCard.modelType') }}</q-item-label>
+              </q-item-section>
               <q-item-section>
-                <q-item-label overline>类型</q-item-label>
                 <q-item-label>{{ selectedModel.type }}</q-item-label>
               </q-item-section>
             </q-item>
             
             <q-item>
+              <q-item-section side>
+                <q-item-label class="text-weight-medium">{{ $t('installedModelsCard.modelSize') }}</q-item-label>
+              </q-item-section>
               <q-item-section>
-                <q-item-label overline>大小</q-item-label>
-                <q-item-label>{{ selectedModel.size }}</q-item-label>
+                <q-item-label>{{ selectedModel.fileSize ? formatFileSize(selectedModel.fileSize) : (selectedModel.size || $t('installedModelsCard.unknown')) }}</q-item-label>
               </q-item-section>
             </q-item>
             
-            <q-item>
+            <!-- <q-item>
+              <q-item-section side>
+                <q-item-label class="text-weight-medium">{{ $t('installedModelsCard.installedDate') }}</q-item-label>
+              </q-item-section>
               <q-item-section>
-                <q-item-label overline>安装日期</q-item-label>
                 <q-item-label>{{ selectedModel.installedDate }}</q-item-label>
               </q-item-section>
-            </q-item>
+            </q-item> -->
             
             <q-item>
+              <q-item-section side>
+                <q-item-label class="text-weight-medium">{{ $t('installedModelsCard.path') }}</q-item-label>
+              </q-item-section>
               <q-item-section>
-                <q-item-label overline>路径</q-item-label>
-                <q-item-label>{{ selectedModel.path }}</q-item-label>
+                <q-item-label>{{ selectedModel.save_path }}</q-item-label>
               </q-item-section>
             </q-item>
           </q-list>
         </q-card-section>
-        
-        <q-card-actions align="right">
-          <q-btn flat label="关闭" color="primary" v-close-popup />
-        </q-card-actions>
       </q-card>
     </q-dialog>
   </q-card>
@@ -336,6 +344,10 @@ export default defineComponent({
     
     const updateTotalStorageUsed = () => {
       const totalBytes = installedModels.value.reduce((sum, model) => {
+        if (model.fileSize && !isNaN(model.fileSize)) {
+          return sum + model.fileSize;
+        }
+        
         const sizeMatch = model.size?.match(/(\d+(\.\d+)?)\s*(KB|MB|GB)/i);
         if (sizeMatch) {
           const size = parseFloat(sizeMatch[1]);

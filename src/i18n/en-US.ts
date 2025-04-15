@@ -224,7 +224,14 @@ export default {
     confirmDelete: 'Confirm Delete Model',
     deleteMessage: 'Are you sure you want to delete the model "{ selectedModel?.name }"? This operation is irreversible.',
     modelInfo: 'Model Details',
-    unknown: 'Unknown'
+    unknown: 'Unknown',
+    viewDetails: 'View Details',
+    deleteModel: 'Delete Model',
+    modelName: 'Name',
+    modelType: 'Type',
+    modelSize: 'Size',
+    installedDate: 'Installed Date',
+    path: 'Path'
   },
   optionalModels: {
     title: 'Available Models',

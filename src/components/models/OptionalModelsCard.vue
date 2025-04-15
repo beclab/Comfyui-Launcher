@@ -115,10 +115,10 @@
                 </q-td>
                 
                 <!-- 大小列 -->
-                <q-td key="size" :props="props">{{ props.row.size || $t('models.modelDetails.noDescription') }}</q-td>
+                <q-td key="size" :props="props">{{ props.row.size || (props.row.fileSize ? formatFileSize(props.row.fileSize) : $t('models.modelDetails.noDescription')) }}</q-td>
                 
                 <!-- 底模列 -->
-                <q-td key="baseModel" :props="props">{{ props.row.baseModel || 'FLUX.1' }}</q-td>
+                <q-td key="baseModel" :props="props">{{ props.row.base || 'unknown' }}</q-td>
                 
                 <!-- 来源列 -->
                 <q-td key="source" :props="props">{{ props.row.source || 'local' }}</q-td>
@@ -237,54 +237,63 @@
   
   <q-dialog v-model="modelInfoDialog">
     <q-card style="min-width: 350px">
-      <q-card-section>
+      <q-card-section class="row items-center">
         <div class="text-h6">{{ $t('optionalModels.dialog.modelDetails') }}</div>
+        <q-space />
+        <q-btn icon="close" flat round dense v-close-popup />
       </q-card-section>
       <q-card-section v-if="selectedModel">
         <q-list>
           <q-item>
+            <q-item-section side style="width: 120px; min-width: 120px">
+              <q-item-label class="text-weight-medium">{{ $t('models.modelDetails.name') }}</q-item-label>
+            </q-item-section>
             <q-item-section>
-              <q-item-label overline>{{ $t('models.modelDetails.name') }}</q-item-label>
-              <q-item-label>{{ selectedModel.name }}</q-item-label>
+              <q-item-label class="text-left">{{ selectedModel.name }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item>
+            <q-item-section side style="width: 120px; min-width: 120px">
+              <q-item-label class="text-weight-medium">{{ $t('models.modelDetails.type') }}</q-item-label>
+            </q-item-section>
             <q-item-section>
-              <q-item-label overline>{{ $t('models.modelDetails.type') }}</q-item-label>
-              <q-item-label>{{ selectedModel.type }}</q-item-label>
+              <q-item-label class="text-left">{{ selectedModel.type }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item>
+            <q-item-section side style="width: 120px; min-width: 120px">
+              <q-item-label class="text-weight-medium">{{ $t('models.modelDetails.size') }}</q-item-label>
+            </q-item-section>
             <q-item-section>
-              <q-item-label overline>{{ $t('models.modelDetails.size') }}</q-item-label>
-              <q-item-label>{{ selectedModel.size }}</q-item-label>
+              <q-item-label class="text-left">{{ selectedModel.size }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item>
+            <q-item-section side style="width: 120px; min-width: 120px">
+              <q-item-label class="text-weight-medium">{{ $t('models.modelDetails.baseModel') }}</q-item-label>
+            </q-item-section>
             <q-item-section>
-              <q-item-label overline>{{ $t('models.modelDetails.baseModel') }}</q-item-label>
-              <q-item-label>{{ selectedModel.baseModel || 'FLUX.1' }}</q-item-label>
+              <q-item-label class="text-left">{{ selectedModel.baseModel || 'FLUX.1' }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item>
+            <q-item-section side style="width: 120px; min-width: 120px">
+              <q-item-label class="text-weight-medium">{{ $t('models.modelDetails.source') }}</q-item-label>
+            </q-item-section>
             <q-item-section>
-              <q-item-label overline>{{ $t('models.modelDetails.source') }}</q-item-label>
-              <q-item-label>{{ selectedModel.source || 'local' }}</q-item-label>
+              <q-item-label class="text-left">{{ selectedModel.source || 'local' }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item>
+            <q-item-section side style="width: 120px; min-width: 120px">
+              <q-item-label class="text-weight-medium">{{ $t('models.modelDetails.description') }}</q-item-label>
+            </q-item-section>
             <q-item-section>
-              <q-item-label overline>{{ $t('models.modelDetails.description') }}</q-item-label>
-              <q-item-label>{{ selectedModel.description || $t('models.modelDetails.noDescription') }}</q-item-label>
+              <q-item-label class="text-left">{{ selectedModel.description || $t('models.modelDetails.noDescription') }}</q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
       </q-card-section>
-      <q-card-actions align="right">
-        <q-btn flat color="primary" v-close-popup>
-          {{ $t('optionalModels.dialog.close') }}
-        </q-btn> 
-      </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
