@@ -901,13 +901,13 @@ export const isComfyUIRunning = (): Promise<boolean> => {
   });
 };
 
-// 创建未启动状态页面的HTML
+// Create HTML page for when ComfyUI is not running
 const getNotRunningHtml = () => {
   return `
   <!DOCTYPE html>
   <html>
   <head>
-    <title>ComfyUI 未启动</title>
+    <title>ComfyUI 不可用 | ComfyUI Unavailable</title>
     <meta charset="utf-8">
     <style>
       body {
@@ -917,43 +917,71 @@ const getNotRunningHtml = () => {
         align-items: center;
         height: 100vh;
         margin: 0;
-        background-color: #f5f5f5;
+        background-color: white;
       }
       .container {
         text-align: center;
         padding: 2rem;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
       }
       h1 {
-        color: #e74c3c;
+        color: #333;
+        font-size: 24px;
+        margin-bottom: 10px;
       }
       p {
-        margin: 1rem 0;
+        margin: 8px 0 20px;
+        color: #666;
+        font-size: 14px;
       }
       .retry-btn {
-        background-color: #3498db;
+        background-color: #4a76fd;
         color: white;
         border: none;
-        padding: 10px 20px;
-        border-radius: 4px;
+        padding: 8px 30px;
+        border-radius: 8px;
         cursor: pointer;
         font-size: 16px;
-        margin-top: 1rem;
+        font-weight: 500;
       }
       .retry-btn:hover {
-        background-color: #2980b9;
+        background-color: #3a66ed;
+      }
+      .en, .zh {
+        display: none;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>ComfyUI 未启动</h1>
-      <p>ComfyUI 服务目前未运行或无法访问。</p>
-      <p>请确保 ComfyUI 服务已启动并正在监听端口 ${config.comfyui.port}。</p>
-      <button class="retry-btn" onclick="window.location.reload()">重试</button>
+      <div class="zh">
+        <h1>ComfyUI 无法使用</h1>
+        <p>ComfyUl 服务目前未启动或无法访问。请联系您的 Olares 管理员。</p>
+        <button class="retry-btn" onclick="window.location.reload()">重试</button>
+      </div>
+      
+      <div class="en">
+        <h1>ComfyUI Unavailable</h1>
+        <p>The ComfyUI service is currently not running or inaccessible. Please contact your Olares administrator.</p>
+        <button class="retry-btn" onclick="window.location.reload()">Retry</button>
+      </div>
     </div>
+    
+    <script>
+      // 检测浏览器语言并显示相应内容
+      (function() {
+        // 获取浏览器语言
+        const userLang = navigator.language || navigator.userLanguage || '';
+        
+        // 默认显示英文，如果是中文环境则显示中文
+        const lang = userLang.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+        
+        // 显示对应语言内容
+        document.querySelectorAll('.' + lang).forEach(el => {
+          el.style.display = 'block';
+        });
+      })();
+    </script>
   </body>
   </html>
   `;
