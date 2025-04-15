@@ -52,7 +52,7 @@ export default {
     },
     pagination: {
       rowsPerPage: 'Rows per page',
-      pageInfo: '{{from}}-{{to}} of {{total}}'
+      pageInfo: '{from}-{to} of {total}'
     }
   },
   network: {

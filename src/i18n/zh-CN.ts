@@ -41,7 +41,7 @@ export default {
     },
     pagination: {
       rowsPerPage: '每页记录数',
-      pageInfo: '第{{from}}到{{to}}条，共{{total}}条'
+      pageInfo: '第{from}到{to}条，共{total}条'
     }
   },
   network: {
@@ -215,13 +215,13 @@ export default {
   },
   installedModelsCard: {
     installedModels: '已安装模型',
-    installedCount: '已安装 {{ installedModelsCount }} 个模型',
-    storageUsed: '占用存储空间: {{ totalStorageUsed }}',
+    installedCount: '已安装 { installedModelsCount } 个模型',
+    storageUsed: '占用存储空间: { totalStorageUsed }',
     searchPlaceholder: '搜索模型...',
     scanModels: '扫描模型',
     refresh: '刷新',
     confirmDelete: '确认删除模型',
-    deleteMessage: '您确定要删除模型 "{{ selectedModel?.name }}" 吗？此操作不可撤销。',
+    deleteMessage: '您确定要删除模型 "{ selectedModel?.name }" 吗？此操作不可撤销。',
     modelInfo: '模型详情',
     unknown: '未知'
   },
@@ -395,7 +395,7 @@ export default {
     },
     pagination: {
       rowsPerPage: '每页显示',
-      pageInfo: '第{{currentPage}}页 / 共{{totalPages}}页 (共{{total}}个插件)'
+      pageInfo: '第{currentPage}页 / 共{totalPages}页 (共{total}个插件)'
     },
     status: {
       installed: '已安装',

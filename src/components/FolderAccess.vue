@@ -12,7 +12,7 @@
           <div class="col-12 col-md-4 folder-container">
             <div class="folder-content q-pa-md">
               <div class="row no-wrap items-start">
-                <img src="src/assets/icon-folder.png" class="folder-icon q-mr-sm q-mt-xs" />
+                <img src="../assets/icon-folder.png" class="folder-icon q-mr-sm q-mt-xs" />
                 <div class="column full-width">
                   <div>
                     {{ folder.name }}
