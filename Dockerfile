@@ -79,6 +79,8 @@ RUN mkdir -p /app/logs && \
 # 从构建阶段复制构建产物
 COPY --from=builder /app/dist /app/dist
 COPY --from=builder /app/server/dist /app/server/dist
+COPY --from=builder /app/server/resource-packs /app/server/resource-packs
+COPY --from=builder /app/server/resource-packs /app/server/dist/resource-packs
 
 # 从构建阶段复制源码,方便后期调试
 COPY --from=builder /app/server/src /app/server/src
