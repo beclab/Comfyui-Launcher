@@ -168,10 +168,12 @@ export default {
     };
 
     const onFilter = (filters: { statusFilter: { label: string; value: string }; tagFilter: string[] }): void => {
+
       emit('filter', filters);
     };
 
     const onRefresh = (): void => {
+      console.log('Refresh plugins in PluginsManager');
       emit('refresh');
     };
 

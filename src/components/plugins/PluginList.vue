@@ -56,7 +56,7 @@
               @update:model-value="onFilter"
             />
             
-            <q-select
+            <!-- <q-select
               v-model="tagFilter"
               :options="tagOptions"
               outlined
@@ -66,7 +66,7 @@
               style="width: 120px"
               @update:model-value="onFilter"
               multiple
-            />
+            /> -->
             
             <q-btn 
             color="grey-7"
@@ -76,7 +76,7 @@
             @click="onRefresh"
             :loading="loading"
             size="md"
-            style="border-radius: var(--border-radius-md);"
+            style="border-radius: var(--border-radius-md);padding-top: 8px;padding-bottom: 8px;"
             >
               <q-tooltip>{{ $t('plugins.refreshTooltip') }}</q-tooltip>
             </q-btn>
@@ -160,7 +160,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
 import { debounce } from 'quasar';
 import PluginCard from './PluginCard.vue';
 
@@ -249,11 +249,11 @@ const statusFilter = ref(props.initialValues.statusFilter);
 const tagFilter = ref(props.initialValues.tagFilter);
 
 // 监听初始值变化
-watch(() => props.initialValues, (newValues) => {
-  searchQuery.value = newValues.searchQuery;
-  statusFilter.value = newValues.statusFilter;
-  tagFilter.value = newValues.tagFilter;
-}, { deep: true });
+// watch(() => props.initialValues, (newValues) => {
+  // searchQuery.value = newValues.searchQuery;
+  // statusFilter.value = newValues.statusFilter;
+  // tagFilter.value = newValues.tagFilter;
+// }, { deep: true });
 
 // Emits
 const emit = defineEmits([
@@ -303,14 +303,16 @@ const onSearch = debounce(function() {
 
 // 筛选
 const onFilter = () => {
+
   emit('filter', {
-    statusFilter: statusFilter.value,
+    statusFilter: { label: statusFilter.value.label, value: statusFilter.value.value },
     tagFilter: tagFilter.value
   });
 };
 
 // 刷新
 const onRefresh = (): void => {
+  console.log('onRefresh called');
   emit('refresh');
 };
 </script>

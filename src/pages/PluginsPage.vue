@@ -59,7 +59,8 @@
         @clear-filters="clearFilters"
         @load-more="loadMorePlugins"
         @search="handleSearch"
-        @refresh="fetchPlugins"
+        @refresh="fetchPlugins(true)"
+        @filter="handleFilter"
       />
     </div>
 
@@ -245,6 +246,7 @@ const historyColumns: QTableColumn[] = [
 
 // 根据筛选条件计算过滤后的插件列表
 const filteredPlugins = computed(() => {
+  
   if (!searchQuery.value && statusFilter.value.value === 'all' && tagFilter.value.length === 0) {
     return plugins.value;
   }
@@ -296,6 +298,7 @@ const clearFilters = () => {
 
 // 获取插件列表
 const fetchPlugins = async (forceUpdate = false) => {
+  console.log('Fetching plugins...');
   loading.value = true;
   try {
     const response = await DataCenter.getPlugins(forceUpdate);
@@ -345,7 +348,7 @@ const installPlugin = async (plugin: Plugin) => {
     installationInProgress[plugin.id] = false;
     progressVisible.value = false;
     
-    await fetchPlugins();
+    await fetchPlugins(true);
   }
 };
 
@@ -376,7 +379,7 @@ const uninstallPlugin = async (plugin: Plugin) => {
     progressVisible.value = false;
   } finally {
     uninstallationInProgress[plugin.id] = false;
-    await fetchPlugins();
+    await fetchPlugins(true);
   }
 };
 
@@ -717,7 +720,7 @@ watch(activeTab, (newValue) => {
 
 // 初始化
 onMounted(() => {
-  fetchPlugins();
+  fetchPlugins(false);
   
   // 收集所有标签
   setTimeout(() => {
@@ -749,6 +752,14 @@ const openPluginsFolder = async () => {
       icon: 'error'
     });
   }
+};
+
+const handleFilter = (filters: { statusFilter: { label: string; value: string }; tagFilter: string[] }) => {
+
+  statusFilter.value = filters.statusFilter || statusFilter.value;
+  tagFilter.value = filters.tagFilter || tagFilter.value;
+
+  filterPlugins();
 };
 
 // 添加这些变量的定义
