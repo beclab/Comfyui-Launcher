@@ -51,7 +51,7 @@ RUN /app/build.sh
 
 # 第二阶段：运行
 # FROM docker.io/opensuse/tumbleweed:latest
-FROM kldtks/comfyui:v0.3.22-b1
+FROM kldtks/comfyui:v0.3.27
 
 # 设置工作目录
 WORKDIR /app
