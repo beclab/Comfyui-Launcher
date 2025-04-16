@@ -1821,4 +1821,167 @@ export class PluginsController {
       return translatedLog;
     });
   }
+
+  // 添加一个新的公共方法，用于从其他控制器直接调用安装插件
+  public async installPluginFromGitHub(
+    githubUrl: string, 
+    branch: string = 'main',
+    progressCallback: (progress: any) => boolean,
+    operationId: string
+  ): Promise<void> {
+    try {
+      // 从GitHub URL解析插件ID
+      const githubUrlParts = githubUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+      if (!githubUrlParts) {
+        throw new Error(`无效的GitHub URL: ${githubUrl}`);
+      }
+      
+      const repo = githubUrlParts[2].replace('.git', '');
+      const pluginId = repo;
+      
+      // 创建任务进度记录（如果尚未存在）
+      if (!taskProgressMap[operationId]) {
+        taskProgressMap[operationId] = {
+          progress: 0,
+          completed: false,
+          pluginId,
+          type: 'install',
+          logs: []
+        };
+      }
+      
+      // 记录操作开始
+      this.logOperation(operationId, `开始从资源包安装插件: ${githubUrl} (分支: ${branch})`);
+      
+      // 确定安装路径
+      const targetDir = path.join(CUSTOM_NODES_PATH, pluginId);
+      
+      // 检查目录是否已存在
+      if (fs.existsSync(targetDir)) {
+        // 如果存在，备份并删除
+        this.logOperation(operationId, '检测到已有安装，正在备份...');
+        const backupDir = `${targetDir}_backup_${Date.now()}`;
+        fs.renameSync(targetDir, backupDir);
+        this.logOperation(operationId, `已将现有目录备份到: ${backupDir}`);
+      }
+      
+      // 更新进度
+      taskProgressMap[operationId].progress = 30;
+      taskProgressMap[operationId].message = '正在下载插件...';
+      this.logOperation(operationId, '正在下载插件...');
+      
+      // 使用git clone安装
+      try {
+        this.logOperation(operationId, `执行: git clone --branch ${branch} "${githubUrl}" "${targetDir}"`);
+        const { stdout, stderr } = await execPromise(`git clone --branch ${branch} "${githubUrl}" "${targetDir}"`);
+        if (stdout) this.logOperation(operationId, `Git输出: ${stdout}`);
+        if (stderr) this.logOperation(operationId, `Git错误: ${stderr}`);
+      } catch (cloneError) {
+        this.logOperation(operationId, `Git克隆失败: ${cloneError}`);
+        console.error(`[API] Git克隆失败: ${cloneError}`);
+        
+        // 尝试使用HTTPS替代可能的SSH或HTTP2
+        const convertedUrl = githubUrl
+          .replace('git@github.com:', 'https://github.com/')
+          .replace(/\.git$/, '');
+        
+        taskProgressMap[operationId].message = '尝试备用方式下载...';
+        this.logOperation(operationId, `尝试备用方式: git clone --branch ${branch} "${convertedUrl}" "${targetDir}"`);
+        
+        try {
+          const { stdout, stderr } = await execPromise(`git clone --branch ${branch} "${convertedUrl}" "${targetDir}"`);
+          if (stdout) this.logOperation(operationId, `Git输出: ${stdout}`);
+          if (stderr) this.logOperation(operationId, `Git错误: ${stderr}`);
+        } catch (retryError) {
+          this.logOperation(operationId, `备用方式也失败: ${retryError}`);
+          throw new Error(`git克隆失败: ${cloneError instanceof Error ? cloneError.message : String(cloneError)}. 备用方式也失败: ${retryError instanceof Error ? retryError.message : String(retryError)}`);
+        }
+      }
+      
+      // 安装依赖
+      taskProgressMap[operationId].progress = 70;
+      
+      // 在开发环境下跳过依赖安装
+      if (isDev) {
+        taskProgressMap[operationId].message = '开发环境：跳过依赖安装...';
+        this.logOperation(operationId, '开发环境：跳过依赖安装');
+        console.log('[API] 开发环境：跳过依赖安装');
+      } else {
+        taskProgressMap[operationId].message = '检查依赖...';
+        this.logOperation(operationId, '检查依赖文件...');
+        
+        const requirementsPath = path.join(targetDir, 'requirements.txt');
+        if (fs.existsSync(requirementsPath)) {
+          taskProgressMap[operationId].message = '安装依赖...';
+          this.logOperation(operationId, `发现requirements.txt，执行: pip install -r "${requirementsPath}"`);
+          try {
+            const { stdout, stderr } = await execPromise(`pip install -r "${requirementsPath}"`);
+            if (stdout) this.logOperation(operationId, `依赖安装输出: ${stdout}`);
+            if (stderr) this.logOperation(operationId, `依赖安装警告: ${stderr}`);
+          } catch (pipError) {
+            this.logOperation(operationId, `依赖安装失败，但继续安装流程: ${pipError}`);
+          }
+        } else {
+          this.logOperation(operationId, '未找到requirements.txt文件');
+        }
+        
+        // 执行安装脚本
+        const installScriptPath = path.join(targetDir, 'install.py');
+        if (fs.existsSync(installScriptPath)) {
+          taskProgressMap[operationId].message = '执行安装脚本...';
+          this.logOperation(operationId, `发现install.py，执行: cd "${targetDir}" && python3 "${installScriptPath}"`);
+          try {
+            const { stdout, stderr } = await execPromise(`cd "${targetDir}" && python3 "${installScriptPath}"`);
+            if (stdout) this.logOperation(operationId, `安装脚本输出: ${stdout}`);
+            if (stderr) this.logOperation(operationId, `安装脚本警告: ${stderr}`);
+          } catch (scriptError) {
+            this.logOperation(operationId, `安装脚本执行失败，但继续安装流程: ${scriptError}`);
+          }
+        } else {
+          this.logOperation(operationId, '未找到install.py脚本');
+        }
+      }
+      
+      // 完成安装
+      taskProgressMap[operationId].progress = 100;
+      taskProgressMap[operationId].completed = true;
+      
+      const now = new Date();
+      const successMessage = `插件安装完成于 ${now.toLocaleString()}`;
+      taskProgressMap[operationId].message = successMessage;
+      this.logOperation(operationId, successMessage);
+      
+      // 调用进度回调
+      if (progressCallback) {
+        progressCallback({
+          progress: 100,
+          status: 'completed'
+        });
+      }
+      
+    } catch (error) {
+      console.error(`[API] 安装插件失败: ${error}`);
+      const errorMessage = `安装失败: ${error instanceof Error ? error.message : '未知错误'}`;
+      
+      // 如果有任务记录，更新它
+      if (taskProgressMap[operationId]) {
+        taskProgressMap[operationId].progress = 0;
+        taskProgressMap[operationId].completed = true;
+        taskProgressMap[operationId].message = errorMessage;
+        this.logOperation(operationId, errorMessage);
+      }
+      
+      // 调用进度回调报告错误
+      if (progressCallback) {
+        progressCallback({
+          progress: 0,
+          status: 'error',
+          error: errorMessage
+        });
+      }
+      
+      // 重新抛出错误
+      throw error;
+    }
+  }
 } 

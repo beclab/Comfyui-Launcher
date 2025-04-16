@@ -52,7 +52,7 @@
               <div class="text-caption text-grey-7">{{ $t('packageInstall.controlNetModelsDesc') }}</div>
             </div>
             
-            <q-btn outline rounded class="download-btn q-ml-sm" @click="downloadPackage($t('packageInstall.controlNetPackage'))" >
+            <q-btn outline rounded class="download-btn q-ml-sm" @click="openControlNetResourcePack" >
               {{ $t('packageInstall.download') }}
             </q-btn>
           </div>
@@ -65,16 +65,25 @@
       v-model="showEssentialModelsDialog"
       @installation-complete="handleInstallationComplete"
     />
+    
+    <!-- 资源包安装对话框 -->
+    <ResourcePackDialog
+      v-model:visible="showResourcePackDialog"
+      :pack-id="selectedPackId"
+      @installation-complete="handleResourcePackInstallComplete"
+    />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import EssentialModelsDialog from './models/EssentialModelsDialog.vue';
+import ResourcePackDialog from './resources/ResourcePackDialog.vue';
 import { useQuasar } from 'quasar';
 
 // 定义资源包接口，避免使用 any 类型
 interface Package {
+  id: string;
   name: string;
   description: string;
   hasMenu: boolean;
@@ -84,47 +93,60 @@ interface Package {
 export default defineComponent({
   name: 'PackageInstall',
   components: {
-    EssentialModelsDialog
+    EssentialModelsDialog,
+    ResourcePackDialog
   },
   setup() {
     const $q = useQuasar();
     const showEssentialModelsDialog = ref(false);
+    const showResourcePackDialog = ref(false);
+    const selectedPackId = ref('');
     
     const packages = ref<Package[]>([
       { 
+        id: 'essential-models',
         name: '最低模型包', 
         description: 'SD1.5 4G SDXL base-model...等', 
         hasMenu: true,
         menuOptions: ['模型', '扩展']
       },
       { 
+        id: 'controlnet-models',
         name: 'ControlNet模型包', 
         description: 'controllllnet-models', 
         hasMenu: false
       }
     ]);
     
-    const downloadPackage = (packageName: string) => {
-      console.log('Downloading package:', packageName);
-      // 实现下载逻辑
-      $q.notify({
-        type: 'info',
-        message: `准备下载 ${packageName}，功能开发中...`
-      });
+    const downloadOption = ref('all');
+    
+    const openControlNetResourcePack = () => {
+      selectedPackId.value = 'controlnet-models';
+      showResourcePackDialog.value = true;
     };
     
-    const downloadOption = (packageName: string, option: string) => {
-      console.log('Downloading option:', packageName, option);
-      // 实现选项下载逻辑
-      $q.notify({
-        type: 'info',
-        message: `准备下载 ${packageName} 的 ${option}，功能开发中...`
-      });
+    const handleResourcePackInstallComplete = (result: { success: boolean, error?: string, packId?: string }) => {
+      if (result.success) {
+        $q.notify({
+          color: 'positive',
+          icon: 'check_circle',
+          message: `${result.packId || '资源包'}安装完成！`,
+          timeout: 3000
+        });
+      } else {
+        $q.notify({
+          color: 'negative',
+          icon: 'error',
+          message: `安装失败: ${result.error || '未知错误'}`,
+          timeout: 5000
+        });
+      }
     };
     
     const handleInstallationComplete = () => {
       $q.notify({
-        type: 'positive',
+        color: 'positive',
+        icon: 'check_circle',
         message: '基础模型安装完成！',
         timeout: 3000
       });
@@ -133,9 +155,12 @@ export default defineComponent({
     return {
       packages,
       showEssentialModelsDialog,
-      downloadPackage,
       downloadOption,
-      handleInstallationComplete
+      handleInstallationComplete,
+      showResourcePackDialog,
+      selectedPackId,
+      openControlNetResourcePack,
+      handleResourcePackInstallComplete
     };
   }
 });

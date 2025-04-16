@@ -311,6 +311,55 @@ const api = {
   
   setHuggingfaceEndpoint: (hfEndpoint: string) => 
     superagent.post(`${API_BASE_URL}/system/huggingface-endpoint`).send({ hfEndpoint }).use(debug),
+
+  // 新增：资源包相关API
+  resourcePacks: {
+    // 获取所有资源包列表
+    getAll: () => {
+      return adaptResponse(
+        superagent
+          .get(`${API_BASE_URL}/resource-packs`)
+          .use(debug)
+      );
+    },
+    
+    // 获取单个资源包详情
+    getById: (packId: string) => {
+      return adaptResponse(
+        superagent
+          .get(`${API_BASE_URL}/resource-packs/${packId}`)
+          .use(debug)
+      );
+    },
+    
+    // 安装资源包 - 修正API路径
+    install: (packId: string, options?: { downloadSource?: string }) => {
+      return adaptResponse(
+        superagent
+          .post(`${API_BASE_URL}/resource-packs/install`)
+          .send({ packId, ...options })
+          .use(debug)
+      );
+    },
+    
+    // 获取安装进度
+    getInstallProgress: (taskId: string) => {
+      return adaptResponse(
+        superagent
+          .get(`${API_BASE_URL}/resource-packs/progress/${taskId}`)
+          .use(debug)
+      );
+    },
+    
+    // 取消安装
+    cancelInstallation: (taskId: string) => {
+      return adaptResponse(
+        superagent
+          .post(`${API_BASE_URL}/resource-packs/cancel/${taskId}`)
+          .use(debug)
+      );
+    }
+  },
 };
 
 export default api;  // 只有一个默认导出 
@@ -431,3 +480,6 @@ export const civitaiApi = {
     return response.body;
   },
 }; 
+
+// 导出资源包API供单独使用
+export const resourcePacksApi = api.resourcePacks; 

@@ -1,0 +1,50 @@
+{
+  "id": "test-resource-pack",
+  "name": "测试资源包",
+  "description": "包含四种类型资源的测试包",
+  "author": "Admin",
+  "version": "1.0.0",
+  "tags": ["测试", "demo"],
+  "resources": [
+    {
+      "id": "test-model",
+      "name": "测试模型",
+      "type": "model",
+      "description": "用于测试的小型模型",
+      "url": {
+        "mirror": "https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors",
+        "hf": "https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors"
+      },
+      "dir": "test",
+      "out": "test-model.safetensors",
+      "optional": false
+    },
+    {
+      "id": "test-plugin",
+      "name": "测试插件",
+      "type": "plugin",
+      "description": "用于测试的简单插件",
+      "github": "https://github.com/Comfy-Org/ComfyUI-Manager",
+      "branch": "main",
+      "optional": true
+    },
+    {
+      "id": "test-workflow",
+      "name": "测试工作流",
+      "type": "workflow",
+      "description": "简单的测试工作流",
+      "url": "https://raw.githubusercontent.com/comfyanonymous/ComfyUI_examples/master/img2img/img2img_workflow.png",
+      "filename": "test-workflow.json",
+      "optional": false
+    },
+    {
+      "id": "test-custom-resource",
+      "name": "测试自定义资源",
+      "type": "custom",
+      "description": "测试用的自定义资源文件",
+      "url": "https://raw.githubusercontent.com/comfyanonymous/ComfyUI_examples/master/img2img/img2img_workflow.png",
+      "destination": "custom/test-readme.md",
+      "optional": true
+    }
+  ]
+} 

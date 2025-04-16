@@ -7,6 +7,7 @@ import { ModelsController } from './controllers/models.controller';
 import { PluginsController } from './controllers/plugins.controller';
 import { SystemController } from './controllers/system.controller';
 import { EssentialModelsController } from './controllers/essential-models.controller';
+import { ResourcePacksController } from './controllers/resource-packs.controller';
 import { config } from './config';
 import {
   getPipSource,
@@ -37,6 +38,7 @@ const modelsController = new ModelsController();
 const pluginsController = new PluginsController();
 const systemController = new SystemController();
 const essentialModelsController = new EssentialModelsController();
+const resourcePacksController = new ResourcePacksController();
 
 // ComfyUI状态管理路由
 router.get('/api/status', (ctx) => comfyuiController.getStatus(ctx));
@@ -113,6 +115,13 @@ router.get('/api/system/network-config', systemController.getNetworkConfig.bind(
 router.post('/api/system/pip-source', systemController.configurePipSource.bind(systemController));
 router.post('/api/system/huggingface-endpoint', systemController.configureHuggingFaceEndpoint.bind(systemController));
 router.post('/api/system/github-proxy', systemController.configureGithubProxy.bind(systemController));
+
+// 资源包管理路由
+router.get('/api/resource-packs', (ctx) => resourcePacksController.getResourcePacks(ctx));
+router.get('/api/resource-packs/:id', (ctx) => resourcePacksController.getResourcePackDetail(ctx));
+router.post('/api/resource-packs/install', (ctx) => resourcePacksController.installResourcePack(ctx));
+router.get('/api/resource-packs/progress/:taskId', (ctx) => resourcePacksController.getInstallProgress(ctx));
+router.post('/api/resource-packs/cancel/:taskId', (ctx) => resourcePacksController.cancelInstallation(ctx));
 
 // 使用路由
 app.use(router.routes());

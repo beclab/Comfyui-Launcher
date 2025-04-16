@@ -1,0 +1,28 @@
+{
+  "id": "chinese-pack",
+  "name": "中文资源包",
+  "description": "包含中文内容的测试资源包",
+  "author": "测试用户",
+  "version": "1.0.0",
+  "tags": ["中文", "测试"],
+  "resources": [
+    {
+      "id": "cn-workflow",
+      "name": "中文工作流",
+      "type": "workflow",
+      "description": "测试用中文工作流",
+      "url": "https://raw.githubusercontent.com/comfyanonymous/ComfyUI_examples/master/example_simple.json",
+      "filename": "中文工作流.json",
+      "optional": false
+    },
+    {
+      "id": "cn-custom",
+      "name": "中文自定义资源",
+      "type": "custom",
+      "description": "中文测试自定义资源",
+      "url": "https://raw.githubusercontent.com/comfyanonymous/ComfyUI/master/README.md",
+      "destination": "自定义/中文说明.md",
+      "optional": true
+    }
+  ]
+} 

@@ -1,0 +1,15 @@
+{
+  "id": "minimal-pack",
+  "name": "最小资源包",
+  "description": "仅包含必要资源的最小测试包",
+  "resources": [
+    {
+      "id": "minimal-model",
+      "name": "最小测试模型",
+      "type": "model",
+      "url": "https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/diffusion_pytorch_model.safetensors",
+      "dir": "minimal",
+      "out": "minimal-model.safetensors"
+    }
+  ]
+} 

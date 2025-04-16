@@ -550,5 +550,40 @@ export default {
       title: 'Last Reset Operation Logs',
       noLogs: 'No reset logs found'
     }
+  },
+  resourcePack: {
+    loading: 'Loading...',
+    loadingPackDetails: 'Loading resource pack details...',
+    loadError: 'Failed to load resource pack',
+    retry: 'Retry',
+    contents: 'Package Contents',
+    totalResources: 'Total {count} resources',
+    id: 'ID',
+    version: 'Version',
+    author: 'Author',
+    website: 'Website',
+    install: 'Install Package',
+    close: 'Close',
+    cancel: 'Cancel Installation',
+    installationProgress: 'Installation Progress',
+    overallProgress: 'Overall Progress',
+    startTime: 'Start Time',
+    endTime: 'End Time',
+    elapsed: 'Elapsed Time',
+    completedResources: 'Completed Resources',
+    resourcesStatus: 'Resource Status',
+    resourcesList: 'Resources List',
+    type: 'Type',
+    size: 'Size'
+  },
+  resourcePacks: {
+    title: 'Resource Packages',
+    subtitle: 'One-click installation of resource packages',
+    loading: 'Loading resource packages...',
+    noPacks: 'No resource packages available',
+    refresh: 'Refresh',
+    resources: '{count} resources',
+    author: 'Author',
+    view: 'View Details'
   }
 };

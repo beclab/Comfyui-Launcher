@@ -1,0 +1,178 @@
+{
+    "id": "controlnet-models",
+    "name": "Controlnet模型包",
+    "description": "包含Controlnet大部分模型",
+    "author": "Admin",
+    "version": "1.0.0",
+    "tags": ["controlnet", "base"],
+    "resources": [
+      {
+        "id": "control_v11p_sd15_canny",
+        "name": "control_v11p_sd15_canny",
+        "type": "model",
+        "description": "control_v11p_sd15_canny",
+        "url": {
+          "hf": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_canny.pth"
+        },
+        "dir": "controlnet",
+        "out": "control_v11p_sd15_canny.pth",
+        "optional": false
+      },
+      {
+        "id": "control_v11p_sd15_mlsd",
+        "name": "control_v11p_sd15_mlsd",
+        "type": "model",
+        "description": "control_v11p_sd15_mlsd",
+        "url": {
+          "hf": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_mlsd.pth"
+        },
+        "dir": "controlnet",
+        "out": "control_v11p_sd15_mlsd.pth",
+        "optional": false
+      },
+      {
+        "id": "control_v11f1p_sd15_depth",
+        "name": "control_v11f1p_sd15_depth",
+        "type": "model",
+        "description": "control_v11f1p_sd15_depth",
+        "url": {
+          "hf": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11f1p_sd15_depth.pth"
+        },
+        "dir": "controlnet",
+        "out": "control_v11f1p_sd15_depth.pth",
+        "optional": false
+      },
+      {
+        "id": "control_v11p_sd15_normalbae",
+        "name": "control_v11p_sd15_normalbae",
+        "type": "model",
+        "description": "control_v11p_sd15_normalbae",
+        "url": {
+          "hf": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_normalbae.pth"
+        },
+        "dir": "controlnet",
+        "out": "control_v11p_sd15_normalbae.pth",
+        "optional": false
+      },
+      {
+        "id": "control_v11p_sd15_seg",
+        "name": "control_v11p_sd15_seg",
+        "type": "model",
+        "description": "control_v11p_sd15_seg",
+        "url": {
+          "hf": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_seg.pth"
+        },
+        "dir": "controlnet",
+        "out": "control_v11p_sd15_seg.pth",
+        "optional": false
+      },
+      {
+        "id": "control_v11p_sd15_inpaint",
+        "name": "control_v11p_sd15_inpaint",
+        "type": "model",
+        "description": "control_v11p_sd15_inpaint",
+        "url": {
+          "hf": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_inpaint.pth"
+        },
+        "dir": "controlnet",
+        "out": "control_v11p_sd15_inpaint.pth",
+        "optional": false
+      },
+      {
+        "id": "control_v11p_sd15_lineart",
+        "name": "control_v11p_sd15_lineart",
+        "type": "model",
+        "description": "control_v11p_sd15_lineart",
+        "url": {
+          "hf": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_lineart.pth"
+        },
+        "dir": "controlnet",
+        "out": "control_v11p_sd15_lineart.pth",
+        "optional": false
+      },
+      {
+        "id": "control_v11p_sd15s2_lineart_anime",
+        "name": "control_v11p_sd15s2_lineart_anime",
+        "type": "model",
+        "description": "control_v11p_sd15s2_lineart_anime",
+        "url": {
+          "hf": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15s2_lineart_anime.pth"
+        },
+        "dir": "controlnet",
+        "out": "control_v11p_sd15s2_lineart_anime.pth",
+        "optional": false
+      },
+      {
+        "id": "control_v11p_sd15_openpose",
+        "name": "control_v11p_sd15_openpose",
+        "type": "model",
+        "description": "control_v11p_sd15_openpose",
+        "url": {
+          "hf": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_openpose.pth"
+        },
+        "dir": "controlnet",
+        "out": "control_v11p_sd15_openpose.pth",
+        "optional": false
+      },
+      {
+        "id": "control_v11p_sd15_scribble",
+        "name": "control_v11p_sd15_scribble",
+        "type": "model",
+        "description": "control_v11p_sd15_scribble",
+        "url": {
+          "hf": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_scribble.pth"
+        },
+        "dir": "controlnet",
+        "out": "control_v11p_sd15_scribble.pth",
+        "optional": false
+      },
+      {
+        "id": "control_v11p_sd15_softedge",
+        "name": "control_v11p_sd15_softedge",
+        "type": "model",
+        "description": "control_v11p_sd15_softedge",
+        "url": {
+          "hf": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_softedge.pth"
+        },
+        "dir": "controlnet",
+        "out": "control_v11p_sd15_softedge.pth",
+        "optional": false
+      },
+      {
+        "id": "control_v11e_sd15_shuffle",
+        "name": "control_v11e_sd15_shuffle",
+        "type": "model",
+        "description": "control_v11e_sd15_shuffle",
+        "url": {
+          "hf": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11e_sd15_shuffle.pth"
+        },
+        "dir": "controlnet",
+        "out": "control_v11e_sd15_shuffle.pth",
+        "optional": false
+      },
+      {
+        "id": "control_v11e_sd15_ip2p",
+        "name": "control_v11e_sd15_ip2p",
+        "type": "model",
+        "description": "control_v11e_sd15_ip2p",
+        "url": {
+          "hf": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11e_sd15_ip2p.pth"
+        },
+        "dir": "controlnet",
+        "out": "control_v11e_sd15_ip2p.pth",
+        "optional": false
+      },
+      {
+        "id": "control_v11f1e_sd15_tile",
+        "name": "control_v11f1e_sd15_tile",
+        "type": "model",
+        "description": "control_v11f1e_sd15_tile",
+        "url": {
+          "hf": "https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11f1e_sd15_tile.pth"
+        },
+        "dir": "controlnet",
+        "out": "control_v11f1e_sd15_tile.pth",
+        "optional": false
+      }
+    ]
+  } 

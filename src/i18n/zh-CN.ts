@@ -550,5 +550,40 @@ export default {
       title: '上次重置操作日志',
       noLogs: '没有找到重置日志记录'
     }
+  },
+  resourcePack: {
+    loading: '加载中...',
+    loadingPackDetails: '正在加载资源包详情...',
+    loadError: '加载资源包失败',
+    retry: '重试',
+    contents: '包内容',
+    totalResources: '共 {count} 个资源',
+    id: 'ID',
+    version: '版本',
+    author: '作者',
+    website: '网站',
+    install: '安装资源包',
+    close: '关闭',
+    cancel: '取消安装',
+    installationProgress: '安装进度',
+    overallProgress: '总体进度',
+    startTime: '开始时间',
+    endTime: '结束时间',
+    elapsed: '已用时间',
+    completedResources: '已完成资源',
+    resourcesStatus: '资源状态',
+    resourcesList: '资源列表',
+    type: '类型',
+    size: '大小'
+  },
+  resourcePacks: {
+    title: '资源包',
+    subtitle: '提供一键安装的资源包合集',
+    loading: '正在加载资源包列表...',
+    noPacks: '没有可用的资源包',
+    refresh: '刷新',
+    resources: '{count} 个资源',
+    author: '作者',
+    view: '查看详情'
   }
 };
