@@ -89,7 +89,7 @@ interface ResourcePackResource {
   description?: string;
   url: string;
   size?: number;
-  options?: any;
+  options?: Record<string, unknown>;
 }
 
 interface ResourcePack {
@@ -123,11 +123,12 @@ export default defineComponent({
       try {
         const response = await api.get('resource-packs');
         packs.value = response.data.data || [];
-      } catch (err: any) {
+      } catch (err: Error | unknown) {
         console.error('Failed to load resource packs:', err);
+        const errorObj = err as { response?: { data?: { message?: string } } };
         $q.notify({
           color: 'negative',
-          message: err.response?.data?.message || '加载资源包失败',
+          message: errorObj.response?.data?.message || '加载资源包列表失败',
           icon: 'error'
         });
       } finally {

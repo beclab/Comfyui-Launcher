@@ -240,7 +240,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { defineComponent, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import api from '../../api';
 
@@ -262,25 +262,6 @@ interface ResourcePack {
   author?: string;
   website?: string;
   resources: Resource[];
-}
-
-// 定义资源类型
-enum ResourceType {
-  MODEL = 'model',
-  PLUGIN = 'plugin',
-  WORKFLOW = 'workflow',
-  CUSTOM = 'custom'
-}
-
-// 定义安装状态
-enum InstallStatus {
-  PENDING = 'pending',
-  DOWNLOADING = 'downloading',
-  INSTALLING = 'installing',
-  COMPLETED = 'completed',
-  ERROR = 'error',
-  SKIPPED = 'skipped',
-  CANCELED = 'canceled'
 }
 
 // 定义资源状态
@@ -316,7 +297,7 @@ interface ColumnDefinition {
   label: string;
   field: string;
   sortable: boolean;
-  format?: (val: any) => string;
+  format?: (val: number | string) => string;
 }
 
 export default defineComponent({
@@ -380,7 +361,7 @@ export default defineComponent({
         label: '大小',
         field: 'size',
         sortable: true,
-        format: (val: number) => formatFileSize(val)
+        format: (val: string | number) => formatFileSize(typeof val === 'string' ? parseInt(val) : val)
       },
       {
         name: 'status',
@@ -427,9 +408,10 @@ export default defineComponent({
         
         // 检查是否有正在进行的安装任务
         await checkInstallationStatus();
-      } catch (err: any) {
+      } catch (err: Error | unknown) {
         console.error('Failed to load resource pack:', err);
-        error.value = err.response?.data?.message || '加载资源包信息失败';
+        const errorObj = err as { response?: { data?: { message?: string } } };
+        error.value = errorObj.response?.data?.message || '加载资源包信息失败';
       } finally {
         loading.value = false;
       }
@@ -449,7 +431,7 @@ export default defineComponent({
           installing.value = true;
           
           // 如果任务还在进行中，启动轮询
-          if (!['completed', 'error', 'canceled'].includes(installProgress.value.status)) {
+          if (installProgress.value && !['completed', 'error', 'canceled'].includes(installProgress.value.status)) {
             startPolling(props.packId);
           }
           
@@ -471,7 +453,6 @@ export default defineComponent({
         // Use resourcePacks.install API - 使用包ID作为任务ID
         const response = await api.resourcePacks.install(props.packId, {
           downloadSource: downloadSource.value,
-          taskId: props.packId // 明确使用packId作为taskId
         });
         
         // 获取任务ID，如果API不返回，则使用包ID
@@ -487,12 +468,13 @@ export default defineComponent({
           message: `开始安装资源包 ${pack.value.name}`,
           icon: 'download'
         });
-      } catch (err: any) {
+      } catch (err: Error | unknown) {
         installing.value = false;
         console.error('Failed to install resource pack:', err);
+        const errorObj = err as { response?: { data?: { error?: string } } };
         $q.notify({
           color: 'negative',
-          message: err.response?.data?.error || '安装资源包失败',
+          message: errorObj.response?.data?.error || '安装资源包失败',
           icon: 'error'
         });
       }
@@ -511,11 +493,12 @@ export default defineComponent({
           message: '取消安装操作已发送',
           icon: 'cancel'
         });
-      } catch (err: any) {
+      } catch (err: Error | unknown) {
         console.error('Failed to cancel installation:', err);
+        const errorObj = err as { response?: { data?: { error?: string } } };
         $q.notify({
           color: 'negative',
-          message: err.response?.data?.error || '取消安装失败',
+          message: errorObj.response?.data?.error || '取消安装失败',
           icon: 'error'
         });
       }
@@ -678,12 +661,13 @@ export default defineComponent({
     };
     
     // 格式化文件大小
-    const formatFileSize = (bytes: number): string => {
-      if (bytes === 0) return '0 B';
+    const formatFileSize = (bytes: number | string): string => {
+      const numBytes = typeof bytes === 'string' ? parseInt(bytes) : bytes;
+      if (numBytes === 0) return '0 B';
       const k = 1024;
       const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      const i = Math.floor(Math.log(numBytes) / Math.log(k));
+      return parseFloat((numBytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
     
     // 格式化日期
