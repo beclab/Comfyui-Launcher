@@ -15,19 +15,34 @@ const logger = loggerIn.logger;
 // 必要模型列表
 export const essentialModels: EssentialModel[] = [
   // 大模型（Checkpoints）
-  {
-    id: 'flux1-schnell-fp8',
-    name: 'Flux1 Schnell FP8 (大模型Checkpoint)',
-    type: 'checkpoint',
-    essential: true,
-    url: {
-      mirror: 'https://hf-mirror.com/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors',
-      hf: 'https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors'
+  // {
+  //   id: 'flux1-schnell-fp8',
+  //   name: 'Flux1 Schnell FP8 (大模型Checkpoint)',
+  //   type: 'checkpoint',
+  //   essential: true,
+  //   url: {
+  //     mirror: 'https://hf-mirror.com/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors',
+  //     hf: 'https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors'
+  //   },
+  //   dir: 'checkpoints',
+  //   out: 'flux1-schnell-fp8.safetensors',
+  //   description: '适用于多种图像生成任务的基础SD模型'
+  // },
+
+    {
+      id: 'stable-diffusion-v1-5',
+      name: 'stable-diffusion-v1-5 ',
+      type: 'checkpoint',
+      essential: true,
+      url: {
+        mirror: 'https://hf-mirror.com/stable-diffusion-v1-5/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors',
+        hf: 'https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors'
+      },
+      dir: 'checkpoints',
+      out: 'v1-5-pruned-emaonly.safetensors',
+      description: '适用于多种图像生成任务的基础SD模型'
     },
-    dir: 'checkpoints',
-    out: 'flux1-schnell-fp8.safetensors',
-    description: '适用于多种图像生成任务的基础SD模型'
-  },
+  
   
   // VAE
   {

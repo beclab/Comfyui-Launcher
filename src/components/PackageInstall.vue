@@ -19,16 +19,15 @@
             <div class="col">
               <div class="row items-center">
                 <div class="text-weight-medium">{{ $t('packageInstall.essentialPackage') }}</div>
-                <q-chip dense size="xs" color="blue" text-color="white" class="q-ml-sm">{{ $t('packageInstall.popular') }}</q-chip>
-                <q-chip dense size="xs" color="pink" text-color="white" class="q-ml-xs">{{ $t('packageInstall.outOfPrint') }}</q-chip>
+                <!-- <q-chip dense size="xs" color="blue" text-color="white" class="q-ml-sm">{{ $t('packageInstall.popular') }}</q-chip>
+                <q-chip dense size="xs" color="pink" text-color="white" class="q-ml-xs">{{ $t('packageInstall.outOfPrint') }}</q-chip> -->
               </div>
               <div class="text-caption text-grey-7">{{ $t('packageInstall.essentialModelsDesc') }}</div>
             </div>
             
-            <q-btn outline rounded label="" class="download-btn q-ml-sm" @click="showEssentialModelsDialog = true" >
+            <q-btn outline rounded label="" class="download-btn q-ml-sm" @click="openEssentialModelsResourcePack" >
               {{ $t('packageInstall.download') }}
-              </q-btn>
-              
+            </q-btn>
           </div>
         </div>
         
@@ -47,7 +46,7 @@
             <div class="col">
               <div class="row items-center">
                 <div class="text-weight-medium">{{ $t('packageInstall.controlNetPackage') }}</div>
-                <q-chip dense size="xs" color="pink" text-color="white" class="q-ml-sm">{{ $t('packageInstall.outOfPrint') }}</q-chip>
+                <!-- <q-chip dense size="xs" color="pink" text-color="white" class="q-ml-sm">{{ $t('packageInstall.outOfPrint') }}</q-chip> -->
               </div>
               <div class="text-caption text-grey-7">{{ $t('packageInstall.controlNetModelsDesc') }}</div>
             </div>
@@ -125,6 +124,11 @@ export default defineComponent({
       showResourcePackDialog.value = true;
     };
     
+    const openEssentialModelsResourcePack = () => {
+      selectedPackId.value = 'essential-models-pack';
+      showResourcePackDialog.value = true;
+    };
+    
     const handleResourcePackInstallComplete = (result: { success: boolean, error?: string, packId?: string }) => {
       if (result.success) {
         $q.notify({
@@ -160,6 +164,7 @@ export default defineComponent({
       showResourcePackDialog,
       selectedPackId,
       openControlNetResourcePack,
+      openEssentialModelsResourcePack,
       handleResourcePackInstallComplete
     };
   }

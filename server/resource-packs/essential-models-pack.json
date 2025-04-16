@@ -1,0 +1,335 @@
+{
+  "id": "essential-models-pack",
+  "name": "基础模型资源包",
+  "description": "包含所有ComfyUI必要的基础模型，包括SD大模型、VAE、预览解码器和辅助工具模型",
+  "author": "Community",
+  "version": "1.0.0",
+  "tags": ["基础模型", "必要模型", "基础包"],
+  "resources": [
+    {
+      "id": "stable-diffusion-v1-5",
+      "name": "stable-diffusion-v1-5",
+      "type": "model",
+      "description": "适用于多种图像生成任务的基础SD模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/stable-diffusion-v1-5/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors",
+        "hf": "https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
+      },
+      "dir": "checkpoints",
+      "out": "v1-5-pruned-emaonly.safetensors",
+      "optional": false
+    },
+    {
+      "id": "vae-ft-mse",
+      "name": "VAE FT MSE",
+      "type": "model",
+      "description": "用于高质量图像重建的VAE模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors",
+        "hf": "https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors"
+      },
+      "dir": "vae",
+      "out": "vae-ft-mse-840000-ema-pruned.safetensors",
+      "optional": false
+    },
+    {
+      "id": "taesd-decoder",
+      "name": "TAESD 解码器",
+      "type": "model",
+      "description": "用于快速预览生成图像的轻量级解码器",
+      "url": {
+        "mirror": "https://ghp.ci/https://raw.githubusercontent.com/madebyollin/taesd/main/taesd_decoder.pth",
+        "hf": "https://raw.githubusercontent.com/madebyollin/taesd/main/taesd_decoder.pth"
+      },
+      "dir": "vae_approx",
+      "out": "taesd_decoder.pth",
+      "optional": false
+    },
+    {
+      "id": "taesdxl-decoder",
+      "name": "TAESDXL 解码器",
+      "type": "model",
+      "description": "用于SDXL模型的轻量级预览解码器",
+      "url": {
+        "mirror": "https://ghp.ci/https://raw.githubusercontent.com/madebyollin/taesd/main/taesdxl_decoder.pth",
+        "hf": "https://raw.githubusercontent.com/madebyollin/taesd/main/taesdxl_decoder.pth"
+      },
+      "dir": "vae_approx",
+      "out": "taesdxl_decoder.pth",
+      "optional": false
+    },
+    {
+      "id": "taesd3-decoder",
+      "name": "TAESD3 解码器",
+      "type": "model",
+      "description": "用于SD3模型的轻量级预览解码器",
+      "url": {
+        "mirror": "https://ghp.ci/https://raw.githubusercontent.com/madebyollin/taesd/main/taesd3_decoder.pth",
+        "hf": "https://raw.githubusercontent.com/madebyollin/taesd/main/taesd3_decoder.pth"
+      },
+      "dir": "vae_approx",
+      "out": "taesd3_decoder.pth",
+      "optional": false
+    },
+    {
+      "id": "taef1-decoder",
+      "name": "TAEF1 解码器",
+      "type": "model",
+      "description": "用于Flux模型的轻量级预览解码器",
+      "url": {
+        "mirror": "https://ghp.ci/https://raw.githubusercontent.com/madebyollin/taesd/main/taef1_decoder.pth",
+        "hf": "https://raw.githubusercontent.com/madebyollin/taesd/main/taef1_decoder.pth"
+      },
+      "dir": "vae_approx",
+      "out": "taef1_decoder.pth",
+      "optional": false
+    },
+    {
+      "id": "siax-upscaler",
+      "name": "4x NMKD-Siax 放大模型",
+      "type": "model",
+      "description": "4倍高质量图像放大模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/gemasai/4x_NMKD-Siax_200k/resolve/main/4x_NMKD-Siax_200k.pth",
+        "hf": "https://huggingface.co/gemasai/4x_NMKD-Siax_200k/resolve/main/4x_NMKD-Siax_200k.pth"
+      },
+      "dir": "upscale_models",
+      "out": "4x_NMKD-Siax_200k.pth",
+      "optional": false
+    },
+    {
+      "id": "remacri-upscaler",
+      "name": "4x Remacri 放大模型",
+      "type": "model",
+      "description": "4倍细节增强型放大模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/uwg/upscaler/resolve/main/ESRGAN/4x_foolhardy_Remacri.pth",
+        "hf": "https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/4x_foolhardy_Remacri.pth"
+      },
+      "dir": "upscale_models",
+      "out": "4x_foolhardy_Remacri.pth",
+      "optional": false
+    },
+    {
+      "id": "nmkd-superscale",
+      "name": "8x NMKD-Superscale 放大模型",
+      "type": "model",
+      "description": "8倍大幅放大模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/uwg/upscaler/resolve/main/ESRGAN/8x_NMKD-Superscale_150000_G.pth",
+        "hf": "https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/8x_NMKD-Superscale_150000_G.pth"
+      },
+      "dir": "upscale_models",
+      "out": "8x_NMKD-Superscale_150000_G.pth",
+      "optional": false
+    },
+    {
+      "id": "easynegative",
+      "name": "EasyNegative 嵌入",
+      "type": "model",
+      "description": "通用负面提示词嵌入，有助于减少常见生成缺陷",
+      "url": {
+        "mirror": "https://hf-mirror.com/datasets/gsdf/EasyNegative/resolve/main/EasyNegative.safetensors",
+        "hf": "https://huggingface.co/datasets/gsdf/EasyNegative/resolve/main/EasyNegative.safetensors"
+      },
+      "dir": "embeddings",
+      "out": "easynegative.safetensors",
+      "optional": false
+    },
+    {
+      "id": "deepnegative",
+      "name": "DeepNegative 嵌入",
+      "type": "model",
+      "description": "深度学习优化的负面提示词，有助于提高画质",
+      "url": {
+        "mirror": "https://hf-mirror.com/lenML/DeepNegative/resolve/main/NG_DeepNegative_V1_75T.pt",
+        "hf": "https://huggingface.co/lenML/DeepNegative/resolve/main/NG_DeepNegative_V1_75T.pt"
+      },
+      "dir": "embeddings",
+      "out": "ng_deepnegative_v1_75t.pt",
+      "optional": false
+    },
+    {
+      "id": "mmdet-anime-face",
+      "name": "MMDet 动漫人脸检测模型",
+      "type": "model",
+      "description": "用于检测动漫风格人脸的模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/dustysys/ddetailer/resolve/main/mmdet/bbox/mmdet_anime-face_yolov3.pth",
+        "hf": "https://huggingface.co/dustysys/ddetailer/resolve/main/mmdet/bbox/mmdet_anime-face_yolov3.pth"
+      },
+      "dir": "mmdets/bbox",
+      "out": "mmdet_anime-face_yolov3.pth",
+      "optional": true
+    },
+    {
+      "id": "mmdet-anime-face-config",
+      "name": "MMDet 动漫人脸检测配置",
+      "type": "model",
+      "description": "动漫人脸检测模型的配置文件",
+      "url": {
+        "mirror": "https://ghp.ci/https://raw.githubusercontent.com/Bing-su/dddetailer/master/config/mmdet_anime-face_yolov3.py",
+        "hf": "https://raw.githubusercontent.com/Bing-su/dddetailer/master/config/mmdet_anime-face_yolov3.py"
+      },
+      "dir": "mmdets/bbox",
+      "out": "mmdet_anime-face_yolov3.py",
+      "optional": true
+    },
+    {
+      "id": "sam-vit-b",
+      "name": "SAM ViT-B 分割模型",
+      "type": "model",
+      "description": "用于图像分割的Segment Anything模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/datasets/Gourieff/ReActor/resolve/main/models/sams/sam_vit_b_01ec64.pth",
+        "hf": "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/sams/sam_vit_b_01ec64.pth"
+      },
+      "dir": "sams",
+      "out": "sam_vit_b_01ec64.pth",
+      "optional": true
+    },
+    {
+      "id": "face-yolov8m",
+      "name": "YOLOv8m 人脸检测模型",
+      "type": "model",
+      "description": "用于精确检测人脸的YOLOv8模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/Bingsu/adetailer/resolve/main/face_yolov8m.pt",
+        "hf": "https://huggingface.co/Bingsu/adetailer/resolve/main/face_yolov8m.pt"
+      },
+      "dir": "ultralytics/bbox",
+      "out": "face_yolov8m.pt",
+      "optional": true
+    },
+    {
+      "id": "hand-yolov8s",
+      "name": "YOLOv8s 手部检测模型",
+      "type": "model",
+      "description": "用于精确检测手部的YOLOv8模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/Bingsu/adetailer/resolve/main/hand_yolov8s.pt",
+        "hf": "https://huggingface.co/Bingsu/adetailer/resolve/main/hand_yolov8s.pt"
+      },
+      "dir": "ultralytics/bbox",
+      "out": "hand_yolov8s.pt",
+      "optional": true
+    },
+    {
+      "id": "person-yolov8m-seg",
+      "name": "YOLOv8m 人物分割模型",
+      "type": "model",
+      "description": "用于人物检测和分割的YOLOv8模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/Bingsu/adetailer/resolve/main/person_yolov8m-seg.pt",
+        "hf": "https://huggingface.co/Bingsu/adetailer/resolve/main/person_yolov8m-seg.pt"
+      },
+      "dir": "ultralytics/segm",
+      "out": "person_yolov8m-seg.pt",
+      "optional": true
+    },
+    {
+      "id": "gfpgan-v1.3",
+      "name": "GFPGANv1.3 人脸修复模型",
+      "type": "model",
+      "description": "用于修复和增强人脸细节的模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/datasets/Gourieff/ReActor/resolve/main/models/facerestore_models/GFPGANv1.3.pth",
+        "hf": "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/facerestore_models/GFPGANv1.3.pth"
+      },
+      "dir": "facerestore_models",
+      "out": "GFPGANv1.3.pth",
+      "optional": true
+    },
+    {
+      "id": "gfpgan-v1.4",
+      "name": "GFPGANv1.4 人脸修复模型",
+      "type": "model",
+      "description": "GFPGANv1.3的升级版，提供更好的人脸修复效果",
+      "url": {
+        "mirror": "https://hf-mirror.com/datasets/Gourieff/ReActor/resolve/main/models/facerestore_models/GFPGANv1.4.pth",
+        "hf": "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/facerestore_models/GFPGANv1.4.pth"
+      },
+      "dir": "facerestore_models",
+      "out": "GFPGANv1.4.pth",
+      "optional": true
+    },
+    {
+      "id": "codeformer",
+      "name": "CodeFormer 人脸修复模型",
+      "type": "model",
+      "description": "具有身份保持能力的高质量人脸修复模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/datasets/Gourieff/ReActor/resolve/main/models/facerestore_models/codeformer-v0.1.0.pth",
+        "hf": "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/facerestore_models/codeformer-v0.1.0.pth"
+      },
+      "dir": "facerestore_models",
+      "out": "codeformer-v0.1.0.pth",
+      "optional": true
+    },
+    {
+      "id": "gpen-bfr-512",
+      "name": "GPEN-BFR-512 人脸修复模型",
+      "type": "model",
+      "description": "中等分辨率的人脸修复模型(ONNX格式)",
+      "url": {
+        "mirror": "https://hf-mirror.com/datasets/Gourieff/ReActor/resolve/main/models/facerestore_models/GPEN-BFR-512.onnx",
+        "hf": "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/facerestore_models/GPEN-BFR-512.onnx"
+      },
+      "dir": "facerestore_models",
+      "out": "GPEN-BFR-512.onnx",
+      "optional": true
+    },
+    {
+      "id": "gpen-bfr-1024",
+      "name": "GPEN-BFR-1024 人脸修复模型",
+      "type": "model",
+      "description": "高分辨率的人脸修复模型(ONNX格式)",
+      "url": {
+        "mirror": "https://hf-mirror.com/datasets/Gourieff/ReActor/resolve/main/models/facerestore_models/GPEN-BFR-1024.onnx",
+        "hf": "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/facerestore_models/GPEN-BFR-1024.onnx"
+      },
+      "dir": "facerestore_models",
+      "out": "GPEN-BFR-1024.onnx",
+      "optional": true
+    },
+    {
+      "id": "gpen-bfr-2048",
+      "name": "GPEN-BFR-2048 人脸修复模型",
+      "type": "model",
+      "description": "超高分辨率的人脸修复模型(ONNX格式)",
+      "url": {
+        "mirror": "https://hf-mirror.com/datasets/Gourieff/ReActor/resolve/main/models/facerestore_models/GPEN-BFR-2048.onnx",
+        "hf": "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/facerestore_models/GPEN-BFR-2048.onnx"
+      },
+      "dir": "facerestore_models",
+      "out": "GPEN-BFR-2048.onnx",
+      "optional": true
+    },
+    {
+      "id": "inswapper",
+      "name": "InsightFace Swapper 128",
+      "type": "model",
+      "description": "用于高质量人脸替换的模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/datasets/Gourieff/ReActor/resolve/main/models/inswapper_128.onnx",
+        "hf": "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/inswapper_128.onnx"
+      },
+      "dir": "insightface",
+      "out": "inswapper_128.onnx",
+      "optional": true
+    },
+    {
+      "id": "inswapper-fp16",
+      "name": "InsightFace Swapper 128 FP16",
+      "type": "model",
+      "description": "用于高质量人脸替换的半精度模型，适合低显存设备",
+      "url": {
+        "mirror": "https://hf-mirror.com/datasets/Gourieff/ReActor/resolve/main/models/inswapper_128_fp16.onnx",
+        "hf": "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/inswapper_128_fp16.onnx"
+      },
+      "dir": "insightface",
+      "out": "inswapper_128_fp16.onnx",
+      "optional": true
+    }
+  ]
+} 
