@@ -316,10 +316,10 @@ export default defineComponent({
       { name: 'actions', label: '操作', field: 'actions', align: 'center' }
     ]);
     
-    const fetchInstalledModels = async () => {
+    const fetchInstalledModels = async (force: boolean) => {
       try {
         isLoading.value = true;
-        const data = await dataCenter.getInstalledModels(false);
+        const data = await dataCenter.getInstalledModels(force);
         if (data && Array.isArray(data)) {
           installedModels.value = data;
           installedModelsCount.value = installedModels.value.length;
@@ -365,7 +365,7 @@ export default defineComponent({
     };
     
     const onRefresh = () => {
-      fetchInstalledModels();
+      fetchInstalledModels(true);
       
       $q.notify({
         type: 'info',
@@ -384,11 +384,11 @@ export default defineComponent({
         color: 'negative'
       }).onOk(async () => {
         try {
-          const response = await api.post(`models/delete/${model.id}`);
+          const response = await api.post('models/delete', { modelName: model.name });
           const data = await extractResponseData<{success?: boolean}>(response);
           
           if (data?.success) {
-            installedModels.value = installedModels.value.filter(m => m.id !== model.id);
+            installedModels.value = installedModels.value.filter(m => m.name !== model.name);
             installedModelsCount.value = installedModels.value.length;
             
             updateTotalStorageUsed();
@@ -529,7 +529,7 @@ export default defineComponent({
     };
     
     onMounted(() => {
-      fetchInstalledModels();
+      fetchInstalledModels(false);
     });
     
     const confirmDelete = () => {
