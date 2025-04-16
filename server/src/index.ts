@@ -53,7 +53,7 @@ router.get('/api/models', modelsController.getModels.bind(modelsController));
 // router.post('/api/models/download', modelsController.downloadModel.bind(modelsController));
 // router.get('/api/models/downloadByName/:modelName', modelsController.downloadModelByNameApi.bind(modelsController));
 router.post('/api/models/delete', modelsController.deleteModel.bind(modelsController));
-router.get('/api/models/installed', modelsController.getInstalledModels.bind(modelsController));
+// router.get('/api/models/installed', modelsController.getInstalledModels.bind(modelsController));
 router.post('/api/models/scan', modelsController.scanModels.bind(modelsController));
 
 router.post('/api/models/cancel-download', modelsController.cancelDownload.bind(modelsController));

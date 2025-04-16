@@ -584,19 +584,83 @@ export class ModelsController extends DownloadController {
       return;
     }
     
-    // 实现删除模型逻辑
-    // ...
-    
-    ctx.body = { success: true };
+    try {
+      // 获取模型信息
+      const models = await this.getModelList();
+      const modelInfo = models.find(model => 
+        model.name === modelName || model.filename === modelName
+      );
+      
+      if (!modelInfo) {
+        logger.warn(`Delete model: Model not found: ${modelName}`);
+        ctx.status = 404;
+        ctx.body = { error: `找不到模型: ${modelName}` };
+        return;
+      }
+      
+      if (!modelInfo.installed) {
+        logger.warn(`Delete model: Model not installed: ${modelName}`);
+        ctx.status = 400;
+        ctx.body = { error: `模型未安装: ${modelName}` };
+        return;
+      }
+      
+      // 构建模型文件的完整路径
+      const modelPath = modelInfo.save_path 
+        ? path.join(this.comfyuiPath, modelInfo.save_path)
+        : path.join(
+            this.comfyuiPath, 
+            this.getModelSaveDir(modelInfo.type), 
+            modelInfo.filename || modelName
+          );
+      
+      logger.info(`Attempting to delete model: ${modelName} at path: ${modelPath}`);
+      
+      // 检查文件是否存在
+      if (!await fs.pathExists(modelPath)) {
+        logger.warn(`Delete model: File not found at path: ${modelPath}`);
+        ctx.status = 404;
+        ctx.body = { error: `找不到模型文件: ${modelPath}` };
+        return;
+      }
+      
+      // 删除文件
+      await fs.remove(modelPath);
+      logger.info(`Model deleted successfully: ${modelName}`);
+      
+      // 更新模型缓存状态
+      if (this.modelCache && this.modelCache.length > 0) {
+        const modelIndex = this.modelCache.findIndex(model => 
+          model.name === modelName || model.filename === modelName
+        );
+        
+        if (modelIndex !== -1) {
+          this.modelCache[modelIndex].installed = false;
+          this.modelCache[modelIndex].fileStatus = undefined;
+          this.modelCache[modelIndex].fileSize = undefined;
+        }
+      }
+      
+      ctx.body = { 
+        success: true,
+        message: `模型 ${modelName} 已成功删除`
+      };
+    } catch (error) {
+      logger.error(`Delete model error: ${error instanceof Error ? error.message : String(error)}`);
+      ctx.status = 500;
+      ctx.body = { 
+        error: `删除模型时出错: ${error instanceof Error ? error.message : String(error)}` 
+      };
+    }
   }
   
-  // 获取已安装模型列表
-  public async getInstalledModels(ctx: Context) {
-    // 获取已安装模型列表逻辑
-    // ...
+  // // 获取已安装模型列表
+  // public async getInstalledModels(ctx: Context) {
+  //   // 获取已安装模型列表逻辑
+  //   // ...
     
-    ctx.body = [];
-  }
+  //   ctx.body = [];
+  // }
 
   // 增强获取内容长度的函数
   private getContentLength(headers: any): number | null {
