@@ -13,12 +13,15 @@
             <div class="folder-content q-pa-md">
               <div class="row no-wrap items-start">
                 <img src="../assets/icon-folder.png" class="folder-icon q-mr-sm q-mt-xs" />
-                <div class="column full-width">
-                  <div>
+                <div class="cloum full-width" style="padding-top: 4px;">
+                  <div >
                     {{ folder.name }}
                   </div>
                   <div v-if="folder.used && folder.available" class="text-caption" style="color: var(--text-normal);">
                     {{ $t('folderAccess.installed') }} {{ folder.used }} {{ $t('folderAccess.available') }} {{ folder.available }}
+                  </div>
+                  <div v-else class="text-caption" style="color: var(--text-normal);">
+                    {{ folder.hint }}
                   </div>
                 </div>
               </div>
@@ -38,50 +41,60 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
 import api from '../api';
 import DataCenter from '../api/DataCenter';
+import { useI18n } from 'vue-i18n';
 
-export default defineComponent({
-  name: 'FolderAccess',
-  data() {
-    return {
-      folders: [
-        { name: this.$t('folderAccess.rootDir'), path: '/Files/External/ai/comfyui/ComfyUI', used: null, available: null },
-        { name: this.$t('folderAccess.pluginDir'), path: '/Files/External/ai/comfyui/ComfyUI/custom_nodes/', used: '128', available: '541' },
-        { name: this.$t('folderAccess.modelDir'), path: '/Files/External/ai/model/', used: null, available: null },
-        { name: this.$t('folderAccess.outputDir'), path: '/Files/External/ai/output/comfyui/', used: null, available: null },
-        { name: this.$t('folderAccess.inputDir'), path: '/Files/External/ai/comfyui/ComfyUI/input/', used: null, available: null }
-      ]
-    }
-  },
-  async created() {
-    const installedModelsCount = await DataCenter.getInstalledModelsCount();
-    const optionalModelsCount = await DataCenter.getOptionalModelsCount();
-    const installedPluginsCount = await DataCenter.getInstalledPluginsCount();
-    const optionalPluginsCount = await DataCenter.getOptionalPluginsCount();
-    const modelFolderIndex = this.folders.findIndex(folder => folder.name === '模型目录');
-    const pluginFolderIndex = this.folders.findIndex(folder => folder.name === '插件目录');
-    if (modelFolderIndex!== -1) {
-      this.folders[modelFolderIndex].used = installedModelsCount.toString();
-      this.folders[modelFolderIndex].available = optionalModelsCount.toString();
-    }
-    if (pluginFolderIndex!== -1) {
-      this.folders[pluginFolderIndex].used = installedPluginsCount.toString();
-      this.folders[pluginFolderIndex].available = optionalPluginsCount.toString();
-    }
-  },
-  methods: {
-    async openFolder(path: string) {
-      console.log('Opening folder:', path);
-      try {
-        await api.openPath(path);
-        console.log('文件夹打开成功');
-      } catch (error) {
-        console.error('打开文件夹失败:', error);
-      }
-    }
-  }
+export default defineComponent({ 
+  name: 'FolderAccess', 
+  setup() { 
+    const { t } = useI18n();
+    const folders = ref([ 
+      { name: t('folderAccess.rootDir'), path: '/Files/External/ai/comfyui/ComfyUI/', used: null, available: null, hint: t('folderAccess.rootDirHint') }, 
+      { name: t('folderAccess.pluginDir'), path: '/Files/External/ai/comfyui/ComfyUI/custom_nodes/', used: '', available: '', hint: null }, 
+      { name: t('folderAccess.modelDir'), path: '/Files/External/ai/model/', used: '', available: '', hint: null }, 
+      { name: t('folderAccess.outputDir'), path: '/Files/External/ai/output/comfyui/', used: null, available: null, hint: t('folderAccess.outputDirHint') }, 
+      { name: t('folderAccess.inputDir'), path: '/Files/External/ai/comfyui/ComfyUI/input/', used: null, available: null, hint: t('folderAccess.inputDirHint') }, 
+    ]); 
+
+    const fetchData = async () => { 
+      let newFolders = [...folders.value];
+      const installedModelsCount = await DataCenter.getInstalledModelsCount(); 
+      const optionalModelsCount = await DataCenter.getOptionalModelsCount(); 
+      const installedPluginsCount = await DataCenter.getInstalledPluginsCount(); 
+      const optionalPluginsCount = await DataCenter.getOptionalPluginsCount(); 
+
+      const modelFolderIndex = newFolders.findIndex(folder => folder.name === t('folderAccess.modelDir')); 
+      const pluginFolderIndex = newFolders.findIndex(folder => folder.name === t('folderAccess.pluginDir')); 
+      if (modelFolderIndex!== -1) { 
+        newFolders[modelFolderIndex].used = installedModelsCount.toString(); 
+        newFolders[modelFolderIndex].available = optionalModelsCount.toString(); 
+      } 
+      if (pluginFolderIndex!== -1) { 
+        newFolders[pluginFolderIndex].used = installedPluginsCount.toString(); 
+        newFolders[pluginFolderIndex].available = optionalPluginsCount.toString(); 
+      } 
+      folders.value = newFolders;
+    }; 
+
+    fetchData(); 
+
+    const openFolder = async (path: string) => { 
+      console.log('Opening folder:', path); 
+      try { 
+        await api.openPath(path); 
+        console.log('文件夹打开成功'); 
+      } catch (error) { 
+        console.error('打开文件夹失败:', error); 
+      } 
+    }; 
+
+    return { 
+      folders, 
+      openFolder 
+    }; 
+  } 
 });
 </script>
 

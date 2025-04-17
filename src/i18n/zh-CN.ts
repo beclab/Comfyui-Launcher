@@ -194,6 +194,10 @@ export default {
     modelDir: '模型目录',
     outputDir: '输出目录',
     inputDir: '输入目录',
+// 下面是将 'rootDirHint' 的值从英文翻译为中文后的代码
+    rootDirHint: 'ComfyUI的根目录',
+    outputDirHint: 'ComfyUI的输出目录',
+    inputDirHint: 'ComfyUI的输入目录',
     installed: '已安装',
     available: '可用',
     open: '打开'
