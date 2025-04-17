@@ -11,9 +11,9 @@ const getApiBaseUrl = () => {
   console.log('当前环境:', import.meta.env.DEV ? '开发环境' : '生产环境');
   
   // 使用动态配置或回退到默认值
-  if (window.APP_CONFIG && window.APP_CONFIG.apiBaseUrl) {
-    return `${window.APP_CONFIG.apiBaseUrl}/api`;
-  }
+  // if (window.APP_CONFIG && window.APP_CONFIG.apiBaseUrl) {
+  //   return `${window.APP_CONFIG.apiBaseUrl}/api`;
+  // }
   
   // 根据环境选择回退地址
   // 开发环境使用localhost
