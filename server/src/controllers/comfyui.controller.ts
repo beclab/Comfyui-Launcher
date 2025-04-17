@@ -376,11 +376,11 @@ export class ComfyUIController {
       
       // 等待一段时间确保进程启动成功
       let retries = 0;
-      const maxRetries = 10;
+      const maxRetries = 120;
       let comfyStarted = false;
       
       while (retries < maxRetries && !comfyStarted) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 5000));
         comfyStarted = await isComfyUIRunning();
         
         if (comfyStarted) {

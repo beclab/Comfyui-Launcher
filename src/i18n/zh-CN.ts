@@ -1,6 +1,6 @@
 export default {
   common: {
-    title: 'ComfyUI 管理器',
+    title: 'ComfyUI Launcher',
     cancel: '取消',
     confirm: '确认',
     save: '保存',
