@@ -550,8 +550,12 @@ export default defineComponent({
     
     // 打开ComfyUI界面
     const openComfyUI = () => {
-      // 在新标签页中打开ComfyUI界面
-      window.open('/comfyui', '_blank');
+      const url = new URL(window.location.href);
+      const domainParts = url.hostname.split('.');
+      domainParts[0] = '7415736f0';
+      url.hostname = domainParts.join('.');
+      url.pathname = '/';
+      window.open(url.toString(), '_blank');
     };
     
     // 添加打开重置日志对话框的方法

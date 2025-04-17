@@ -41,7 +41,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, onMounted } from 'vue';
 import api from '../api';
 import DataCenter from '../api/DataCenter';
 import { useI18n } from 'vue-i18n';
@@ -50,6 +50,7 @@ export default defineComponent({
   name: 'FolderAccess', 
   setup() { 
     const { t } = useI18n();
+    const isInIframe = ref(false);
     const folders = ref([ 
       { name: t('folderAccess.rootDir'), path: '/Files/External/ai/comfyui/ComfyUI/', used: null, available: null, hint: t('folderAccess.rootDirHint') }, 
       { name: t('folderAccess.pluginDir'), path: '/Files/External/ai/comfyui/ComfyUI/custom_nodes/', used: '', available: '', hint: null }, 
@@ -78,21 +79,44 @@ export default defineComponent({
       folders.value = newFolders;
     }; 
 
-    fetchData(); 
+    onMounted(() => {
+      // Check if the current page is in an iframe
+      try {
+        isInIframe.value = window.self !== window.top;
+      } catch (e) {
+        // If there's a cross-domain issue, assume we're in an iframe
+        isInIframe.value = true;
+      }
+    });
 
     const openFolder = async (path: string) => { 
       console.log('Opening folder:', path); 
       try { 
-        await api.openPath(path); 
-        console.log('文件夹打开成功'); 
+        if (isInIframe.value) {
+          // If in iframe, use the original method
+          await api.openPath(path);
+          console.log('Folder opened successfully in iframe mode'); 
+        } else {
+          // If not in iframe, open in a new page
+          const hostname = window.location.hostname;
+          const parts = hostname.split('.');
+          parts[0] = 'files';
+          const filesDomain = parts.join('.');
+          const url = `https://${filesDomain}${path}`;
+          window.open(url, '_blank');
+          console.log('Folder opened in new tab:', url);
+        }
       } catch (error) { 
-        console.error('打开文件夹失败:', error); 
+        console.error('Failed to open folder:', error); 
       } 
     }; 
 
+    fetchData(); 
+
     return { 
       folders, 
-      openFolder 
+      openFolder,
+      isInIframe
     }; 
   } 
 });
