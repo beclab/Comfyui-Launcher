@@ -178,12 +178,12 @@
         </q-card-section>
         <!-- 提示文案下方增加单选框"记住我的选择, 下次无需弹窗确认" -->
         <q-card-section style="color: var(--text-normal)">
-          <q-checkbox v-model="rememberChoice" label="{{ $t('comfyuiStatus.dialog.rememberChoice') }}" />
+          <q-checkbox v-model="rememberChoice" :label="$t('comfyuiStatus.dialog.rememberChoice')" />
         </q-card-section>
         <q-card-actions align="right" style="margin-right: 10px; margin-bottom: 10px;">
           <!-- 下方按钮 去安装模型 和 仍然启动 对调位置 -->
-          <q-btn flat label="{{ $t('comfyuiStatus.dialog.confirmStart') }}" style="color: var(--text-normal); border: 1px solid var(--text-normal); border-radius: var(--border-radius-md);" @click="confirmStartComfyUI" />
-          <q-btn label="{{ $t('comfyuiStatus.dialog.installModels') }}" color="primary" @click="goToModels" style="box-shadow: none; border-radius: var(--border-radius-md);" />
+          <q-btn flat :label="$t('comfyuiStatus.dialog.confirmStart')" style="color: var(--text-normal); border: 1px solid var(--text-normal); border-radius: var(--border-radius-md);" @click="confirmStartComfyUI" />
+          <q-btn :label="$t('comfyuiStatus.dialog.installModels')" color="primary" @click="goToModels" style="box-shadow: none; border-radius: var(--border-radius-md);" />
           
           
         </q-card-actions>

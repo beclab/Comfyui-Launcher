@@ -7,11 +7,11 @@
     
     <!-- 中间链接 -->
     <div class="center-links row items-center">
-      <a href="#" target="_blank" class="footer-link row items-center q-mx-sm">
+      <a href="https://www.comfy.org/" target="_blank" class="footer-link row items-center q-mx-sm">
         <img src="~assets/icon-comfyorg.png" style="height: 20px" class="q-mr-xs">
         ComfyOrg
       </a>
-      <a href="#" target="_blank" class="footer-link row items-center q-mx-sm">
+      <a href="https://discord.com/invite/comfyorg" target="_blank" class="footer-link row items-center q-mx-sm">
         <img src="~assets/icon-discord.png" style="height: 20px" class="q-mr-xs">
         Discord
       </a>
@@ -19,16 +19,19 @@
     
     <!-- 右侧图标 -->
     <div class="right-icons row items-center">
-      <q-btn flat round size="sm" class="icon-btn">
+      <q-btn href="https://olares.medium.com/" target="_blank" flat round size="sm" class="icon-btn">
         <img src="~assets/icon-m.png" style="height: 18px">
       </q-btn>
-      <q-btn flat round size="sm" class="icon-btn">
+      <q-btn href="https://github.com/beclab/Olares" target="_blank" flat round size="sm" class="icon-btn">
         <img src="~assets/icon-github.png" style="height: 18px">
       </q-btn>
       <q-btn flat round size="sm" class="icon-btn">
+        <q-tooltip>
+          <img src="~assets/olares-weichat-link.jpeg" alt="olares-weichat-link" style="max-width: 200px; max-height: 200px; display: block;" />
+        </q-tooltip>
         <img src="~assets/icon-weichat.png" style="height: 18px">
       </q-btn>
-      <q-btn flat round size="sm" class="icon-btn">
+      <q-btn href="https://olares.cn/" target="_blank" flat round size="sm" class="icon-btn">
         <img src="~assets/icon-olares.png" style="height: 18px">
       </q-btn>
     </div>
@@ -73,4 +76,4 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
 }
-</style> 
+</style>
