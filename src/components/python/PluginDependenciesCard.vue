@@ -11,6 +11,7 @@
 
         
         <div class="row items-center justify-end q-mt-md">
+          <q-btn color="grey-7" style="margin-right: 16px; border-radius: var(--border-radius-md);" outline icon="build" :label="$t('python.pluginDependencies.fixAll')" @click="installAllMissingDependencies" :loading="installingAll" />
           <q-btn color="grey-7" style="border-radius: var(--border-radius-md);" outline icon="refresh" :label="$t('python.pluginDependencies.analyze')" @click="analyzePluginDependencies" :loading="analyzingDeps" />
         </div>
       </div>
@@ -49,7 +50,10 @@
         <div class="col-9 q-pl-md" style="padding-left: 0px;">
           <div class="row items-center justify-between" style="padding-top: 16px;">
             <div class="text-subtitle1" style="margin-left: 16px;">{{ $t('python.pluginDependencies.dependenciesColumn') }}</div>
-            <q-btn color="grey-7" style="margin-right: 16px; border-radius: var(--border-radius-md);" outline icon="build" :label="$t('python.pluginDependencies.fixAll')" @click="installAllMissingDependencies" :loading="installingAll" />
+            <div>
+              
+              <q-btn color="grey-7" style="margin-right: 16px; border-radius: var(--border-radius-md);" outline icon="build" :label="$t('python.pluginDependencies.fix')" @click="installSelectedPluginDependencies" :loading="installingSelected" />
+            </div>
           </div>
           
           <div class="dependency-list-container" style="height: 400px; overflow-y: auto;">
@@ -114,6 +118,7 @@ export default defineComponent({
     const analyzingDeps = ref(false);
     const selectedPlugin = ref(null);
     const installingAll = ref(false);
+    const installingSelected = ref(false);
     
     // Installing single dependency related
     const installingDep = reactive({});
@@ -254,6 +259,63 @@ export default defineComponent({
       }
     };
     
+    // Install missing dependencies for the selected plugin only
+    const installSelectedPluginDependencies = async () => {
+      installingSelected.value = true;
+      
+      try {
+        if (!selectedPlugin.value) {
+          $q.notify({
+            color: 'warning',
+            message: '请先选择一个插件',
+            icon: 'warning'
+          });
+          return;
+        }
+        
+        // Get missing dependencies for the selected plugin
+        const plugin = pluginDependencies.value.find(p => p.plugin === selectedPlugin.value);
+        if (!plugin) {
+          $q.notify({
+            color: 'warning',
+            message: '未找到所选插件',
+            icon: 'warning'
+          });
+          return;
+        }
+        
+        const missingDeps = plugin.dependencies.filter(dep => dep.missing);
+        
+        if (missingDeps.length === 0) {
+          $q.notify({
+            color: 'positive',
+            message: '所选插件没有缺失的依赖需要安装',
+            icon: 'check'
+          });
+          return;
+        }
+        
+        // Install missing dependencies one by one
+        for (const dep of missingDeps) {
+          await installMissingDependency(plugin.plugin, dep.name, dep.version);
+        }
+        
+        $q.notify({
+          color: 'positive',
+          message: `插件 ${selectedPlugin.value} 的所有缺失依赖已安装完成`,
+          icon: 'check'
+        });
+      } catch (error) {
+        $q.notify({
+          color: 'negative',
+          message: '安装依赖失败: ' + error.message,
+          icon: 'error'
+        });
+      } finally {
+        installingSelected.value = false;
+      }
+    };
+    
     onMounted(async () => {
       await analyzePluginDependencies();
     });
@@ -272,7 +334,9 @@ export default defineComponent({
       installingDep,
       installMissingDependency,
       installingAll,
-      installAllMissingDependencies
+      installAllMissingDependencies,
+      installingSelected,
+      installSelectedPluginDependencies
     };
   }
 });

@@ -146,6 +146,7 @@ export default {
       pluginsColumn: '插件',
       dependenciesColumn: '依赖库列表',
       fixAll: '一键修复',
+      fix: '修复',
       versionRequired: '版本要求:',
       install: '安装',
       installed: '已安装',

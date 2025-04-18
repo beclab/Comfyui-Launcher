@@ -160,6 +160,7 @@ export default {
       pluginsColumn: 'Plugins',
       dependenciesColumn: 'Dependencies List',
       fixAll: 'Fix All',
+      fix: 'Fix',
       versionRequired: 'Version required:',
       install: 'Install',
       installed: 'Installed',

@@ -456,13 +456,24 @@ export class PluginsController {
       // 忽略大小写比较
       const installedInfo = installedMap.get(plugin.id.toLowerCase());
       if (installedInfo) {
+        // 更新为本地数据优先，保留网络数据中本地没有的字段
+        const originalPlugin = installedInfo.originalPlugin;
+        Object.keys(originalPlugin).forEach(key => {
+          plugin[key] = originalPlugin[key];
+        });
+        // 确保安装状态正确
         plugin.installed = true;
-        plugin.installedOn = installedInfo.installedOn;
-        plugin.disabled = installedInfo.disabled;
+        plugin.installedOn = originalPlugin.installedOn;
+        plugin.disabled = originalPlugin.disabled;
       } else {
         // 如果ID没匹配上，尝试匹配GitHub URL
         const matchByGithub = this.findPluginByGithubUrl(plugin, installedPlugins);
         if (matchByGithub) {
+          // 用本地插件数据覆盖网络数据
+          Object.keys(matchByGithub).forEach(key => {
+            plugin[key] = matchByGithub[key];
+          });
+          // 确保安装状态正确
           plugin.installed = true;
           plugin.installedOn = matchByGithub.installedOn;
           plugin.disabled = matchByGithub.disabled;
