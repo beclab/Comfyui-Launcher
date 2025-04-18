@@ -67,9 +67,11 @@
     
     <!-- 资源包安装对话框 -->
     <ResourcePackDialog
+      ref="resourcePackDialog"
       v-model:visible="showResourcePackDialog"
       :pack-id="selectedPackId"
       @installation-complete="handleResourcePackInstallComplete"
+      @update:visible="(val) => !val && handleResourcePackDialogClose()"
     />
   </div>
 </template>
@@ -119,6 +121,9 @@ export default defineComponent({
     
     const downloadOption = ref('all');
     
+    // 添加资源包对话框组件的引用
+    const resourcePackDialog = ref<InstanceType<typeof ResourcePackDialog> | null>(null);
+    
     const openControlNetResourcePack = () => {
       selectedPackId.value = 'controlnet-models';
       showResourcePackDialog.value = true;
@@ -156,6 +161,15 @@ export default defineComponent({
       });
     };
     
+    // 添加处理资源包对话框关闭的方法
+    const handleResourcePackDialogClose = () => {
+      showResourcePackDialog.value = false;
+      // 如果有引用，调用重置方法
+      if (resourcePackDialog.value) {
+        resourcePackDialog.value.resetState();
+      }
+    };
+    
     return {
       packages,
       showEssentialModelsDialog,
@@ -165,7 +179,9 @@ export default defineComponent({
       selectedPackId,
       openControlNetResourcePack,
       openEssentialModelsResourcePack,
-      handleResourcePackInstallComplete
+      handleResourcePackInstallComplete,
+      resourcePackDialog,
+      handleResourcePackDialogClose
     };
   }
 });

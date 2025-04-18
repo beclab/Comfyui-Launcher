@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { DownloadController } from './download.controller';
 import { Model, DownloadProgress, EssentialModel } from '../types/models.types';
 import { essentialModels } from './essential-models.controller';
+import { SystemController } from './system.controller';  // 导入SystemController
 
 // 必要模型接口定义
 
@@ -86,12 +87,16 @@ export class ModelsController extends DownloadController {
   private readonly LOCAL_DEFAULT_LIST_PATH = path.join(__dirname, '../model-list.json');
   private comfyuiPath: string;
   private modelsDir: string;
+  private systemController: SystemController;  // 添加SystemController实例
   
   // 增加全局计数器跟踪进度事件
   private progressEventCounter = 0;
   
   constructor() {
     super(); // 调用父类构造函数
+    
+    // 初始化系统控制器
+    this.systemController = new SystemController();
     
     // 初始化路径
     this.comfyuiPath = process.env.COMFYUI_PATH || 
@@ -103,6 +108,24 @@ export class ModelsController extends DownloadController {
 
     // 启动时自动进行一次模型扫描
     this.initScan();
+  }
+
+  /**
+   * 获取Hugging Face端点配置
+   * 从系统控制器获取
+   */
+  private getHuggingFaceEndpoint(): string | undefined {
+    // 优先使用环境变量
+    if (process.env.HF_ENDPOINT) {
+      return process.env.HF_ENDPOINT;
+    }
+    
+    // 尝试从系统控制器的配置中获取
+    if (this.systemController && this.systemController.envConfig) {
+      return this.systemController.envConfig.HF_ENDPOINT;
+    }
+    
+    return undefined;
   }
 
   // 初始化扫描方法
@@ -455,12 +478,21 @@ export class ModelsController extends DownloadController {
         downloadUrl = `${baseUrl}${repo}/resolve/main/${filename}`;
       }
       
-      // 6. 异步启动下载过程
+      // 6. 检查HF_ENDPOINT配置，如果有则替换huggingface.co
+      const hfEndpoint = this.getHuggingFaceEndpoint();
+      if (hfEndpoint && downloadUrl.includes('huggingface.co')) {
+        logger.info(`使用配置的HF端点 ${hfEndpoint} 替换 huggingface.co`);
+        downloadUrl = downloadUrl.replace('huggingface.co/', hfEndpoint.replace(/^https?:\/\//, ''));
+      }
+      
+      logger.info(`即将从 ${downloadUrl} 下载模型到 ${outputPath}`);
+      
+      // 7. 异步启动下载过程
       this.downloadModelByName(modelName, downloadUrl, outputPath, taskId, source).catch(err => {
         logger.error(`下载模型 ${modelName} 失败: ${err instanceof Error ? err.message : String(err)}`);
       });
       
-      // 7. 立即返回成功响应，让前端开始轮询
+      // 8. 立即返回成功响应，让前端开始轮询
       ctx.body = {
         success: true,
         taskId: taskId,

@@ -12,6 +12,7 @@ import { EssentialModel, DownloadProgress } from '../types/models.types';
 import { logger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { downloadFile } from '../utils/download.utils';
+import { SystemController } from './system.controller';
 
 // 资源类型枚举
 export enum ResourceType {
@@ -125,6 +126,7 @@ export class ResourcePacksController extends DownloadController {
   private comfyuiPath: string;
   private modelsController: ModelsController;
   private pluginsController: PluginsController;
+  private systemController: SystemController;
   
   constructor() {
     super();
@@ -132,6 +134,7 @@ export class ResourcePacksController extends DownloadController {
     // 初始化其他控制器
     this.modelsController = new ModelsController();
     this.pluginsController = new PluginsController();
+    this.systemController = new SystemController();
     
     // 获取ComfyUI路径
     const { config } = require('../config');
@@ -455,6 +458,24 @@ export class ResourcePacksController extends DownloadController {
   }
   
   /**
+   * 获取Hugging Face端点配置
+   * 从系统控制器获取
+   */
+  private getHuggingFaceEndpoint(): string | undefined {
+    // 优先使用环境变量
+    if (process.env.HF_ENDPOINT) {
+      return process.env.HF_ENDPOINT;
+    }
+    
+    // 尝试从系统控制器的配置中获取
+    if (this.systemController && this.systemController.envConfig) {
+      return this.systemController.envConfig.HF_ENDPOINT;
+    }
+    
+    return undefined;
+  }
+  
+  /**
    * 安装模型资源（修复类型错误）
    */
   private async installModelResource(resource: ModelResource, taskId: string, source: string): Promise<void> {
@@ -509,6 +530,14 @@ export class ResourcePacksController extends DownloadController {
     } else {
       // 根据source参数选择下载源
       downloadUrl = source === 'mirror' ? resource.url.mirror : resource.url.hf;
+    }
+    
+    // 从系统控制器获取HF端点配置
+    const hfEndpoint = this.getHuggingFaceEndpoint();
+    
+    if (hfEndpoint && downloadUrl.includes('huggingface.co')) {
+      logger.info(`使用配置的HF端点 ${hfEndpoint} 替换 huggingface.co`);
+      downloadUrl = downloadUrl.replace('huggingface.co/', hfEndpoint.replace(/^https?:\/\//, ''));
     }
     
     logger.info(`开始下载模型 ${resource.name} 从 ${downloadUrl} 到 ${outputPath}`);

@@ -198,6 +198,15 @@
 
     <!-- 添加重置弹窗组件 -->
     <ResetDialogs ref="resetDialogs" />
+
+    <!-- 修改资源包安装对话框 -->
+    <ResourcePackDialog
+      ref="resourcePackDialog"
+      v-model:visible="showResourcePackDialog"
+      :pack-id="selectedPackId"
+      @installation-complete="handleResourcePackInstallComplete"
+      @update:visible="(val) => !val && handleResourcePackDialogClose()"
+    />
   </div>
 </template>
 
@@ -206,11 +215,13 @@ import { defineComponent, ref, computed, onMounted, onUnmounted, watch } from 'v
 import { modelsApi, Model } from '../api';
 import api from '../api';
 import { useQuasar } from 'quasar';
-import { useRouter } from 'vue-router';
+// import { useRouter } from 'vue-router';
 // 引入重置弹窗组件类型
 import ResetDialogs from '../components/reset/ResetDialogs.vue';
 // 引入重置日志对话框组件
 import ResetLogDialog from '../components/reset/ResetLogDialog.vue';
+// 引入资源包对话框组件
+import ResourcePackDialog from '../components/resources/ResourcePackDialog.vue';
 
 // 定义模型接口
 interface EssentialModel {
@@ -250,12 +261,13 @@ export default defineComponent({
   // 注册组件
   components: {
     ResetDialogs,
-    ResetLogDialog
+    ResetLogDialog,
+    ResourcePackDialog
   },
   
   setup() {
     const $q = useQuasar();
-    const router = useRouter();
+    // const router = useRouter();
     const isConnected = ref(false);
     const models = ref<Model[]>([]);
     const isStarting = ref(false);
@@ -298,6 +310,13 @@ export default defineComponent({
     
     // 添加对重置日志对话框组件的引用
     const resetLogDialog = ref<ResetLogDialogInstance | null>(null);
+    
+    // 添加资源包对话框相关变量
+    const showResourcePackDialog = ref(false);
+    const selectedPackId = ref('');
+    
+    // 在setup函数内部添加对话框组件的引用
+    const resourcePackDialog = ref<InstanceType<typeof ResourcePackDialog> | null>(null);
     
     const checkConnection = async () => {
       try {
@@ -396,10 +415,30 @@ export default defineComponent({
       startComfyUI();
     };
     
-    // 前往模型页面
+    // 修改前往模型页面方法，改为打开基础资源包安装弹窗
     const goToModels = () => {
       showConfirmDialog.value = false;
-      router.push('/models');
+      selectedPackId.value = 'essential-models-pack';
+      showResourcePackDialog.value = true;
+    };
+    
+    // 添加处理资源包安装完成的方法
+    const handleResourcePackInstallComplete = (result: { success: boolean, error?: string, packId?: string }) => {
+      if (result.success) {
+        $q.notify({
+          color: 'positive',
+          icon: 'check_circle',
+          message: `${result.packId || '资源包'}安装完成！`,
+          timeout: 3000
+        });
+      } else {
+        $q.notify({
+          color: 'negative',
+          icon: 'error',
+          message: `安装失败: ${result.error || '未知错误'}`,
+          timeout: 5000
+        });
+      }
     };
     
     // 启动 ComfyUI
@@ -565,6 +604,15 @@ export default defineComponent({
       }
     };
     
+    // 在处理ResourcePackDialog关闭的地方添加重置状态
+    const handleResourcePackDialogClose = () => {
+      showResourcePackDialog.value = false;
+      // 如果有引用，调用重置方法
+      if (resourcePackDialog.value) {
+        resourcePackDialog.value.resetState();
+      }
+    };
+    
     return {
       isConnected,
       installedModelsCount,
@@ -595,7 +643,13 @@ export default defineComponent({
       rememberChoice,
       resetDialogs,
       resetLogDialog,
-      showResetLog
+      showResetLog,
+      // 添加新的返回值
+      showResourcePackDialog,
+      selectedPackId,
+      handleResourcePackInstallComplete,
+      resourcePackDialog, // 添加组件引用
+      handleResourcePackDialogClose, // 添加处理方法
     };
   }
 });

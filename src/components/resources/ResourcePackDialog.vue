@@ -355,14 +355,14 @@ export default defineComponent({
         field: 'type',
         sortable: true
       },
-      {
-        name: 'size',
-        align: 'right',
-        label: '大小',
-        field: 'size',
-        sortable: true,
-        format: (val: string | number) => formatFileSize(typeof val === 'string' ? parseInt(val) : val)
-      },
+      // {
+      //   name: 'size',
+      //   align: 'right',
+      //   label: '大小',
+      //   field: 'size',
+      //   sortable: true,
+      //   format: (val: string | number) => formatFileSize(typeof val === 'string' ? parseInt(val) : val)
+      // },
       {
         name: 'status',
         align: 'center',
@@ -386,6 +386,8 @@ export default defineComponent({
       if (!newVal) {
         // 停止轮询
         stopPolling();
+        // 添加重置状态调用
+        resetState();
       }
     });
     
@@ -425,17 +427,31 @@ export default defineComponent({
         // 使用包ID作为任务ID查询安装状态
         const response = await api.resourcePacks.getInstallProgress(props.packId);
         
-        // 如果能获取到状态数据，说明有正在进行的任务
+        // 如果能获取到初步状态数据
         if (response.data) {
-          installProgress.value = response.data;
-          installing.value = true;
+          console.log('Found potential installation task, checking status...');
           
-          // 如果任务还在进行中，启动轮询
-          if (installProgress.value && !['completed', 'error', 'canceled'].includes(installProgress.value.status)) {
-            startPolling(props.packId);
+          // 检测到可能的安装任务，进行二次确认
+          try {
+            // 延迟一小段时间再次获取进度
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const confirmResponse = await api.resourcePacks.getInstallProgress(props.packId);
+            
+            // 只有确认获取到进度数据后，才设置为安装状态
+            if (confirmResponse.data) {
+              installProgress.value = confirmResponse.data;
+              installing.value = true;
+              
+              // 如果任务还在进行中，启动持续轮询
+              if (installProgress.value && !['completed', 'error', 'canceled'].includes(installProgress.value.status)) {
+                startPolling(props.packId);
+              }
+              
+              console.log('Confirmed active installation task:', installProgress.value);
+            }
+          } catch (confirmErr) {
+            console.log('Could not confirm installation task is active');
           }
-          
-          console.log('Found existing installation task:', installProgress.value);
         }
       } catch (err) {
         // 找不到任务状态或其他错误，忽略即可
@@ -579,6 +595,19 @@ export default defineComponent({
       } else {
         isOpen.value = false;
       }
+    };
+    
+    // 添加新方法 - 重置组件状态
+    const resetState = () => {
+      // 只有在安装未完成时，保留安装状态和进度
+      // if (!installing.value || (installProgress.value && ['completed', 'error', 'canceled'].includes(installProgress.value.status))) {
+        pack.value = null;
+        loading.value = false;
+        error.value = null;
+        installing.value = false;
+        installProgress.value = null;
+        stopPolling();
+      // }
     };
     
     // 获取资源类型对应的颜色
@@ -733,6 +762,7 @@ export default defineComponent({
       installResourcePack,
       cancelInstallation,
       closeDialog,
+      resetState,
       
       formatFileSize,
       formatDate,

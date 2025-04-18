@@ -34,7 +34,7 @@ interface NetworkCheckCache {
 }
 
 export class SystemController {
-  private envConfig: EnvironmentVariables = {};
+  public envConfig: EnvironmentVariables = {};
   private readonly CACHE_VALIDITY_PERIOD = 10 * 60 * 1000; // 10分钟的缓存有效期（毫秒）
   
   // 网络检查缓存，每项单独记录检查时间
