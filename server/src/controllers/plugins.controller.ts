@@ -7,6 +7,7 @@ import { exec, execSync } from 'child_process';
 import * as util from 'util';
 import * as os from 'os';
 import logger, { i18nLogger } from '../utils/logger';
+import { SystemController } from './system.controller';
 
 // 将exec转换为Promise
 const execPromise = util.promisify(exec);
@@ -176,6 +177,9 @@ async function fetchWithFallback(url: string) {
     return proxyResponse;  // 返回完整的 response 对象
   }
 }
+
+// 获取系统控制器单例
+const systemController = new SystemController();
 
 export class PluginsController {
   constructor() {
@@ -591,10 +595,28 @@ export class PluginsController {
   // 安装插件
   async installPlugin(ctx: Context): Promise<void> {
     const { pluginId } = ctx.request.body as { pluginId: string };
-    const { githubProxy } = ctx.request.body as { githubProxy: string };
+    const { githubProxy: clientProvidedProxy } = ctx.request.body as { githubProxy: string };
     console.log(`[API] 请求安装插件: ${pluginId}`);
     
     const taskId = uuidv4();
+    
+    // 从系统控制器获取 GitHub 代理配置
+    const systemEnvConfig = systemController.envConfig || {};
+    const systemGithubProxy = systemEnvConfig.GITHUB_PROXY || process.env.GITHUB_PROXY || '';
+    
+    // 确定实际使用的代理:
+    // 1. 如果系统配置的代理是 github.com，不使用代理
+    // 2. 否则优先使用系统配置的代理，如果没有则使用客户端提供的代理
+    let actualGithubProxy = '';
+    if (systemGithubProxy && systemGithubProxy !== 'https://github.com') {
+      actualGithubProxy = systemGithubProxy;
+      console.log(`[API] 使用系统配置的GitHub代理: ${actualGithubProxy}`);
+    } else if (clientProvidedProxy) {
+      actualGithubProxy = clientProvidedProxy;
+      console.log(`[API] 使用客户端提供的GitHub代理: ${actualGithubProxy}`);
+    } else {
+      console.log(`[API] 不使用GitHub代理`);
+    }
     
     // 创建任务并初始化进度
     taskProgressMap[taskId] = {
@@ -602,15 +624,15 @@ export class PluginsController {
       completed: false,
       pluginId,
       type: 'install',
-      githubProxy,
+      githubProxy: actualGithubProxy,
       logs: []  // 初始化日志数组
     };
     
     // 添加到历史记录
-    this.addHistoryItem(taskId, pluginId, 'install', githubProxy);
+    this.addHistoryItem(taskId, pluginId, 'install', actualGithubProxy);
     
     // 实际安装插件任务
-    this.installPluginTask(taskId, pluginId, githubProxy);
+    this.installPluginTask(taskId, pluginId, actualGithubProxy);
     
     ctx.body = {
       success: true,
@@ -693,8 +715,9 @@ export class PluginsController {
       if (installType === 'git-clone' && pluginInfo.github) {
         // 使用git clone安装
         try {
-          this.logOperation(taskId, `执行: git clone "${githubProxy}${pluginInfo.github}" "${targetDir}"`);
-          const { stdout, stderr } = await execPromise(`git clone "${githubProxy}${pluginInfo.github}" "${targetDir}"`);
+          const proxyUrl = this.applyGitHubProxy(pluginInfo.github, githubProxy);
+          this.logOperation(taskId, `执行: git clone "${proxyUrl}" "${targetDir}"`);
+          const { stdout, stderr } = await execPromise(`git clone "${proxyUrl}" "${targetDir}"`);
           if (stdout) this.logOperation(taskId, `Git输出: ${stdout}`);
           if (stderr) this.logOperation(taskId, `Git错误: ${stderr}`);
         } catch (cloneError) {
@@ -707,10 +730,11 @@ export class PluginsController {
             .replace(/\.git$/, '');
           
           taskProgressMap[taskId].message = '尝试备用方式下载...';
-          this.logOperation(taskId, `尝试备用方式: git clone "${githubProxy}${convertedUrl}" "${targetDir}"`);
+          const proxyConvertedUrl = this.applyGitHubProxy(convertedUrl, githubProxy);
+          this.logOperation(taskId, `尝试备用方式: git clone "${proxyConvertedUrl}" "${targetDir}"`);
           
           try {
-            const { stdout, stderr } = await execPromise(`git clone "${githubProxy}${convertedUrl}" "${targetDir}"`);
+            const { stdout, stderr } = await execPromise(`git clone "${proxyConvertedUrl}" "${targetDir}"`);
             if (stdout) this.logOperation(taskId, `Git输出: ${stdout}`);
             if (stderr) this.logOperation(taskId, `Git错误: ${stderr}`);
           } catch (retryError) {
@@ -1822,6 +1846,28 @@ export class PluginsController {
     });
   }
 
+  // 修改 GitHub URL 使用代理的辅助方法
+  private applyGitHubProxy(githubUrl: string, githubProxy: string): string {
+    if (!githubProxy || !githubUrl) {
+      return githubUrl;
+    }
+
+    // 如果代理本身就是 github.com，则不做任何处理
+    if (githubProxy === 'https://github.com/' || githubProxy === 'http://github.com/') {
+      return githubUrl;
+    }
+
+    // // 处理第一种格式：http://gh-proxy.com/https://github.com/
+    // if (githubProxy.includes('/https://github.com/')) {
+    //   // 这是前缀模式，例如 http://gh-proxy.com/https://github.com/
+    //   return githubUrl.replace('https://github.com/', githubProxy);
+    // }
+
+    // // 处理第二种格式：https://hub.fastgit.xyz/
+    // // 这是域名替换模式
+    return githubUrl.replace('https://github.com/', githubProxy);
+  }
+
   // 添加一个新的公共方法，用于从其他控制器直接调用安装插件
   public async installPluginFromGitHub(
     githubUrl: string, 
@@ -1838,6 +1884,19 @@ export class PluginsController {
       
       const repo = githubUrlParts[2].replace('.git', '');
       const pluginId = repo;
+      
+      // 从系统控制器获取 GitHub 代理配置
+      const systemEnvConfig = systemController.envConfig || {};
+      const systemGithubProxy = systemEnvConfig.GITHUB_PROXY || process.env.GITHUB_PROXY || '';
+      
+      // 确定实际使用的代理
+      let actualGithubProxy = '';
+      if (systemGithubProxy && systemGithubProxy !== 'https://github.com') {
+        actualGithubProxy = systemGithubProxy;
+        console.log(`[API] 使用系统配置的GitHub代理: ${actualGithubProxy}`);
+      } else {
+        console.log(`[API] 不使用GitHub代理`);
+      }
       
       // 创建任务进度记录（如果尚未存在）
       if (!taskProgressMap[operationId]) {
@@ -1872,8 +1931,9 @@ export class PluginsController {
       
       // 使用git clone安装
       try {
-        this.logOperation(operationId, `执行: git clone --branch ${branch} "${githubUrl}" "${targetDir}"`);
-        const { stdout, stderr } = await execPromise(`git clone --branch ${branch} "${githubUrl}" "${targetDir}"`);
+        const proxyUrl = this.applyGitHubProxy(githubUrl, actualGithubProxy);
+        this.logOperation(operationId, `执行: git clone --branch ${branch} "${proxyUrl}" "${targetDir}"`);
+        const { stdout, stderr } = await execPromise(`git clone --branch ${branch} "${proxyUrl}" "${targetDir}"`);
         if (stdout) this.logOperation(operationId, `Git输出: ${stdout}`);
         if (stderr) this.logOperation(operationId, `Git错误: ${stderr}`);
       } catch (cloneError) {
@@ -1886,10 +1946,11 @@ export class PluginsController {
           .replace(/\.git$/, '');
         
         taskProgressMap[operationId].message = '尝试备用方式下载...';
-        this.logOperation(operationId, `尝试备用方式: git clone --branch ${branch} "${convertedUrl}" "${targetDir}"`);
+        const proxyConvertedUrl = this.applyGitHubProxy(convertedUrl, actualGithubProxy);
+        this.logOperation(operationId, `尝试备用方式: git clone --branch ${branch} "${proxyConvertedUrl}" "${targetDir}"`);
         
         try {
-          const { stdout, stderr } = await execPromise(`git clone --branch ${branch} "${convertedUrl}" "${targetDir}"`);
+          const { stdout, stderr } = await execPromise(`git clone --branch ${branch} "${proxyConvertedUrl}" "${targetDir}"`);
           if (stdout) this.logOperation(operationId, `Git输出: ${stdout}`);
           if (stderr) this.logOperation(operationId, `Git错误: ${stderr}`);
         } catch (retryError) {

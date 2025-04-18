@@ -201,20 +201,31 @@ export class SystemController {
     const sitesToCheck = [
       { 
         name: 'github' as const, 
-        url: this.envConfig.GITHUB_PROXY || 'https://github.com', 
+        url: this.envConfig.GITHUB_PROXY || 'https://github.com/', 
         type: 'GitHub'
       },
       { 
         name: 'pip' as const, 
-        url: this.envConfig.PIP_INDEX_URL || 'https://pypi.org', 
+        url: this.envConfig.PIP_INDEX_URL || 'https://pypi.org/simple/', 
         type: 'PIP源'
       },
       { 
         name: 'huggingface' as const, 
-        url: this.envConfig.HF_ENDPOINT || 'https://huggingface.co', 
+        url: this.envConfig.HF_ENDPOINT || 'https://huggingface.co/', 
         type: 'Hugging Face'
       }
     ];
+    
+    // 处理 GitHub 代理的特殊情况
+    if (sitesToCheck[0].url && sitesToCheck[0].url.includes('gh-proxy.com')) {
+      const proxyUrlMatch = sitesToCheck[0].url.match(/(https?:\/\/gh-proxy\.com)/);
+      if (proxyUrlMatch && proxyUrlMatch[1]) {
+        // 如果是 gh-proxy.com 格式的链接，仅检查代理服务器部分
+        console.log(`检测到 GitHub 代理链接: ${sitesToCheck[0].url}`);
+        console.log(`将只检查代理服务器部分: ${proxyUrlMatch[1]}`);
+        sitesToCheck[0].url = proxyUrlMatch[1];
+      }
+    }
     
     // 筛选出缓存过期的网站进行检查
     const sitesNeedCheck = sitesToCheck.filter(site => {
@@ -503,19 +514,19 @@ export class SystemController {
       // 从环境变量或已保存的配置中获取网络配置
       const networkConfig = {
         github: {
-          url: this.envConfig.GITHUB_PROXY || process.env.GITHUB_PROXY || '',
+          url: this.envConfig.GITHUB_PROXY || process.env.GITHUB_PROXY || 'https://github.com/',
           accessible: this.networkCheckCache.github.accessible
         },
         pip: {
-          url: this.envConfig.PIP_INDEX_URL || process.env.PIP_INDEX_URL || '',
+          url: this.envConfig.PIP_INDEX_URL || process.env.PIP_INDEX_URL || 'https://pypi.org/simple/',
           accessible: this.networkCheckCache.pip.accessible
         },
         huggingface: {
-          url: this.envConfig.HF_ENDPOINT || process.env.HF_ENDPOINT || '',
+          url: this.envConfig.HF_ENDPOINT || process.env.HF_ENDPOINT || 'https://huggingface.co/',
           accessible: this.networkCheckCache.huggingface.accessible
         }
       };
-      
+
       ctx.status = 200;
       ctx.body = {
         code: 200,

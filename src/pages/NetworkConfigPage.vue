@@ -39,8 +39,8 @@
             outlined
             dense
             v-model="githubUrl"
-            :options="['https://github.com/','http://gh-proxy.com/', 'https://hub.fastgit.xyz/', 'https://github.com.cnpmjs.org/']"
-            placeholder="http://gh-proxy.com/"
+            :options="['https://github.com/','http://gh-proxy.com/https://github.com/', 'https://hub.fastgit.xyz/', 'https://github.com.cnpmjs.org/']"
+            placeholder="http://gh-proxy.com/https://github.com/"
             dropdown-icon="expand_more"
             @update:model-value="saveGithubConfig"
           />
@@ -218,20 +218,21 @@ const checkNetworkStatus = async (service = null) => {
       networkStatus.value.pip = result.pip.accessible;
       networkStatus.value.huggingface = result.huggingface.accessible;
       
-      if (service) {
-        const serviceNames = {
-          github: 'GitHub',
-          pip: 'PIP源',
-          huggingface: 'Hugging Face'
-        };
+      console.log('service:', service, 'networkStatus:', networkStatus.value);
+      // if (service) {
+      //   const serviceNames = {
+      //     github: 'GitHub',
+      //     pip: 'PIP源',
+      //     huggingface: 'Hugging Face'
+      //   };
         
-        const isAccessible = networkStatus.value[service];
-        showNotify(
-          '网络检测结果', 
-          `${serviceNames[service]}${isAccessible ? $t('network.canAccess') : $t('network.cannotAccess')}`, 
-          isAccessible ? 'positive' : 'warning'
-        );
-      }
+      //   const isAccessible = networkStatus.value[service];
+      //   showNotify(
+      //     '网络检测结果', 
+      //     `${serviceNames[service]}${isAccessible ? $t('network.canAccess') : $t('network.cannotAccess')}`, 
+      //     isAccessible ? 'positive' : 'warning'
+      //   );
+      // }
     }
   } catch (error) {
     console.error('Failed to check network status:', error);
