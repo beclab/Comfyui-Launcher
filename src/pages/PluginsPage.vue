@@ -170,6 +170,7 @@ const tagFilter = ref<string[]>([]);
 const tagOptions = ref<string[]>([]);
 const selectedPlugin = ref<Plugin | null>(null);
 const pluginInfoDialog = ref(false);
+const isInIframe = ref(false);
 
 // 安装/卸载进度
 const installationInProgress = reactive<Record<string, boolean>>({});
@@ -733,6 +734,14 @@ watch(activeTab, (newValue) => {
 onMounted(() => {
   fetchPlugins(false);
   
+  // 检查是否在 iframe 中运行
+  try {
+    isInIframe.value = window.self !== window.top;
+  } catch (e) {
+    // 如果出现跨域问题，假设在 iframe 中
+    isInIframe.value = true;
+  }
+  
   // 收集所有标签
   setTimeout(() => {
     const allTags = plugins.value
@@ -744,16 +753,32 @@ onMounted(() => {
   }, 1000);
 });
 
-// 新增打开插件目录方法
+// 修改打开插件目录方法
 const openPluginsFolder = async () => {
+  const pluginsPath = '/Files/External/ai/comfyui/ComfyUI/custom_nodes/';
+  console.log('Opening plugins folder:', pluginsPath);
+  
   try {
-    const response = await api.openPath('/');
-    if (!response.body.success) {
-      $q.notify({
-        color: 'negative',
-        message: t('plugins.notifications.folderOpenFail'),
-        icon: 'error'
-      });
+    if (isInIframe.value) {
+      // 如果在 iframe 中，使用原始方法
+      const response = await api.openPath(pluginsPath);
+      if (!response.body.success) {
+        $q.notify({
+          color: 'negative',
+          message: t('plugins.notifications.folderOpenFail'),
+          icon: 'error'
+        });
+      }
+      console.log('Plugins folder opened successfully in iframe mode');
+    } else {
+      // 如果不在 iframe 中，在新页面中打开
+      const hostname = window.location.hostname;
+      const parts = hostname.split('.');
+      parts[0] = 'files';
+      const filesDomain = parts.join('.');
+      const url = `https://${filesDomain}${pluginsPath}`;
+      window.open(url, '_blank');
+      console.log('Plugins folder opened in new tab:', url);
     }
   } catch (error) {
     console.error('Failed to open plugin directory:', error);
