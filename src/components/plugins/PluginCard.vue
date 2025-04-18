@@ -99,7 +99,7 @@
             }"
             class="q-mr-xs"
           >
-            <q-tooltip>{{ plugin.installed ? '卸载' : '安装' }}</q-tooltip>
+            <!-- <q-tooltip>{{ plugin.installed ? '卸载' : '安装' }}</q-tooltip> -->
           </q-btn>
           
 

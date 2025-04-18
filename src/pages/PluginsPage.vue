@@ -106,7 +106,6 @@ import { useI18n } from 'vue-i18n';
 import api from 'src/api';
 import { QTableColumn } from 'quasar';
 import DataCenter from 'src/api/DataCenter';
-import { debounce } from 'lodash';
 
 // 导入组件
 import PluginsManager from 'src/components/plugins/PluginsManager.vue';
@@ -299,12 +298,18 @@ const clearFilters = () => {
 
 // 获取插件列表
 const fetchPlugins = async (forceUpdate = false) => {
-  console.log('Fetching plugins...');
+  console.log('Fetching plugins...', forceUpdate ? '(forced update)' : '');
   try {
     loading.value = true;
     const response = await DataCenter.getPlugins(forceUpdate);
-    plugins.value = response;
+    console.log('Plugins fetched:', response.length);
+    
+    // 确保完全替换数组和每个对象，创建全新对象引用
+    plugins.value = response.map(plugin => ({...plugin}));
+    
+    // 确保重新过滤和更新可见插件
     filterPlugins();
+    console.log('Visible plugins updated:', visiblePlugins.value.length);
   } catch (error) {
     console.error('Failed to fetch plugin list:', error);
     $q.notify({
@@ -313,7 +318,6 @@ const fetchPlugins = async (forceUpdate = false) => {
       icon: 'error'
     });
   } finally {
-    // 确保在所有子组件中设置 loading 为 false
     loading.value = false;
   }
 };
@@ -351,6 +355,8 @@ const installPlugin = async (plugin: Plugin) => {
     installationInProgress[plugin.id] = false;
     progressVisible.value = false;
     
+    // 确保强制刷新插件列表
+    console.log('Refreshing plugins after installation');
     await fetchPlugins(true);
   }
 };
@@ -382,6 +388,8 @@ const uninstallPlugin = async (plugin: Plugin) => {
     progressVisible.value = false;
   } finally {
     uninstallationInProgress[plugin.id] = false;
+    // 确保强制刷新插件列表
+    console.log('Refreshing plugins after uninstallation');
     await fetchPlugins(true);
   }
 };
@@ -770,14 +778,19 @@ const pluginStateChanging = ref<Record<string, boolean>>({});
 const pluginTaskId = ref<Record<string, string>>({});
 const githubProxy = ref<string>(''); // 修改为 string 类型
 
-// 添加防抖的刷新方法
-const debouncedRefresh = debounce(async () => {
-  await fetchPlugins(true);
-}, 300);
-
 // 修改刷新处理
-const onRefresh = (): void => {
-  debouncedRefresh();
+const onRefresh = async (): Promise<void> => {
+  console.log('Refresh triggered in PluginsPage');
+  loading.value = true; // 先设置加载状态
+  try {
+    // 直接调用而不使用debounce，确保立即执行
+    await fetchPlugins(true);
+    console.log('Plugins refreshed successfully', plugins.value.length);
+  } catch (error) {
+    console.error('Failed to refresh plugins:', error);
+  } finally {
+    loading.value = false;
+  }
 };
 
 onUnmounted(() => {

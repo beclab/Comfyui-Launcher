@@ -102,7 +102,7 @@
         
         <!-- 插件列表 -->
         <div class="plugin-items">
-          <div v-for="plugin in plugins" :key="plugin.id" v-memo="[plugin.id, plugin.disabled]">
+          <div v-for="plugin in plugins" :key="plugin.id">
             <plugin-card
               :plugin="plugin"
               :installation-in-progress="installationInProgress[plugin.id]"
@@ -313,6 +313,7 @@ const onFilter = () => {
 
 // 刷新
 const onRefresh = (): void => {
+  console.log('Refresh event from PluginList');
   emit('refresh');
 };
 
