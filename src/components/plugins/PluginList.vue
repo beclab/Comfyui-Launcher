@@ -313,9 +313,12 @@ const onFilter = () => {
 
 // 刷新
 const onRefresh = (): void => {
-  console.log('onRefresh called');
   emit('refresh');
 };
+
+
+
+
 </script>
 
 <style scoped>

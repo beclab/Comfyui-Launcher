@@ -59,7 +59,7 @@
         @clear-filters="clearFilters"
         @load-more="loadMorePlugins"
         @search="handleSearch"
-        @refresh="fetchPlugins(true)"
+        @refresh="onRefresh"
         @filter="handleFilter"
       />
     </div>
@@ -100,12 +100,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive, watch, computed } from 'vue';
+import { ref, onMounted, reactive, watch, computed, onUnmounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { useI18n } from 'vue-i18n';
 import api from 'src/api';
 import { QTableColumn } from 'quasar';
 import DataCenter from 'src/api/DataCenter';
+import { debounce } from 'lodash';
 
 // 导入组件
 import PluginsManager from 'src/components/plugins/PluginsManager.vue';
@@ -299,8 +300,8 @@ const clearFilters = () => {
 // 获取插件列表
 const fetchPlugins = async (forceUpdate = false) => {
   console.log('Fetching plugins...');
-  loading.value = true;
   try {
+    loading.value = true;
     const response = await DataCenter.getPlugins(forceUpdate);
     plugins.value = response;
     filterPlugins();
@@ -312,6 +313,7 @@ const fetchPlugins = async (forceUpdate = false) => {
       icon: 'error'
     });
   } finally {
+    // 确保在所有子组件中设置 loading 为 false
     loading.value = false;
   }
 };
@@ -767,6 +769,24 @@ const handleFilter = (filters: { statusFilter: { label: string; value: string };
 const pluginStateChanging = ref<Record<string, boolean>>({});
 const pluginTaskId = ref<Record<string, string>>({});
 const githubProxy = ref<string>(''); // 修改为 string 类型
+
+// 添加防抖的刷新方法
+const debouncedRefresh = debounce(async () => {
+  await fetchPlugins(true);
+}, 300);
+
+// 修改刷新处理
+const onRefresh = (): void => {
+  debouncedRefresh();
+};
+
+onUnmounted(() => {
+  // 清理所有状态
+  loading.value = false;
+  plugins.value = [];
+  visiblePlugins.value = [];
+});
+
 </script>
 
 <style scoped>

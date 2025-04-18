@@ -174,7 +174,7 @@ export default {
     };
 
     const onRefresh = (): void => {
-      console.log('Refresh plugins in PluginsManager');
+      // 不再操作本地 loading 状态，直接发出事件
       emit('refresh');
     };
 
