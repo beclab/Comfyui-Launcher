@@ -25,10 +25,17 @@
       <q-btn href="https://github.com/beclab/Olares" target="_blank" flat round size="sm" class="icon-btn">
         <img src="~assets/icon-github.png" style="height: 18px">
       </q-btn>
-      <q-btn flat round size="sm" class="icon-btn">
-        <q-tooltip>
+      <q-btn 
+        flat 
+        round 
+        size="sm" 
+        class="icon-btn"
+        @mouseover="showWeichatQR = true"
+        @mouseleave="showWeichatQR = false"
+      >
+        <div v-if="showWeichatQR" class="custom-tooltip">
           <img src="~assets/olares-weichat-link.jpeg" alt="olares-weichat-link" style="max-width: 200px; max-height: 200px; display: block;" />
-        </q-tooltip>
+        </div>
         <img src="~assets/icon-weichat.png" style="height: 18px">
       </q-btn>
       <q-btn href="https://olares.cn/" target="_blank" flat round size="sm" class="icon-btn">
@@ -39,10 +46,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
 
 export default defineComponent({
-  name: 'SupportLinks'
+  name: 'SupportLinks',
+  setup() {
+    const showWeichatQR = ref(false);
+    return {
+      showWeichatQR
+    };
+  }
 });
 </script>
 
@@ -75,5 +88,17 @@ export default defineComponent({
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.custom-tooltip {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 5px;
+  z-index: 9999;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+  padding: 5px;
 }
 </style>
