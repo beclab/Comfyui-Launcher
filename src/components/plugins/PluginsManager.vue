@@ -140,6 +140,7 @@ export default {
 
     // 方法转发
     const onInstall = (plugin: Plugin): void => {
+      console.log('installPlugin2:', plugin);
       emit('install', plugin);
     };
 

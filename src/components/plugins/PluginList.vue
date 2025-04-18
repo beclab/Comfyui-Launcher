@@ -270,6 +270,7 @@ const emit = defineEmits([
 
 // Methods
 const onInstall = (plugin: Plugin): void => {
+  console.log('installPlugin3:', plugin);
   emit('install', plugin);
 };
 

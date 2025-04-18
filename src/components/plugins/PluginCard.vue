@@ -90,7 +90,13 @@
             :color="plugin.installed ? 'grey-7' : 'grey-7'"
             :icon="plugin.installed ? 'delete' : 'download'"
             :loading="!!installationInProgress"
-            @click="plugin.installed ? onUninstall : onInstall"
+            @click="() => {
+              if (plugin.installed) {
+                onUninstall();
+              } else {
+                onInstall();
+              }
+            }"
             class="q-mr-xs"
           >
             <q-tooltip>{{ plugin.installed ? '卸载' : '安装' }}</q-tooltip>
@@ -153,6 +159,8 @@ const emit = defineEmits([
 
 
 const onInstall = () => {
+  console.log('installPlugin4: 开始执行安装操作');
+  console.log('传入的插件信息:', props.plugin);
   emit('install', props.plugin);
 };
 

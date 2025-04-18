@@ -318,6 +318,7 @@ const fetchPlugins = async (forceUpdate = false) => {
 
 // 安装插件
 const installPlugin = async (plugin: Plugin) => {
+  console.log('installPlugin:', plugin);
   try {
     if (installationInProgress[plugin.id]) {
       return;
