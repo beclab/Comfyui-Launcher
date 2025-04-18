@@ -442,31 +442,93 @@ export class PluginsController {
     // 创建一个快速查找表
     const installedMap = new Map();
     installedPlugins.forEach(plugin => {
-      installedMap.set(plugin.id, {
+      // 统一转为小写键以便忽略大小写比较
+      installedMap.set(plugin.id.toLowerCase(), {
         installedOn: plugin.installedOn,
-        disabled: plugin.disabled
+        disabled: plugin.disabled,
+        // 保存原始插件信息用于GitHub URL比较
+        originalPlugin: plugin
       });
     });
     
     // 更新每个插件的安装状态
     plugins.forEach(plugin => {
-      const installedInfo = installedMap.get(plugin.id);
+      // 忽略大小写比较
+      const installedInfo = installedMap.get(plugin.id.toLowerCase());
       if (installedInfo) {
         plugin.installed = true;
         plugin.installedOn = installedInfo.installedOn;
         plugin.disabled = installedInfo.disabled;
       } else {
-        plugin.installed = false;
-        plugin.disabled = false;
+        // 如果ID没匹配上，尝试匹配GitHub URL
+        const matchByGithub = this.findPluginByGithubUrl(plugin, installedPlugins);
+        if (matchByGithub) {
+          plugin.installed = true;
+          plugin.installedOn = matchByGithub.installedOn;
+          plugin.disabled = matchByGithub.disabled;
+        } else {
+          plugin.installed = false;
+          plugin.disabled = false;
+        }
       }
     });
     
     // 添加本地安装但不在列表中的插件
-    installedPlugins.forEach(plugin => {
-      if (!plugins.some(p => p.id === plugin.id)) {
-        plugins.push(plugin);
+    installedPlugins.forEach(localPlugin => {
+      // 忽略大小写比较
+      const exists = plugins.some(p => 
+        p.id.toLowerCase() === localPlugin.id.toLowerCase() || 
+        this.isSameGithubRepo(p.github, localPlugin.github)
+      );
+      if (!exists) {
+        plugins.push(localPlugin);
       }
     });
+  }
+
+  // 辅助方法：根据GitHub URL查找插件
+  private findPluginByGithubUrl(plugin: any, installedPlugins: any[]): any {
+    if (!plugin.github) return null;
+    
+    return installedPlugins.find(localPlugin => 
+      this.isSameGithubRepo(plugin.github, localPlugin.github)
+    );
+  }
+  
+  // 辅助方法：判断两个GitHub URL是否指向同一仓库
+  private isSameGithubRepo(url1: string, url2: string): boolean {
+    if (!url1 || !url2) return false;
+    
+    // 标准化GitHub URL以进行比较
+    const normalizeGithubUrl = (url: string): string => {
+      return url.toLowerCase()
+        .replace(/^git@github\.com:/, 'https://github.com/')
+        .replace(/\.git$/, '')
+        .replace(/\/$/, '');
+    };
+    
+    const normalized1 = normalizeGithubUrl(url1);
+    const normalized2 = normalizeGithubUrl(url2);
+    
+    // 直接比较标准化后的URL
+    if (normalized1 === normalized2) return true;
+    
+    // 提取用户名和仓库名进行比较
+    try {
+      const match1 = normalized1.match(/github\.com\/([^\/]+)\/([^\/]+)/i);
+      const match2 = normalized2.match(/github\.com\/([^\/]+)\/([^\/]+)/i);
+      
+      if (match1 && match2) {
+        const [, user1, repo1] = match1;
+        const [, user2, repo2] = match2;
+        return user1.toLowerCase() === user2.toLowerCase() && 
+               repo1.toLowerCase() === repo2.toLowerCase();
+      }
+    } catch (e) {
+      // 如果解析失败，继续使用URL直接比较的结果
+    }
+    
+    return false;
   }
 
   // 获取已安装的插件列表
@@ -1316,16 +1378,19 @@ export class PluginsController {
         // 创建一个映射以快速查找插件
         const installedMap = new Map();
         installedPlugins.forEach(plugin => {
-          installedMap.set(plugin.id, {
+          // 使用小写ID作为键
+          installedMap.set(plugin.id.toLowerCase(), {
             installed: true,
             installedOn: plugin.installedOn,
-            disabled: plugin.disabled
+            disabled: plugin.disabled,
+            github: plugin.github // 保存GitHub URL用于后续比较
           });
         });
         
         // 更新缓存中的插件状态
         cachedPlugins = cachedPlugins.map(plugin => {
-          const installed = installedMap.get(plugin.id);
+          // 优先通过ID匹配（忽略大小写）
+          const installed = installedMap.get(plugin.id.toLowerCase());
           if (installed) {
             return {
               ...plugin,
@@ -1333,18 +1398,35 @@ export class PluginsController {
               installedOn: installed.installedOn,
               disabled: installed.disabled
             };
-          } else {
-            return {
-              ...plugin,
-              installed: false,
-              disabled: false
-            };
+          } else if (plugin.github) {
+            // 如果ID没匹配上但有GitHub URL，尝试用GitHub URL匹配
+            const matchedByGithub = this.findPluginByGithubUrl(plugin, installedPlugins);
+            if (matchedByGithub) {
+              return {
+                ...plugin,
+                installed: true,
+                installedOn: matchedByGithub.installedOn,
+                disabled: matchedByGithub.disabled
+              };
+            }
           }
+          
+          return {
+            ...plugin,
+            installed: false,
+            disabled: false
+          };
         });
         
         // 也更新本地安装但不在缓存中的插件
         installedPlugins.forEach(plugin => {
-          if (!cachedPlugins.some(p => p.id === plugin.id)) {
+          // 检查是否已存在（忽略大小写ID和GitHub URL）
+          const exists = cachedPlugins.some(p => 
+            p.id.toLowerCase() === plugin.id.toLowerCase() || 
+            this.isSameGithubRepo(p.github, plugin.github)
+          );
+          
+          if (!exists) {
             cachedPlugins.push(plugin);
           }
         });
