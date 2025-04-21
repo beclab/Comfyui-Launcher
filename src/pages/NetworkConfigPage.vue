@@ -78,7 +78,7 @@
             outlined
             dense
             v-model="pypiUrl"
-            :options="['https://pypi.joinolares.cn/root/olares3/+simple/', 'https://pypi.tuna.tsinghua.edu.cn', 'https://mirrors.aliyun.com/pypi/simple/', 'https://pypi.org/simple/']"
+            :options="['https://pypi.joinolares.cn/root/olares3/+simple/', 'https://pypi.tuna.tsinghua.edu.cn/simple', 'https://mirrors.aliyun.com/pypi/simple/', 'https://pypi.org/simple/']"
             placeholder="https://pypi.joinolares.cn/root/olares3/+simple/"
             dropdown-icon="expand_more"
             @update:model-value="savePipConfig"
