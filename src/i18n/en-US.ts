@@ -33,7 +33,7 @@ export default {
     modelManagement: 'Model management',
     pluginManagement: 'Plugin management',
     pythonDependencies: 'Python dependencies',
-    networkConfig: 'Network config',
+    networkConfig: 'Network Config',
     discovery: 'Discover'
   },
   models: {
