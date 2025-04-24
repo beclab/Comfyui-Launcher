@@ -28,19 +28,19 @@ export default {
     open: 'Open'
   },
   menu: {
-    navigation: 'Navigation Menu',
+    navigation: 'Navigation',
     home: 'Home',
-    modelManagement: 'Model Management',
-    pluginManagement: 'Plugin Management',
-    pythonDependencies: 'Python Dependencies',
-    networkConfig: 'Network Config',
-    discovery: 'Discovery'
+    modelManagement: 'Model management',
+    pluginManagement: 'Plugin management',
+    pythonDependencies: 'Python dependencies',
+    networkConfig: 'Network config',
+    discovery: 'Discover'
   },
   models: {
-    essentialModels: 'Essential Models',
-    downloadModels: 'Download Models',
-    localModels: 'Local Models',
-    modelName: 'Model Name',
+    essentialModels: 'Essential models',
+    downloadModels: 'Download models',
+    localModels: 'Local models',
+    modelName: 'Model name',
     modelSize: 'Size',
     modelType: 'Type',
     modelAction: 'Action',
@@ -48,7 +48,7 @@ export default {
       name: 'Name',
       type: 'Type',
       size: 'Size',
-      baseModel: 'Base Model',
+      baseModel: 'Base model',
       source: 'Source',
       description: 'Description',
       noDescription: 'No description'
@@ -59,67 +59,67 @@ export default {
     }
   },
   network: {
-    config: 'Network Configuration',
-    proxy: 'Proxy Settings',
-    useProxy: 'Use Proxy',
+    config: 'Network configuration',
+    proxy: 'Proxy settings',
+    useProxy: 'Use proxy',
     github: {
       title: 'GitHub',
       accessible: 'Accessible',
       inaccessible: 'Inaccessible',
-      selectUrl: 'Select URL to access'
+      selectUrl: 'Select the URL to access'
     },
-    environment: 'Network Environment',
+    environment: 'Network environment',
     pypi: {
       title: 'PyPI',
       accessible: 'Accessible',
       inaccessible: 'Inaccessible',
-      selectUrl: 'Select URL to access'
+      selectUrl: 'Select the URL to access'
     },
     huggingface: {
       title: 'HuggingFace',
       accessible: 'Accessible',
       inaccessible: 'Inaccessible',
-      selectUrl: 'Select URL to access'
+      selectUrl: 'Select the URL to access'
     },
     checkNetwork: 'Check',
     loading: 'Loading configuration...',
-    networkTest: 'Network Test Result',
-    canAccess: 'can be accessed',
-    cannotAccess: 'cannot be accessed',
+    networkTest: 'Network test result',
+    canAccess: 'can access',
+    cannotAccess: 'cannot access',
     saveSuccess: 'Configuration saved successfully',
     saveError: 'Failed to save configuration'
   },
   python: {
-    dependencies: 'Python Dependencies',
-    installPackage: 'Install Package',
-    packageName: 'Package Name',
+    dependencies: 'Python dependencies',
+    installPackage: 'Install package',
+    packageName: 'Package name',
     version: 'Version',
     status: 'Status',
     action: 'Action',
-    environmentManagement: 'Environment Management',
+    environmentManagement: 'Python dependency management',
     tabs: {
-      dependencies: 'Python Dependencies',
-      analysis: 'Dependency Analysis'
+      dependencies: 'Python dependencies',
+      analysis: 'Dependency analysis'
     },
     errors: {
-      installationError: 'Installation Error',
+      installationError: 'Installation error',
       serverErrorCauses: 'Internal server errors may be caused by:',
-      envConfigProblem: 'Python environment configuration issues - may be virtual or system environment issues',
-      permissionProblem: 'Permission problems - current user may not have permissions to install packages',
-      networkProblem: 'Network issues - unable to connect to PyPI source',
+      envConfigProblem: 'Error in Python environment configuration - may be an issue with virtual system or system environment',
+      permissionProblem: 'Permission issue - current user may not have the permission to install packages',
+      networkProblem: 'Network issue - unable to connect to PyPI source',
       dependencyConflict: 'Dependency conflicts - may conflict with other installed packages',
       installTips: 'To install Python packages:',
       useVirtualEnv: 'Using virtual environment',
       useUserInstall: 'Using user-level installation'
     },
     installedPackages: {
-      title: 'Installed Python Packages',
-      subtitle: 'Python packages installed in local Python environment',
+      title: 'Installed Python packages',
+      subtitle: 'Python packages installed in local environment',
       search: 'Search Python packages',
-      install: 'Install New Package',
+      install: 'Install new package',
       refresh: 'Refresh',
       tableCols: {
-        name: 'Package Name',
+        name: 'Package name',
         version: 'Version',
         actions: 'Actions'
       },
@@ -129,8 +129,8 @@ export default {
       },
       dialog: {
         install: {
-          title: 'Install New Package',
-          packageName: 'Package Name',
+          title: 'Install new package',
+          packageName: 'Package name',
           version: 'Version (optional)',
           versionHint: 'Example: ==1.0.0, >=2.0.0, leave blank for latest version',
           cancel: 'Cancel',
@@ -154,12 +154,12 @@ export default {
       }
     },
     pluginDependencies: {
-      title: 'Plugin Dependencies Analysis',
-      subtitle: 'Automatically analyze whether Python libraries required by installed plugins are correctly installed',
-      analyze: 'Analyze Now',
+      title: 'Plugin dependency analysis',
+      subtitle: 'Automatically check the installation of Python libraries required by installed plugins',
+      analyze: 'Analyze now',
       pluginsColumn: 'Plugins',
-      dependenciesColumn: 'Dependencies List',
-      fixAll: 'Fix All',
+      dependenciesColumn: 'Dependency list',
+      fixAll: 'Fix all',
       fix: 'Fix',
       versionRequired: 'Version required:',
       install: 'Install',
@@ -184,64 +184,64 @@ export default {
       start: 'Start'
     },
     menu: {
-      viewLogs: 'View Logs',
-      viewResetLogs: 'View Reset Logs',
-      reset: 'Wipe and Restore'
+      viewLogs: 'View logs',
+      viewResetLogs: 'View reset logs',
+      reset: 'Wipe and restore'
     },
     logs: {
-      title: 'ComfyUI Logs',
+      title: 'ComfyUI logs',
       loading: 'Loading logs...',
-      refresh: 'Refresh Logs',
-      download: 'Download Logs'
+      refresh: 'Refresh logs',
+      download: 'Download logs'
     },
     dialog: {
-      missingModelsTitle: 'Missing Essential Models',
-      missingModelsMessage: 'You have not installed all the necessary essential models. This may cause ComfyUI to fail to generate images properly. Do you want to continue starting?',
-      rememberChoice: 'Remember my choice, no need to confirm next time',
-      confirmStart: 'Still Start',
-      installModels: 'Install Models'
+      missingModelsTitle: 'Missing essential models',
+      missingModelsMessage: 'You have not installed all the essential models. This may cause ComfyUI to fail to generate images properly. Do you want to continue starting?',
+      rememberChoice: 'Remember my choice',
+      confirmStart: 'Start anyway',
+      installModels: 'Install models'
     }
   },
   modelsPage: {
-    title: 'Model Management',
-    modelLibrary: 'Model Library',
-    operationHistory: 'Operation History',
-    openModelDir: 'Open Model Directory'
+    title: 'Model management',
+    modelLibrary: 'Model library',
+    operationHistory: 'Operation history',
+    openModelDir: 'Open model directory'
   },
   packageInstall: {
-    title: 'Package Installation',
-    essentialPackage: 'Essential Model Package',
+    title: 'Package installation',
+    essentialPackage: 'Essential model package',
     popular: 'Popular',
-    outOfPrint: 'Out of Print',
+    outOfPrint: 'Out of print',
     essentialModelsDesc: 'Contains the basic models required for ComfyUI to work',
     download: 'Download',
     controlNetPackage: 'ControlNet Model Package',
     controlNetModelsDesc: 'Contains all models required for ControlNet'
   },
   installedModelsCard: {
-    installedModels: 'Installed Models',
+    installedModels: 'Installed models',
     installedCount: 'Installed { installedModelsCount } models',
     storageUsed: 'Storage used: { totalStorageUsed }',
     searchPlaceholder: 'Search models...',
-    scanModels: 'Scan Models',
+    scanModels: 'Scan models',
     refresh: 'Refresh',
-    confirmDelete: 'Confirm Delete Model',
-    deleteMessage: 'Are you sure you want to delete the model "{ selectedModel?.name }"? This operation is irreversible.',
-    modelInfo: 'Model Details',
+    confirmDelete: 'Confirm model deletion',
+    deleteMessage: 'Are you sure you want to delete model "{ selectedModel?.name }"? This operation is irreversible.',
+    modelInfo: 'Model details',
     unknown: 'Unknown',
-    viewDetails: 'View Details',
-    deleteModel: 'Delete Model',
+    viewDetails: 'View details',
+    deleteModel: 'Delete model',
     modelName: 'Name',
     modelType: 'Type',
     modelSize: 'Size',
-    installedDate: 'Installed Date',
+    installedDate: 'Installation date',
     path: 'Path'
   },
   optionalModels: {
-    title: 'Available Models',
+    title: 'Available models',
     subtitle: 'Browse available models on HuggingFace',
     searchPlaceholder: 'Search models...',
-    databaseSource: 'Data Source',
+    databaseSource: 'Data source',
     refresh: 'Refresh',
     dataSource: {
       cache: 'Cache (1 day)',
@@ -250,9 +250,9 @@ export default {
     },
     tabs: {
       all: 'All',
-      sd: 'SD Models',
-      lora: 'LORA',
-      controlnet: 'CONTROLNET',
+      sd: 'SD models',
+      lora: 'LoRA',
+      controlnet: 'ControlNet',
       vae: 'VAE',
       upscaler: 'Upscalers'
     },
@@ -260,13 +260,13 @@ export default {
       name: 'Name',
       type: 'Type',
       size: 'Size',
-      baseModel: 'Base Model',
+      baseModel: 'Base model',
       source: 'Source',
       description: 'Description',
       actions: 'Actions'
     },
     modelTypes: {
-      checkpoint: 'SD Model',
+      checkpoint: 'SD model',
       vae: 'VAE',
       vae_approx: 'Preview Decoder',
       lora: 'LoRA',
@@ -274,8 +274,8 @@ export default {
       upscaler: 'Upscaler',
       embedding: 'Embedding',
       ipadapter: 'IP-Adapter',
-      motion: 'Motion Model',
-      facerestore: 'Face Restore',
+      motion: 'Motion model',
+      facerestore: 'Face restore',
       detector: 'Detector',
       segmentation: 'Segmentation',
       other: 'Other'
@@ -284,9 +284,9 @@ export default {
     loadingModels: 'Loading models...',
     download: {
       source: {
-        title: 'Download Source',
-        mirror: 'HuggingFace China Mirror',
-        official: 'HuggingFace Official'
+        title: 'Download source',
+        mirror: 'HuggingFace China mirror',
+        official: 'HuggingFace official'
       },
       progress: '{percentage}% | {speed}',
       installComplete: 'Model {model} installation completed',
@@ -295,16 +295,16 @@ export default {
       refreshing: 'Refreshing model list...'
     },
     actions: {
-      viewDetails: 'View Details',
+      viewDetails: 'View details',
       install: 'Install',
       installed: 'Installed'
     },
     dialog: {
-      confirmTitle: 'Confirm Installation',
+      confirmTitle: 'Confirm installation',
       confirmMessage: 'Are you sure you want to install model "{model}"?',
       cancel: 'Cancel',
       confirm: 'Confirm',
-      modelDetails: 'Model Details',
+      modelDetails: 'Model details',
       close: 'Close'
     },
     pagination: {
@@ -313,7 +313,7 @@ export default {
     }
   },
   downloadHistory: {
-    title: 'Model Download History',
+    title: 'Model download history',
     clearHistory: 'Clear History',
     refresh: 'Refresh',
     loading: 'Loading history...',
@@ -324,7 +324,7 @@ export default {
       source: 'Source',
       fileSize: 'Size',
       duration: 'Duration',
-      speed: 'Average Speed',
+      speed: 'Average speed',
       status: 'Status',
       actions: 'Actions'
     },
@@ -333,11 +333,11 @@ export default {
     },
     dialog: {
       confirmClear: {
-        title: 'Confirm Clear',
+        title: 'Confirm clearing',
         message: 'Are you sure you want to clear all download history? This action cannot be undone.'
       },
       confirmDelete: {
-        title: 'Confirm Delete',
+        title: 'Confirm deleting',
         message: 'Are you sure you want to delete the download record for "{modelName}"?'
       },
       success: {
@@ -370,24 +370,24 @@ export default {
     }
   },
   plugins: {
-    title: 'Plugin Management',
+    title: 'Plugin management',
     tabs: {
-      pluginLibrary: 'Plugin Library',
-      operationHistory: 'Operation History'
+      pluginLibrary: 'Plugin library',
+      operationHistory: 'Operation history'
     },
     actions: {
-      updateAll: 'Update All Plugins',
-      openDirectory: 'Open Plugin Directory',
+      updateAll: 'Update all plugins',
+      openDirectory: 'Open plugin directory',
       install: 'Install',
       uninstall: 'Uninstall',
       enable: 'Enable',
       disable: 'Disable',
       showInfo: 'Details',
       refresh: 'Refresh',
-      clearFilters: 'Clear Filters',
+      clearFilters: 'Clear filters',
       loadMore: 'Load More',
       search: 'Search',
-      retryInstall: 'Retry Installation'
+      retryInstall: 'Retry installation'
     },
     loadingPlugins: 'Loading plugins list...',
     noPluginsFound: 'No matching plugins found',
@@ -411,27 +411,27 @@ export default {
     },
     status: {
       installed: 'Installed',
-      notInstalled: 'Not Installed',
+      notInstalled: 'Not installed',
       disabled: 'Disabled',
       enabled: 'Enabled',
       all: 'All'
     },
     history: {
-      title: 'Operation History',
-      clearHistory: 'Clear History',
+      title: 'Operation history',
+      clearHistory: 'Clear history',
       refresh: 'Refresh',
       pluginId: 'Plugin ID',
-      operationType: 'Operation Type',
-      startTime: 'Start Time',
-      endTime: 'End Time',
+      operationType: 'Operation type',
+      startTime: 'Start time',
+      endTime: 'End time',
       duration: 'Duration',
       time: 'Time',
       status: 'Status',
       actions: 'Actions',
-      viewLogs: 'View Logs',
-      deleteRecord: 'Delete Record',
+      viewLogs: 'View logs',
+      deleteRecord: 'Delete record',
       retry: 'Retry',
-      logs: 'Operation Logs',
+      logs: 'Operation logs',
       noHistory: 'No operation history records',
       running: 'Running',
       success: 'Success',
@@ -452,14 +452,14 @@ export default {
       updateAllStart: 'Checking for updates...',
       updateAllSuccess: 'Updated {count} plugins',
       updateAllNoPlugins: 'No installed plugins to update',
-      updateAllFail: 'Failed to update plugins, please try again later',
-      fetchFail: 'Failed to fetch plugin list, please try again later',
+      updateAllFail: 'Failed to update plugins. Please try again',
+      fetchFail: 'Failed to fetch plugin list. Please try again later',
       progressRequestFail: 'Progress request failed: {message}',
       folderOpenFail: 'Failed to open plugin directory'
     },
     dialog: {
-      operationLogs: 'Operation Logs',
-      pluginInfo: 'Plugin Information',
+      operationLogs: 'Operation logs',
+      pluginInfo: 'Plugin information',
       logsFetchFail: 'Failed to fetch log details',
       details: {
         name: 'Name',
@@ -467,8 +467,8 @@ export default {
         author: 'Author',
         version: 'Version',
         github: 'GitHub',
-        installed: 'Installation Status',
-        installedOn: 'Installed On',
+        installed: 'Installation status',
+        installedOn: 'Installation date',
         status: 'Status',
         tags: 'Tags'
       }
@@ -501,13 +501,13 @@ export default {
       hotWorkflows: 'Hot Workflows'
     },
     loading: 'Loading',
-    loadMore: 'Pull up to load more',
+    loadMore: 'Scroll down to load more',
     noMoreData: 'No more data',
     retry: 'Retry',
     invalidData: 'Invalid data format returned',
     tryingDirectAccess: 'Trying to access Civitai directly...',
     switchedToDirectMode: 'Switched to direct Civitai access mode',
-    fetchError: 'Failed to fetch model list, please check your network connection and try again',
+    fetchError: 'Failed to fetch model list. Check your network connection and try again',
     viewingModel: 'Viewing model ID: {modelId}',
     noVersionsAvailable: 'No available model versions',
     startDownloading: 'Started downloading model: {model}',
@@ -521,37 +521,37 @@ export default {
   },
   reset: {
     dialog1: {
-      title: 'Confirm Wipe and Restore',
+      title: 'Confirm wipe and restore',
       message: 'Do you really want to restore ComfyUI? This operation will:',
       effects: {
         settings: 'Erase all user configurations',
         plugins: 'Remove all installed plugins',
         workflows: 'Reset all workflows and projects',
-        models: 'Downloaded models will still be preserved'
+        models: 'Downloaded models will be preserved'
       },
-      confirmButton: 'Wipe and Restore'
+      confirmButton: 'Wipe and restore'
     },
     dialog2: {
-      warning: 'This operation is irreversible, please proceed with caution',
+      warning: 'This operation is irreversible. Please proceed with caution',
       restartTip: 'If you are experiencing temporary issues, you can try restarting ComfyUI instead of completely resetting it.',
       confirmInput: 'Please type \'CONFIRM\' to proceed with this operation'
     },
     progress: {
       title: 'Restoring...',
-      starting: 'Starting reset operation, please wait...',
-      failed: 'Reset operation failed',
-      error: 'Reset operation error',
+      starting: 'Starting reset. Please wait...',
+      failed: 'Reset failed',
+      error: 'Reset error',
       unknownError: 'Unknown error'
     },
     complete: {
-      title: 'Restore operation completed!',
+      title: 'Restore completed!',
       message: 'ComfyUI has been successfully restored to its initial state.',
       restartTip: 'It is recommended to restart the application to ensure all changes take effect.',
       backButton: 'Back to Home',
-      restartButton: 'Restart Application'
+      restartButton: 'Restart application'
     },
     logs: {
-      title: 'Last Reset Operation Logs',
+      title: 'Logs for last reset',
       noLogs: 'No reset logs found'
     }
   },
@@ -561,33 +561,33 @@ export default {
     loadError: 'Failed to load resource pack',
     retry: 'Retry',
     contents: 'Package Contents',
-    totalResources: 'Total {count} resources',
+    totalResources: '{count} resources in total',
     id: 'ID',
     version: 'Version',
     author: 'Author',
     website: 'Website',
-    install: 'Install Package',
+    install: 'Install package',
     close: 'Close',
-    cancel: 'Cancel Installation',
-    installationProgress: 'Installation Progress',
-    overallProgress: 'Overall Progress',
-    startTime: 'Start Time',
-    endTime: 'End Time',
-    elapsed: 'Elapsed Time',
-    completedResources: 'Completed Resources',
-    resourcesStatus: 'Resource Status',
-    resourcesList: 'Resources List',
+    cancel: 'Cancel installation',
+    installationProgress: 'Installation progress',
+    overallProgress: 'Overall progress',
+    startTime: 'Start time',
+    endTime: 'End time',
+    elapsed: 'Elapsed time',
+    completedResources: 'Completed resources',
+    resourcesStatus: 'Resource status',
+    resourcesList: 'Resource list',
     type: 'Type',
     size: 'Size'
   },
   resourcePacks: {
-    title: 'Resource Packages',
-    subtitle: 'One-click installation of resource packages',
+    title: 'Resource packages',
+    subtitle: 'Install all resource packages in one click',
     loading: 'Loading resource packages...',
     noPacks: 'No resource packages available',
     refresh: 'Refresh',
     resources: '{count} resources',
     author: 'Author',
-    view: 'View Details'
+    view: 'View details'
   }
 };
