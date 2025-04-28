@@ -104,9 +104,9 @@ export default {
     errors: {
       installationError: 'Installation error',
       serverErrorCauses: 'Internal server errors may be caused by:',
-      envConfigProblem: 'Error in Python environment configuration - may be an issue with virtual system or system environment',
-      permissionProblem: 'Permission issue - current user may not have the permission to install packages',
-      networkProblem: 'Network issue - unable to connect to PyPI source',
+      envConfigProblem: 'Python environment configuration issues - check virtual system or system environment',
+      permissionProblem: 'Permission issues - insufficient permissions for current user to install packages',
+      networkProblem: 'Network issues - unable to connect to PyPI source',
       dependencyConflict: 'Dependency conflicts - may conflict with other installed packages',
       installTips: 'To install Python packages:',
       useVirtualEnv: 'Using virtual environment',
