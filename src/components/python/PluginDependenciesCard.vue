@@ -31,11 +31,14 @@
                 clickable
                 :active="selectedPlugin === plugin.name"
                 @click="selectedPlugin = plugin.name"
-                :class="{ 'bg-red-1': hasPluginMissingDeps(plugin.name) }"
+                :class="{ 
+                  'bg-red-1': hasPluginMissingDeps(plugin.name) && !hasOnlyPythonBasicDeps(plugin.name),
+                  'bg-amber-1': hasOnlyPythonBasicDeps(plugin.name)
+                }"
               >
                 <q-item-section avatar>
-                  <q-icon :name="hasPluginMissingDeps(plugin.name) ? 'error_outline' : 'check_circle'" 
-                          :color="hasPluginMissingDeps(plugin.name) ? 'negative' : 'positive'" />
+                  <q-icon :name="getPluginStatusIcon(plugin.name)" 
+                          :color="getPluginStatusColor(plugin.name)" />
                 </q-item-section>
                 
                 <q-item-section>
@@ -63,8 +66,8 @@
                 :key="dep.name"
               >
                 <q-item-section avatar>
-                  <q-icon :name="dep.missing ? 'error_outline' : 'check_circle'" 
-                          :color="dep.missing ? 'negative' : 'positive'" />
+                  <q-icon :name="dep.missing ? (isPythonBasicLib(dep.name) ? 'warning' : 'error_outline') : 'check_circle'" 
+                          :color="dep.missing ? (isPythonBasicLib(dep.name) ? 'warning' : 'negative') : 'positive'" />
                 </q-item-section>
                 
                 <q-item-section>
@@ -316,6 +319,69 @@ export default defineComponent({
       }
     };
     
+    // 判断是否为Python基础库
+    const pythonBasicLibs = [
+      'sys', 'os', 'io', 'time', 'datetime', 're', 'math', 'random',
+      'json', 'collections', 'functools', 'itertools', 'typing',
+      'subprocess', 'string', 'pathlib', 'glob', 'shutil', 'tempfile',
+      'pickle', 'struct', 'argparse', 'logging', 'csv', 'urllib',
+      'hashlib', 'traceback', 'inspect', 'platform', 'ctypes', 'importlib',
+      'calendar', 'decimal', 'statistics', 'uuid', 'contextlib', 'abc',
+      'ast', 'dataclasses', 'enum', 'operator', 'textwrap', 'threading',
+      'multiprocessing', 'queue', 'signal', 'socket', 'email', 'json',
+      'http', 'html', 'xml', 'unittest', 'warnings', 'zlib', 'zipfile',
+      'tarfile', 'configparser', 'copy', 'tokenize', 'code', 'cmath',
+      'numbers', 'fractions', 'array', 'bisect', 'heapq'
+    ];
+    
+    const isPythonBasicLib = (depName) => {
+      return pythonBasicLibs.includes(depName.toLowerCase());
+    };
+    
+    // 检查插件是否只有Python基础库缺失
+    const hasOnlyPythonBasicDeps = (pluginName) => {
+      const plugin = pluginDependencies.value.find(p => p.plugin === pluginName);
+      if (!plugin) return false;
+      
+      const missingDeps = plugin.dependencies.filter(dep => dep.missing);
+      if (missingDeps.length === 0) return false;
+      
+      // 如果有非基础库缺失，返回false
+      return missingDeps.every(dep => isPythonBasicLib(dep.name));
+    };
+    
+    // 获取插件状态图标
+    const getPluginStatusIcon = (pluginName) => {
+      const plugin = pluginDependencies.value.find(p => p.plugin === pluginName);
+      if (!plugin) return 'check_circle';
+      
+      const missingDeps = plugin.dependencies.filter(dep => dep.missing);
+      if (missingDeps.length === 0) return 'check_circle';
+      
+      // 如果缺失的库只有Python基础库
+      if (missingDeps.every(dep => isPythonBasicLib(dep.name))) {
+        return 'warning';
+      }
+      
+      return 'error_outline';
+    };
+    
+    // 获取插件状态颜色
+    const getPluginStatusColor = (pluginName) => {
+      const plugin = pluginDependencies.value.find(p => p.plugin === pluginName);
+      if (!plugin) return 'positive';
+      
+      const missingDeps = plugin.dependencies.filter(dep => dep.missing);
+      if (missingDeps.length === 0) return 'positive';
+      
+      // 如果缺失的库只有Python基础库
+      if (missingDeps.every(dep => isPythonBasicLib(dep.name))) {
+        return 'warning';
+      }
+      
+      return 'negative';
+    };
+    
     onMounted(async () => {
       await analyzePluginDependencies();
     });
@@ -336,7 +402,13 @@ export default defineComponent({
       installingAll,
       installAllMissingDependencies,
       installingSelected,
-      installSelectedPluginDependencies
+      installSelectedPluginDependencies,
+      
+      // Python basic library related
+      isPythonBasicLib,
+      hasOnlyPythonBasicDeps,
+      getPluginStatusIcon,
+      getPluginStatusColor
     };
   }
 });
