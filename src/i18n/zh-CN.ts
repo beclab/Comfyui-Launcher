@@ -18,7 +18,7 @@ export default {
     home: '首页',
     modelManagement: '模型管理',
     pluginManagement: '插件管理',
-    pythonDependencies: 'python依赖管理',
+    pythonDependencies: 'Python 依赖管理',
     networkConfig: '网络配置',
     discovery: '探索发现'
   },
@@ -41,7 +41,7 @@ export default {
     },
     pagination: {
       rowsPerPage: '每页记录数',
-      pageInfo: '第{from}到{to}条，共{total}条'
+      pageInfo: '第 {from} 到 {to} 条，共 {total} 条'
     }
   },
   network: {
@@ -76,15 +76,15 @@ export default {
     saveError: '保存配置失败'
   },
   python: {
-    dependencies: 'Python依赖',
+    dependencies: 'Python 依赖',
     installPackage: '安装包',
     packageName: '包名',
     version: '版本',
     status: '状态',
     action: '操作',
-    environmentManagement: '环境管理',
+    environmentManagement: 'Python 依赖管理',
     tabs: {
-      dependencies: 'Python依赖库',
+      dependencies: 'Python 依赖库',
       analysis: '依赖分析'
     },
     errors: {
@@ -92,15 +92,15 @@ export default {
       serverErrorCauses: '服务器内部错误可能是由以下原因导致：',
       envConfigProblem: 'Python环境配置问题 - 可能是虚拟环境或系统环境配置有误',
       permissionProblem: '权限问题 - 当前用户可能没有安装包的权限',
-      networkProblem: '网络问题 - 无法连接到PyPI源',
+      networkProblem: '网络问题 - 无法连接到 PyPI 源',
       dependencyConflict: '依赖冲突 - 可能与已安装的其他包存在版本冲突',
-      installTips: '如需安装Python包：',
+      installTips: '如需安装 Python 包：',
       useVirtualEnv: '使用虚拟环境',
       useUserInstall: '使用用户级安装'
     },
     installedPackages: {
-      title: '已安装Python库',
-      subtitle: '本地Python环境已安装的Python库',
+      title: '已安装 Python 库',
+      subtitle: '本地环境已安装的 Python 库',
       search: '搜索Python库',
       install: '安装新库',
       refresh: '刷新',
@@ -111,7 +111,7 @@ export default {
       },
       pagination: {
         rowsPerPage: '每页记录数',
-        range: '第{start}-{end}条，共{total}条'
+        range: '第 {start}-{end} 条，共 {total} 条'
       },
       dialog: {
         install: {
@@ -141,7 +141,7 @@ export default {
     },
     pluginDependencies: {
       title: '插件依赖分析',
-      subtitle: '自动分析已安装插件依赖的Python库是否安装正确',
+      subtitle: '自动检查已安装插件所需 Python 库的安装',
       analyze: '立即分析',
       pluginsColumn: '插件',
       dependenciesColumn: '依赖库列表',
@@ -182,8 +182,8 @@ export default {
     },
     dialog: {
       missingModelsTitle: '缺少基础模型',
-      missingModelsMessage: '您尚未安装所有必要的基础模型，这可能导致ComfyUI无法正常生成图像。是否继续启动？',
-      rememberChoice: '记住我的选择，下次无需弹窗确认',
+      missingModelsMessage: '您尚未安装所有必要的基础模型，这可能导致 ComfyUI 无法正常生成图像。是否继续启动？',
+      rememberChoice: '记住我的选择',
       confirmStart: '仍然启动',
       installModels: '安装模型'
     }
@@ -214,10 +214,10 @@ export default {
     essentialPackage: '基础模型包',
     popular: '热门',
     outOfPrint: '绝版',
-    essentialModelsDesc: '包含ComfyUI能工作所需的基础模型',
+    essentialModelsDesc: '包含 ComfyUI 运行所需的基础模型',
     download: '下载',
     controlNetPackage: 'ControlNet模型包',
-    controlNetModelsDesc: '包含ControlNet所需全部模型'
+    controlNetModelsDesc: '包含 ControlNet 所需全部模型'
   },
   installedModelsCard: {
     installedModels: '已安装模型',
@@ -240,7 +240,7 @@ export default {
   },
   optionalModels: {
     title: '可用模型',
-    subtitle: '查看HuggingFace上的可用模型',
+    subtitle: '查看 HuggingFace 上的可用模型',
     searchPlaceholder: '搜索模型...',
     databaseSource: '存储数据源',
     refresh: '刷新',
@@ -252,8 +252,8 @@ export default {
     tabs: {
       all: '全部',
       sd: 'SD 模型',
-      lora: 'LORA',
-      controlnet: 'CONTROLNET',
+      lora: 'LoRA',
+      controlnet: 'ControlNet',
       vae: 'VAE',
       upscaler: '超分辨率'
     },
@@ -302,7 +302,7 @@ export default {
     },
     dialog: {
       confirmTitle: '确认安装',
-      confirmMessage: '您确定要安装模型"{model}"吗？',
+      confirmMessage: '您确定要安装模型 "{model}" 吗？',
       cancel: '取消',
       confirm: '确定',
       modelDetails: '模型详情',
@@ -310,7 +310,7 @@ export default {
     },
     pagination: {
       rowsPerPage: '每页记录数',
-      of: '第{from}-{to}条，共{total}条'
+      of: '第 {from}-{to} 条，共 {total} 条'
     }
   },
   downloadHistory: {
@@ -339,7 +339,7 @@ export default {
       },
       confirmDelete: {
         title: '确认删除',
-        message: '确定要删除"{modelName}"的下载记录吗？'
+        message: '确定要删除 "{modelName}" 的下载记录吗？'
       },
       success: {
         cleared: '历史记录已清空',
@@ -359,9 +359,9 @@ export default {
     },
     time: {
       unknown: '未知时间',
-      seconds: '{count}秒',
-      minutes: '{minutes}分{seconds}秒',
-      hours: '{hours}小时{minutes}分'
+      seconds: '{count} 秒',
+      minutes: '{minutes} 分 {seconds} 秒',
+      hours: '{hours} 小时 {minutes} 分'
     },
     size: {
       unknown: '未知大小'
@@ -393,7 +393,7 @@ export default {
     loadingPlugins: '加载插件列表...',
     noPluginsFound: '未找到匹配的插件',
     availablePlugins: '可用插件',
-    registeredPlugins: '来自ComfyUI Manager上注册的可用插件',
+    registeredPlugins: 'ComfyUI Manager 上注册的可用插件',
     searchPlaceholder: '搜索插件...',
     refreshTooltip: '刷新插件列表',
     columns: {
@@ -408,7 +408,7 @@ export default {
     },
     pagination: {
       rowsPerPage: '每页显示',
-      pageInfo: '第{currentPage}页 / 共{totalPages}页 (共{total}个插件)'
+      pageInfo: '第 {currentPage} 页 / 共 {totalPages} 页 (共 {total} 个插件)'
     },
     status: {
       installed: '已安装',
@@ -438,8 +438,8 @@ export default {
       success: '成功',
       failed: '失败',
       milliseconds: '毫秒',
-      seconds: '{count}秒',
-      minutes: '{minutes}分{seconds}秒'
+      seconds: '{count} 秒',
+      minutes: '{minutes} 分 {seconds} 秒'
     },
     notifications: {
       installSuccess: '安装 {name} 成功!',
@@ -494,7 +494,7 @@ export default {
   },
   discovery: {
     title: '探索发现',
-    inspireFrom: '在Civitai.com上发现更多灵感',
+    inspireFrom: '在 Civitai.com 上发现更多灵感',
     tabs: {
       latestModels: '最新模型',
       hotModels: '最火模型',
@@ -506,8 +506,8 @@ export default {
     noMoreData: '没有更多数据了',
     retry: '重试',
     invalidData: '返回数据格式不正确',
-    tryingDirectAccess: '正在尝试直接访问Civitai...',
-    switchedToDirectMode: '已切换到直接访问Civitai模式',
+    tryingDirectAccess: '正在尝试直接访问 Civitai...',
+    switchedToDirectMode: '已切换到直接访问 Civitai 模式',
     fetchError: '获取模型列表失败，请检查网络连接后重试',
     viewingModel: '查看模型 ID: {modelId}',
     noVersionsAvailable: '没有可用的模型版本',
@@ -523,7 +523,7 @@ export default {
   reset: {
     dialog1: {
       title: '确认抹掉并还原',
-      message: '您真的要还原ComfyUI吗？此操作会：',
+      message: '您真的要还原 ComfyUI 吗？此操作会：',
       effects: {
         settings: '抹掉所有用户配置',
         plugins: '删除所有已安装插件',
@@ -534,7 +534,7 @@ export default {
     },
     dialog2: {
       warning: '此操作不可逆，请谨慎操作',
-      restartTip: '如果您遇到临时问题，可以尝试重启ComfyUI而不是完全重置。',
+      restartTip: '如果您遇到临时问题，可以尝试重启 ComfyUI 而非完全重置。',
       confirmInput: '请输入 \'CONFIRM\' 确认此操作'
     },
     progress: {
