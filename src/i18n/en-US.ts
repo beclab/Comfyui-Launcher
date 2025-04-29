@@ -87,7 +87,15 @@ export default {
     canAccess: 'can access',
     cannotAccess: 'cannot access',
     saveSuccess: 'Configuration saved successfully',
-    saveError: 'Failed to save configuration'
+    saveError: 'Failed to save configuration',
+    checkingLog: 'Network Check Logs',
+    checkStatus: 'Network Status Overview',
+    accessible: 'Accessible',
+    inaccessible: 'Inaccessible',
+    checkLogs: 'Check Logs',
+    loadingLogs: 'Loading logs...',
+    noLogs: 'No logs available',
+    forceCheck: 'Force Re-check'
   },
   python: {
     dependencies: 'Python dependencies',

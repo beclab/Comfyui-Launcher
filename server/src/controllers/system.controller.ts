@@ -33,6 +33,21 @@ interface NetworkCheckCache {
   huggingface: ServiceCheckInfo;
 }
 
+// 添加网络检查日志接口
+interface NetworkCheckLog {
+  id: string;
+  status: 'in_progress' | 'completed' | 'failed';
+  startTime: number;
+  endTime?: number;
+  logs: Array<{
+    time: number;
+    service?: string;
+    message: string;
+    type: 'info' | 'error' | 'success'
+  }>;
+  result?: any;
+}
+
 export class SystemController {
   public envConfig: EnvironmentVariables = {};
   private readonly CACHE_VALIDITY_PERIOD = 10 * 60 * 1000; // 10分钟的缓存有效期（毫秒）
@@ -55,6 +70,11 @@ export class SystemController {
       lastCheckTime: 0
     }
   };
+  
+  // 检查日志存储，键为检查ID
+  private networkCheckLogs: Map<string, NetworkCheckLog> = new Map();
+  // 保留最近10次检查的日志
+  private readonly MAX_LOG_ENTRIES = 10;
 
   constructor() {
     // 确保目录存在
@@ -191,11 +211,102 @@ export class SystemController {
   }
 
   /**
+   * 生成唯一ID
+   */
+  private generateId(): string {
+    return Date.now().toString() + Math.random().toString(36).substring(2, 10);
+  }
+  
+  /**
+   * 添加检查日志
+   */
+  private addNetworkCheckLog(log: NetworkCheckLog): void {
+    this.networkCheckLogs.set(log.id, log);
+    
+    // 如果日志条目超过最大限制，删除最旧的
+    if (this.networkCheckLogs.size > this.MAX_LOG_ENTRIES) {
+      const oldestKey = Array.from(this.networkCheckLogs.keys())[0];
+      this.networkCheckLogs.delete(oldestKey);
+    }
+  }
+  
+  /**
+   * 添加日志条目
+   */
+  private logNetworkCheck(
+    id: string, 
+    message: string, 
+    type: 'info' | 'error' | 'success' = 'info', 
+    service?: string
+  ): void {
+    const log = this.networkCheckLogs.get(id);
+    if (log) {
+      log.logs.push({
+        time: Date.now(),
+        message,
+        type,
+        service
+      });
+      console.log(`[Network Check ${id}] ${service ? `[${service}] ` : ''}${message}`);
+    }
+  }
+
+  /**
    * 检查网络状态
    * @param ctx Koa上下文
    */
   public async checkNetworkStatus(ctx: Context): Promise<void> {
+    const checkId = this.generateId();
+    
+    // 获取强制检查参数
+    const forceCheck = ctx.query.force === 'true' || (ctx.request.body as any)?.force === true;
+    
+    // 创建新的检查日志
+    const checkLog: NetworkCheckLog = {
+      id: checkId,
+      status: 'in_progress',
+      startTime: Date.now(),
+      logs: []
+    };
+    this.addNetworkCheckLog(checkLog);
+    this.logNetworkCheck(checkId, forceCheck 
+      ? "网络检查已启动（强制模式），正在后台执行" 
+      : "网络检查已启动，正在后台执行");
+    
+    // 立即返回checkId
+    ctx.status = 200;
+    ctx.body = {
+      code: 200,
+      message: '网络检查已启动，请使用返回的checkId查询结果',
+      data: {
+        checkId: checkId,
+        status: 'in_progress',
+        forceCheck: forceCheck
+      }
+    };
+    
+    // 异步执行网络检查，不等待它完成
+    this.performNetworkCheck(checkId, forceCheck).catch(error => {
+      console.error('执行网络检查时发生错误:', error);
+      const log = this.networkCheckLogs.get(checkId);
+      if (log) {
+        log.status = 'failed';
+        log.endTime = Date.now();
+        this.logNetworkCheck(checkId, `网络检查失败: ${error.message}`, 'error');
+      }
+    });
+  }
+  
+  /**
+   * 执行网络检查（内部方法）
+   * @param checkId 检查ID
+   * @param forceCheck 是否强制检查（忽略缓存）
+   */
+  private async performNetworkCheck(checkId: string, forceCheck: boolean = false): Promise<void> {
     const now = Date.now();
+    this.logNetworkCheck(checkId, forceCheck 
+      ? "开始执行网络检查（强制模式，将忽略缓存）" 
+      : "开始执行网络检查");
     
     // 定义需要检查的网站，优先使用环境变量中配置的代理地址
     const sitesToCheck = [
@@ -221,8 +332,8 @@ export class SystemController {
       const proxyUrlMatch = sitesToCheck[0].url.match(/(https?:\/\/gh-proxy\.com)/);
       if (proxyUrlMatch && proxyUrlMatch[1]) {
         // 如果是 gh-proxy.com 格式的链接，仅检查代理服务器部分
-        console.log(`检测到 GitHub 代理链接: ${sitesToCheck[0].url}`);
-        console.log(`将只检查代理服务器部分: ${proxyUrlMatch[1]}`);
+        this.logNetworkCheck(checkId, `检测到 GitHub 代理链接: ${sitesToCheck[0].url}`, 'info', 'github');
+        this.logNetworkCheck(checkId, `将只检查代理服务器部分: ${proxyUrlMatch[1]}`, 'info', 'github');
         sitesToCheck[0].url = proxyUrlMatch[1];
       }
     }
@@ -230,14 +341,20 @@ export class SystemController {
     // 筛选出缓存过期的网站进行检查
     const sitesNeedCheck = sitesToCheck.filter(site => {
       const cached = this.networkCheckCache[site.name];
-      const isCacheValid = (now - cached.lastCheckTime < this.CACHE_VALIDITY_PERIOD);
+      const isCacheValid = !forceCheck && (now - cached.lastCheckTime < this.CACHE_VALIDITY_PERIOD);
       
       if (isCacheValid) {
-        console.log(`使用缓存的${site.type}检查结果，距上次检查：${(now - cached.lastCheckTime) / 1000}秒`);
+        this.logNetworkCheck(
+          checkId, 
+          `使用缓存的检查结果，距上次检查：${(now - cached.lastCheckTime) / 1000}秒`, 
+          'info', 
+          site.name
+        );
         // 更新URL（可能配置已变更）
         cached.url = site.url;
       } else {
-        console.log(`${site.type}缓存已过期，需要重新检查`);
+        const reason = forceCheck ? "强制重新检查" : "缓存已过期";
+        this.logNetworkCheck(checkId, `${reason}，需要重新检查`, 'info', site.name);
       }
       
       return !isCacheValid;
@@ -245,9 +362,12 @@ export class SystemController {
     
     // 如果有网站需要检查，则进行检查
     if (sitesNeedCheck.length > 0) {
+      this.logNetworkCheck(checkId, `开始检查 ${sitesNeedCheck.length} 个服务`);
+      
       // 并行检查所有需要检查的网站
       await Promise.all(sitesNeedCheck.map(async (site) => {
         try {
+          this.logNetworkCheck(checkId, `开始检查 ${site.url}`, 'info', site.name);
           const response = await superagent
             .get(site.url)
             .timeout({
@@ -260,14 +380,30 @@ export class SystemController {
           this.networkCheckCache[site.name].lastCheckTime = now;
           this.networkCheckCache[site.name].url = site.url;
           
-          console.log(`${site.type}可访问性检查: ${this.networkCheckCache[site.name].accessible}, 检查地址: ${site.url}`);
+          const resultMessage = `可访问性检查: ${this.networkCheckCache[site.name].accessible}, 状态码: ${response.status}`;
+          this.logNetworkCheck(
+            checkId, 
+            resultMessage, 
+            this.networkCheckCache[site.name].accessible ? 'success' : 'error',
+            site.name
+          );
         } catch (error) {
-          console.error(`检查${site.type}可访问性时出错:`, error);
           this.networkCheckCache[site.name].accessible = false;
           this.networkCheckCache[site.name].lastCheckTime = now;
           this.networkCheckCache[site.name].url = site.url;
+          
+          this.logNetworkCheck(
+            checkId, 
+            `检查失败: ${error instanceof Error ? error.message : String(error)}`, 
+            'error', 
+            site.name
+          );
         }
       }));
+      
+      this.logNetworkCheck(checkId, "所有服务检查完成");
+    } else {
+      this.logNetworkCheck(checkId, "所有服务使用缓存结果，无需重新检查");
     }
     
     // 构建响应结果
@@ -289,11 +425,72 @@ export class SystemController {
       }
     };
 
+    // 更新检查日志的状态和结果
+    const log = this.networkCheckLogs.get(checkId);
+    if (log) {
+      log.status = 'completed';
+      log.endTime = Date.now();
+      log.result = checkResult;
+      this.logNetworkCheck(checkId, "网络检查已完成", 'success');
+    }
+  }
+  
+  /**
+   * 获取网络检查日志
+   * @param ctx Koa上下文
+   */
+  public async getNetworkCheckLog(ctx: Context): Promise<void> {
+    const checkId = ctx.params.id || ctx.query.id as string;
+    
+    if (!checkId) {
+      ctx.status = 400;
+      ctx.body = {
+        code: 400,
+        message: '缺少检查ID参数',
+        data: null
+      };
+      return;
+    }
+    
+    const log = this.networkCheckLogs.get(checkId);
+    
+    if (!log) {
+      ctx.status = 404;
+      ctx.body = {
+        code: 404,
+        message: '未找到指定的检查日志',
+        data: null
+      };
+      return;
+    }
+    
+    // 构建当前的网络检查结果，确保始终返回最新状态
+    const currentNetworkStatus = {
+      github: {
+        accessible: this.networkCheckCache.github.accessible,
+        name: this.networkCheckCache.github.name,
+        url: this.networkCheckCache.github.url
+      },
+      pip: {
+        accessible: this.networkCheckCache.pip.accessible,
+        name: this.networkCheckCache.pip.name,
+        url: this.networkCheckCache.pip.url
+      },
+      huggingface: {
+        accessible: this.networkCheckCache.huggingface.accessible,
+        name: this.networkCheckCache.huggingface.name,
+        url: this.networkCheckCache.huggingface.url
+      }
+    };
+    
     ctx.status = 200;
     ctx.body = {
       code: 200,
-      message: sitesNeedCheck.length > 0 ? '网络状态检查完成' : '网络状态检查完成（使用缓存结果）',
-      data: checkResult
+      message: '获取网络检查日志成功',
+      data: {
+        log: log,
+        currentNetworkStatus: currentNetworkStatus
+      }
     };
   }
 

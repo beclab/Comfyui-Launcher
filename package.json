@@ -13,7 +13,8 @@
     "build": "quasar build",
     "dev:server": "cd server && npm run dev",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\"",
-    "install:all": "npm install && cd server && npm install"
+    "install:all": "npm install && cd server && npm install",
+    "proxy": "node --no-warnings proxy/proxy.ts"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.4",

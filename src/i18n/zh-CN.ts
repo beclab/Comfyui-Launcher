@@ -73,7 +73,15 @@ export default {
     canAccess: '可以访问',
     cannotAccess: '无法访问',
     saveSuccess: '配置已保存',
-    saveError: '保存配置失败'
+    saveError: '保存配置失败',
+    checkingLog: '网络检测日志',
+    checkStatus: '网络状态概览',
+    accessible: '可访问',
+    inaccessible: '不可访问',
+    checkLogs: '检测日志',
+    loadingLogs: '加载日志中...',
+    noLogs: '暂无日志记录',
+    forceCheck: '强制重新检测'
   },
   python: {
     dependencies: 'Python 依赖',

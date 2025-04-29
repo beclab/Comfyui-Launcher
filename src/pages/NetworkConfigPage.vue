@@ -126,6 +126,142 @@
       </q-card>
     </template>
 
+    <!-- 添加网络检查日志弹窗 -->
+    <q-dialog v-model="logDialog.show" persistent>
+      <q-card style="min-width: 600px; max-width: 80vw;">
+        <q-card-section class="row items-center bg-primary text-white">
+          <div class="text-h6">{{ $t('network.checkingLog') }}</div>
+          <q-space />
+
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+        
+        <q-card-section style="max-height: 70vh; overflow-y: auto;">
+          <!-- 网络状态概览 -->
+          <div class="q-mb-md">
+            <div class="text-subtitle1 q-mb-sm">{{ $t('network.checkStatus') }}</div>
+            <div class="row q-col-gutter-md">
+              <div class="col-4">
+                <q-item>
+                  <q-item-section avatar>
+                    <q-avatar>
+                      <q-img src="../assets/github-logo.png" />
+                    </q-avatar>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>GitHub</q-item-label>
+                    <q-item-label caption>
+                      <q-chip 
+                        dense 
+                        :color="currentNetworkStatus.github?.accessible ? 'positive' : 'negative'" 
+                        text-color="white"
+                      >
+                        {{ currentNetworkStatus.github?.accessible ? $t('network.accessible') : $t('network.inaccessible') }}
+                      </q-chip>
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </div>
+              <div class="col-4">
+                <q-item>
+                  <q-item-section avatar>
+                    <q-avatar>
+                      <q-img src="../assets/pypi-logo.png" />
+                    </q-avatar>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>PIP 源</q-item-label>
+                    <q-item-label caption>
+                      <q-chip 
+                        dense 
+                        :color="currentNetworkStatus.pip?.accessible ? 'positive' : 'negative'" 
+                        text-color="white"
+                      >
+                        {{ currentNetworkStatus.pip?.accessible ? $t('network.accessible') : $t('network.inaccessible') }}
+                      </q-chip>
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </div>
+              <div class="col-4">
+                <q-item>
+                  <q-item-section avatar>
+                    <q-avatar>
+                      <q-img src="../assets/huggingface-logo.png" />
+                    </q-avatar>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>Hugging Face</q-item-label>
+                    <q-item-label caption>
+                      <q-chip 
+                        dense 
+                        :color="currentNetworkStatus.huggingface?.accessible ? 'positive' : 'negative'" 
+                        text-color="white"
+                      >
+                        {{ currentNetworkStatus.huggingface?.accessible ? $t('network.accessible') : $t('network.inaccessible') }}
+                      </q-chip>
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </div>
+            </div>
+          </div>
+
+          <!-- 检查日志列表 -->
+          <div class="text-subtitle1 q-mb-sm">{{ $t('network.checkLogs') }}</div>
+          
+          <div v-if="logDialog.loading" class="text-center q-pa-md">
+            <q-spinner color="primary" size="3em" />
+            <div class="q-mt-sm">{{ $t('network.loadingLogs') }}</div>
+          </div>
+          
+          <div v-else-if="logDialog.logs.length === 0" class="text-center q-pa-md text-grey">
+            {{ $t('network.noLogs') }}
+          </div>
+          
+          <div v-else class="log-container">
+            <q-list separator>
+              <q-item v-for="(log, index) in logDialog.logs" :key="index">
+                <q-item-section avatar>
+                  <q-icon 
+                    :name="logIcon(log.type)" 
+                    :color="logColor(log.type)" 
+                  />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>
+                    <span v-if="log.service" class="log-service">
+                      [{{ log.service }}]
+                    </span>
+                    {{ log.message }}
+                  </q-item-label>
+                  <q-item-label caption>
+                    {{ formatTime(log.time) }}
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </div>
+        </q-card-section>
+        
+        <q-card-section align="right">
+
+        <!-- 在网络检测弹窗中添加强制刷新按钮 -->
+          <div class="network-check-buttons">
+            <q-btn 
+              color="secondary" 
+              :loading="checkingNetwork" 
+              @click="forceCheckNetworkStatus" 
+              class="q-ml-sm"
+            >
+              {{ $t('network.forceCheck') }}
+            </q-btn>
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <!-- 现有的通知对话框 -->
     <q-dialog v-model="notifyDialog.show">
       <q-card>
         <q-card-section :class="`bg-${notifyDialog.color} text-white`">
@@ -139,11 +275,13 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+
   </q-page>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import api from 'src/api';
 
 // 输入框绑定的URL值
@@ -174,12 +312,107 @@ const notifyDialog = ref({
   color: 'primary'
 });
 
+// 添加日志对话框状态
+const logDialog = ref({
+  show: false,
+  loading: false,
+  checkId: null,
+  logs: [],
+  polling: null,
+  pollingInterval: 1000, // 轮询间隔(毫秒)
+  status: 'in_progress' // 'in_progress', 'completed', 'failed'
+});
+
+// 当前检查获取的网络状态
+const currentNetworkStatus = ref({
+  github: { accessible: false },
+  pip: { accessible: false },
+  huggingface: { accessible: false }
+});
+
+// 根据日志类型返回图标
+const logIcon = (type) => {
+  switch(type) {
+    case 'error': return 'error';
+    case 'success': return 'check_circle';
+    case 'info': 
+    default: return 'info';
+  }
+};
+
+// 根据日志类型返回颜色
+const logColor = (type) => {
+  switch(type) {
+    case 'error': return 'negative';
+    case 'success': return 'positive';
+    case 'info': 
+    default: return 'info';
+  }
+};
+
+// 格式化时间戳
+const formatTime = (timestamp) => {
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString();
+};
+
 // 显示通知
 const showNotify = (title, message, color = 'primary') => {
   notifyDialog.value.title = title;
   notifyDialog.value.message = message;
   notifyDialog.value.color = color;
   notifyDialog.value.show = true;
+};
+
+// 停止轮询
+const stopPolling = () => {
+  if (logDialog.value.polling) {
+    clearInterval(logDialog.value.polling);
+    logDialog.value.polling = null;
+  }
+};
+
+// 获取网络检查日志
+const fetchNetworkCheckLog = async () => {
+  if (!logDialog.value.checkId) return;
+  
+  try {
+    const response = (await api.getNetworkCheckLog(logDialog.value.checkId)).body;
+    console.log('response:', response);
+    if (response.code === 200) {
+      const data = response.data;
+      logDialog.value.logs = data.log.logs;
+      logDialog.value.status = data.log.status;
+      currentNetworkStatus.value = data.currentNetworkStatus;
+      
+      // 如果检查已完成，停止轮询并更新总体网络状态
+      if (data.log.status === 'completed' || data.log.status === 'failed') {
+        stopPolling();
+        // 更新页面上的网络状态
+        networkStatus.value.github = currentNetworkStatus.value.github.accessible;
+        networkStatus.value.pip = currentNetworkStatus.value.pip.accessible;
+        networkStatus.value.huggingface = currentNetworkStatus.value.huggingface.accessible;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch network check log:', error);
+    // 如果获取日志失败，停止轮询
+    stopPolling();
+  } finally {
+    logDialog.value.loading = false;
+  }
+};
+
+// 开始轮询网络检查日志
+const startPolling = () => {
+  // 先停止现有的轮询
+  stopPolling();
+  
+  // 立即获取一次日志
+  fetchNetworkCheckLog();
+  
+  // 设置轮询间隔
+  logDialog.value.polling = setInterval(fetchNetworkCheckLog, logDialog.value.pollingInterval);
 };
 
 // 获取当前配置
@@ -207,38 +440,71 @@ const fetchNetworkConfig = async () => {
   }
 };
 
-// 检查网络状态
-const checkNetworkStatus = async (service = null) => {
+// 检查网络状态 - 修改版本，支持日志查看
+const checkNetworkStatus = async () => {
   try {
     const response = await api.get('system/network-status');
-    
+    console.log('response:', response);
     if (response.data.code === 200) {
       const result = response.data.data;
-      networkStatus.value.github = result.github.accessible;
-      networkStatus.value.pip = result.pip.accessible;
-      networkStatus.value.huggingface = result.huggingface.accessible;
+      // networkStatus.value.github = result.result.github.accessible;
+      // networkStatus.value.pip = result.result.pip.accessible;
+      // networkStatus.value.huggingface = result.result.huggingface.accessible;
       
-      console.log('service:', service, 'networkStatus:', networkStatus.value);
-      // if (service) {
-      //   const serviceNames = {
-      //     github: 'GitHub',
-      //     pip: 'PIP源',
-      //     huggingface: 'Hugging Face'
-      //   };
-        
-      //   const isAccessible = networkStatus.value[service];
-      //   showNotify(
-      //     '网络检测结果', 
-      //     `${serviceNames[service]}${isAccessible ? $t('network.canAccess') : $t('network.cannotAccess')}`, 
-      //     isAccessible ? 'positive' : 'warning'
-      //   );
-      // }
+      // 获取检查ID并开始轮询日志
+      const checkId = result.checkId;
+      if (checkId) {
+        logDialog.value.checkId = checkId;
+        logDialog.value.logs = [];
+        logDialog.value.loading = true;
+        logDialog.value.show = true;
+        logDialog.value.status = 'in_progress';
+        startPolling();
+      }
     }
   } catch (error) {
     console.error('Failed to check network status:', error);
     showNotify('错误', '检查网络状态失败', 'negative');
   }
 };
+
+// 强制重新检测网络状态（忽略缓存）
+async function forceCheckNetworkStatus() {
+  const checkingNetwork = ref(true);
+  try {
+    // 使用 POST 请求并传递 force=true 参数
+    const response = await api.post('system/network-status', { force: true });
+    console.log('强制检测网络响应:', response);
+    
+    if (response.data.code === 200) {
+      const result = response.data.data;
+      const checkId = result.checkId;
+      
+      if (checkId) {
+        logDialog.value.checkId = checkId;
+        logDialog.value.logs = [];
+        logDialog.value.loading = true;
+        logDialog.value.show = true;
+        logDialog.value.status = 'in_progress';
+        startPolling();
+        
+        // 显示强制检测的提示
+        $q.notify({
+          type: 'info',
+          message: '已启动强制网络重新检测'
+        });
+      }
+    }
+  } catch (error) {
+    console.error('强制网络检测出错:', error);
+    $q.notify({
+      type: 'negative',
+      message: '网络检测请求失败'
+    });
+  } finally {
+    checkingNetwork.value = false;
+  }
+}
 
 // 保存GitHub配置
 const saveGithubConfig = async () => {
@@ -322,11 +588,31 @@ const saveHuggingFaceConfig = async () => {
 onMounted(() => {
   fetchNetworkConfig();
 });
+
+// 组件卸载前停止轮询
+onBeforeUnmount(() => {
+  stopPolling();
+});
 </script>
 
 <style scoped>
 .q-card {
   border-radius: 8px;
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+}
+
+.log-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.log-service {
+  font-weight: bold;
+  margin-right: 6px;
+}
+
+.network-check-buttons {
+  margin-top: 16px;
+  text-align: right;
 }
 </style> 

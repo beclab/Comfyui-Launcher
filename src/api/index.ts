@@ -303,6 +303,10 @@ const api = {
   getNetworkStatus: () => 
     superagent.get(`${API_BASE_URL}/system/network-status`).use(debug),
   
+  // 添加获取网络检查日志的方法
+  getNetworkCheckLog: (checkId: string) => 
+    superagent.get(`${API_BASE_URL}/system/network-check-log/${checkId}`).use(debug),
+  
   setGithubProxy: (githubProxy: string) => 
     superagent.post(`${API_BASE_URL}/system/github-proxy`).send({ githubProxy }).use(debug),
   
