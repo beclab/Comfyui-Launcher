@@ -545,9 +545,13 @@ export class ComfyUIController {
 
   // 重置ComfyUI到初始状态
   async resetComfyUI(ctx: Context): Promise<void> {
-    // 从请求体中获取语言参数，使用类型断言解决类型错误
-    const lang = (ctx.request.body as { lang?: string })?.lang || this.getClientLocale(ctx) || i18nLogger.getLocale();
-    logger.info(`[API] Received reset ComfyUI request (language: ${lang})`);
+    // 从请求体中获取语言参数
+    const requestBody = ctx.request.body as { lang?: string; mode?: string };
+    const lang = requestBody?.lang || this.getClientLocale(ctx) || i18nLogger.getLocale();
+    // 获取重置模式：normal(普通) 或 hard(强力)
+    const resetMode = requestBody?.mode === 'hard' ? 'hard' : 'normal';
+    
+    logger.info(`[API] Received reset ComfyUI request (language: ${lang}, mode: ${resetMode})`);
     
     // 清空重置日志
     this.resetLogs = [];
@@ -566,6 +570,12 @@ export class ComfyUIController {
     const startMessage = i18nLogger.translate('comfyui.reset.started', { lng: lang });
     this.addResetLog('comfyui.reset.started', false, lang);
     this.addLog(startMessage);
+    
+    // 记录重置模式
+    const modeMessage = resetMode === 'hard' 
+      ? i18nLogger.translate('comfyui.reset.mode_hard', { lng: lang }) || '使用强力重置模式'
+      : i18nLogger.translate('comfyui.reset.mode_normal', { lng: lang }) || '使用普通重置模式';
+    this.addResetLog(modeMessage);
     
     try {
       // 首先检查ComfyUI是否在运行，如果是则停止它
@@ -603,11 +613,22 @@ export class ComfyUIController {
         this.addResetLog(cacheNotExistMessage, true);
       }
       
-      // 2. 清空COMFYUI_PATH下除models外的所有内容
+      // 2. 清空COMFYUI_PATH下的内容，根据重置模式保留不同的目录
       const comfyuiPath = paths.comfyui;
       if (comfyuiPath && fs.existsSync(comfyuiPath)) {
         const cleaningPathMessage = i18nLogger.translate('comfyui.reset.cleaning_path', { path: comfyuiPath, lng: lang });
         this.addResetLog(cleaningPathMessage);
+        
+        // 确定要保留的目录列表
+        const preservedDirs = ['models', 'output', 'input']; // 默认保留的目录
+        
+        // 根据重置模式添加额外保留的目录
+        if (resetMode === 'normal') {
+          preservedDirs.push('user', 'custom_nodes');
+          this.addResetLog(i18nLogger.translate('comfyui.reset.preserving_normal_dirs', { lng: lang }) || '普通模式：保留 user、models、custom_nodes 目录');
+        } else {
+          this.addResetLog(i18nLogger.translate('comfyui.reset.preserving_hard_dirs', { lng: lang }) || '强力模式：仅保留 models 目录');
+        }
         
         // 检查数据目录是否在comfyuiPath内
         const dataDir = config.dataDir;
@@ -616,14 +637,14 @@ export class ComfyUIController {
         
         if (isDataDirInComfyUI) {
           this.addResetLog(`数据目录(${dataDir})位于ComfyUI目录内，将保留此目录`);
+          preservedDirs.push(path.basename(dataDir));
         }
         
         const entries = fs.readdirSync(comfyuiPath, { withFileTypes: true });
         
         for (const entry of entries) {
-          // 跳过models、output和数据目录
-          if (entry.name === 'models' || entry.name === 'output' || 
-              (isDataDirInComfyUI && entry.name === path.basename(dataDir))) {
+          // 检查是否为需要保留的目录
+          if (preservedDirs.includes(entry.name)) {
             const keepingDirMessage = i18nLogger.translate('comfyui.reset.keeping_dir', { name: entry.name, lng: lang });
             this.addResetLog(keepingDirMessage);
             continue;
@@ -791,7 +812,11 @@ export class ComfyUIController {
                   'comfyui.reset.reset_completed': 'ComfyUI reset completed successfully',
                   'comfyui.reset.failed': 'Failed to reset ComfyUI',
                   'comfyui.reset.no_logs': 'No reset logs found',
-                  'comfyui.reset.logs_retrieved': 'Retrieved reset log entries'
+                  'comfyui.reset.logs_retrieved': 'Retrieved reset log entries',
+                  'comfyui.reset.mode_normal': 'Using normal reset mode: preserving user, models, and custom_nodes directories',
+                  'comfyui.reset.mode_hard': 'Using hard reset mode: preserving only models directory',
+                  'comfyui.reset.preserving_normal_dirs': 'Normal mode: preserving user, models, and custom_nodes directories',
+                  'comfyui.reset.preserving_hard_dirs': 'Hard mode: preserving only models directory'
                 },
                 'zh': {
                   'comfyui.reset.started': 'ComfyUI重置过程已启动',
@@ -811,7 +836,11 @@ export class ComfyUIController {
                   'comfyui.reset.reset_completed': 'ComfyUI重置成功完成',
                   'comfyui.reset.failed': '重置ComfyUI失败',
                   'comfyui.reset.no_logs': '未找到重置日志',
-                  'comfyui.reset.logs_retrieved': '已检索重置日志条目'
+                  'comfyui.reset.logs_retrieved': '已检索重置日志条目',
+                  'comfyui.reset.mode_normal': '使用普通重置模式：保留user、models和custom_nodes目录',
+                  'comfyui.reset.mode_hard': '使用强力重置模式：仅保留models目录',
+                  'comfyui.reset.preserving_normal_dirs': '普通模式：保留user、models和custom_nodes目录',
+                  'comfyui.reset.preserving_hard_dirs': '强力模式：仅保留models目录'
                 }
               };
               

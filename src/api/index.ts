@@ -274,8 +274,8 @@ const api = {
     superagent.post(`${API_BASE_URL}/plugins/history/clear`),
 
   // ComfyUI 重置相关 API
-  resetComfyUI: (lang?: string) => 
-    superagent.post(`${API_BASE_URL}/comfyui/reset`).send({ lang }).use(debug),
+  resetComfyUI: (lang?: string, mode?: string) => 
+    superagent.post(`${API_BASE_URL}/comfyui/reset`).send({ lang, mode }).use(debug),
   
   getResetLogs: (lang?: string) => 
     superagent.get(`${API_BASE_URL}/comfyui/reset-logs`).query({ lang }).use(debug),
