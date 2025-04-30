@@ -47,6 +47,76 @@ export class ComfyUIController {
     
     // 初始化时检查ComfyUI是否已经运行
     this.checkIfComfyUIRunning();
+    
+    // 在初始化时清理重复的禁用插件
+    this.cleanupDisabledPlugins();
+  }
+
+  // 清理被禁用但仍存在于插件目录中的插件
+  private async cleanupDisabledPlugins(): Promise<void> {
+    try {
+      const comfyuiPath = paths.comfyui;
+      if (!comfyuiPath || !fs.existsSync(comfyuiPath)) {
+        logger.warn('[Plugin Cleanup] ComfyUI路径不存在，跳过插件清理');
+        return;
+      }
+
+      // 定义插件目录和禁用目录路径
+      const pluginsDir = path.join(comfyuiPath, 'custom_nodes');
+      const disabledDir = path.join(pluginsDir, '.disabled');
+
+      // 检查目录是否存在
+      if (!fs.existsSync(pluginsDir)) {
+        logger.warn('[Plugin Cleanup] 插件目录不存在，跳过插件清理');
+        return;
+      }
+
+      if (!fs.existsSync(disabledDir)) {
+        logger.info('[Plugin Cleanup] 禁用插件目录不存在，无需清理');
+        return;
+      }
+
+      logger.info('[Plugin Cleanup] 开始检查插件目录状态...');
+
+      // 获取禁用目录中的所有插件
+      const disabledPlugins = fs.readdirSync(disabledDir, { withFileTypes: true })
+        .filter(dirent => dirent.isDirectory())
+        .map(dirent => dirent.name);
+
+      if (disabledPlugins.length === 0) {
+        logger.info('[Plugin Cleanup] 未发现被禁用的插件，无需清理');
+        return;
+      }
+
+      logger.info(`[Plugin Cleanup] 发现 ${disabledPlugins.length} 个被禁用的插件`);
+
+      // 检查插件目录是否包含任何被禁用的插件
+      let cleanupCount = 0;
+      for (const plugin of disabledPlugins) {
+        const pluginPath = path.join(pluginsDir, plugin);
+        
+        if (fs.existsSync(pluginPath)) {
+          logger.warn(`[Plugin Cleanup] 发现被禁用的插件 "${plugin}" 存在于插件目录中，正在删除...`);
+          
+          try {
+            // 递归删除插件目录
+            await this.clearDirectory(pluginPath, true);
+            cleanupCount++;
+            logger.info(`[Plugin Cleanup] 成功删除被禁用的插件: ${plugin}`);
+          } catch (error) {
+            logger.error(`[Plugin Cleanup] 删除插件 "${plugin}" 失败: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        }
+      }
+
+      if (cleanupCount > 0) {
+        logger.info(`[Plugin Cleanup] 清理完成，共删除 ${cleanupCount} 个重复的被禁用插件`);
+      } else {
+        logger.info('[Plugin Cleanup] 未发现需要清理的插件，插件目录状态良好');
+      }
+    } catch (error) {
+      logger.error(`[Plugin Cleanup] 清理插件时发生错误: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   // 初始化时检查ComfyUI是否已经运行
