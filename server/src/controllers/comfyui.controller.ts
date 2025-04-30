@@ -27,7 +27,7 @@ export class ComfyUIController {
   private comfyPid: number | null = null;
   // 存储最近的ComfyUI日志
   private recentLogs: string[] = [];
-  private maxLogEntries: number = 100; // 保留最近100条日志
+  private maxLogEntries: number = 10000; // 保留最近100条日志
   private resetLogs: string[] = []; // 存储最近一次重置操作的日志
   // 缓存版本信息，避免频繁读取
   private versionCache: {
