@@ -383,7 +383,8 @@ export default {
     title: '插件管理',
     tabs: {
       pluginLibrary: '插件库',
-      operationHistory: '操作历史'
+      operationHistory: '操作历史',
+      customInstall: '自定义安装'
     },
     actions: {
       updateAll: '更新全部插件',
@@ -499,6 +500,20 @@ export default {
     },
     pluginStatus: {
       unknown: '未知'
+    },
+    customInstall: {
+      title: '自定义插件安装',
+      subtitle: '直接从GitHub仓库安装插件',
+      githubUrlLabel: 'GitHub 地址',
+      githubUrlHint: 'GitHub 仓库地址 (例如: https://github.com/用户名/仓库名)',
+      branchLabel: '分支/标签 (可选)',
+      branchHint: '留空将使用默认分支 (通常是main或master)',
+      urlRequired: '请输入GitHub地址',
+      installButton: '安装插件',
+      startedInstall: '开始从 {url} 安装插件',
+      installSuccess: '成功安装插件 {name}',
+      installFailed: '插件安装失败',
+      recentInstalls: '最近安装记录'
     }
   },
   discovery: {

@@ -382,7 +382,8 @@ export default {
     title: 'Plugin management',
     tabs: {
       pluginLibrary: 'Plugin library',
-      operationHistory: 'Operation history'
+      operationHistory: 'Operation history',
+      customInstall: 'Custom Install'
     },
     actions: {
       updateAll: 'Update all plugins',
@@ -498,6 +499,20 @@ export default {
     },
     pluginStatus: {
       unknown: 'Unknown'
+    },
+    customInstall: {
+      title: 'Custom Plugin Installation',
+      subtitle: 'Install plugins directly from GitHub repositories',
+      githubUrlLabel: 'GitHub URL',
+      githubUrlHint: 'URL of the GitHub repository (e.g., https://github.com/username/repo)',
+      branchLabel: 'Branch/Tag (Optional)',
+      branchHint: 'Leave empty for default branch (usually main or master)',
+      urlRequired: 'GitHub URL is required',
+      installButton: 'Install Plugin',
+      startedInstall: 'Started installing plugin from {url}',
+      installSuccess: 'Successfully installed plugin {name}',
+      installFailed: 'Failed to install plugin',
+      recentInstalls: 'Recent Installations'
     }
   },
   discovery: {

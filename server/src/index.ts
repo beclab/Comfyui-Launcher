@@ -81,6 +81,8 @@ router.get('/api/plugins/progress/:taskId', (ctx) => pluginsController.getPlugin
 router.post('/api/plugins/disable', (ctx) => pluginsController.disablePlugin(ctx));
 router.post('/api/plugins/enable', (ctx) => pluginsController.enablePlugin(ctx));
 router.get('/api/plugins/refresh', (ctx) => pluginsController.refreshInstalledPlugins(ctx));
+// 新增自定义GitHub URL安装插件路由
+router.post('/api/plugins/install-custom', (ctx) => pluginsController.installCustomPlugin(ctx));
 
 // 插件历史记录相关路由
 router.get('/api/plugins/history', pluginsController.getPluginHistory.bind(pluginsController));

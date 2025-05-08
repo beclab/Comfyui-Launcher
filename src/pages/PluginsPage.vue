@@ -16,7 +16,9 @@
           v-model="activeTab"
           :options="[
             {label: $t('plugins.tabs.pluginLibrary'), value: 'plugins'},
+            {label: $t('plugins.tabs.customInstall'), value: 'custom'},
             {label: $t('plugins.tabs.operationHistory'), value: 'history'}
+            
           ]"
         />
       </div>
@@ -78,6 +80,11 @@
       />
     </div>
 
+    <!-- 自定义安装标签页内容 -->
+    <div v-if="activeTab === 'custom'">
+      <custom-plugin-install />
+    </div>
+
     <!-- 对话框和其他组件保持不变 -->
     <operation-logs-dialog
       :visible="logsDialogVisible"
@@ -113,6 +120,7 @@ import OperationHistoryTable from 'src/components/plugins/OperationHistoryTable.
 import OperationLogsDialog from 'src/components/plugins/OperationLogsDialog.vue';
 import PluginInfoDialog from 'src/components/plugins/PluginInfoDialog.vue';
 import TabToggle from 'src/components/common/TabToggle.vue';
+import CustomPluginInstall from 'src/components/plugins/CustomPluginInstall.vue';
 
 // 确保 ESLint 知道所有组件都被使用
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -121,7 +129,8 @@ const components = {
   OperationHistoryTable,
   OperationLogsDialog,
   PluginInfoDialog,
-  TabToggle
+  TabToggle,
+  CustomPluginInstall
 };
 
 const $q = useQuasar();

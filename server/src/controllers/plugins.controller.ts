@@ -2138,4 +2138,129 @@ export class PluginsController {
       throw error;
     }
   }
+
+  // 添加一个新的API端点，用于自定义插件安装
+  async installCustomPlugin(ctx: Context): Promise<void> {
+    // 从请求体中获取参数
+    const { githubUrl, branch = 'main' } = ctx.request.body as { 
+      githubUrl: string, 
+      branch?: string 
+    };
+    
+    // 验证参数
+    if (!githubUrl) {
+      ctx.status = 400;
+      ctx.body = {
+        success: false,
+        message: 'GitHub URL 是必需的'
+      };
+      return;
+    }
+    
+    console.log(`[API] 请求从自定义URL安装插件: ${githubUrl}, 分支: ${branch}`);
+    
+    // 验证GitHub URL格式
+    const githubRegex = /^(https?:\/\/)?(www\.)?github\.com\/([^\/]+)\/([^\/\.]+)(\.git)?$/;
+    if (!githubRegex.test(githubUrl)) {
+      ctx.status = 400;
+      ctx.body = {
+        success: false,
+        message: '无效的GitHub URL格式'
+      };
+      return;
+    }
+    
+    // 规范化URL (确保使用https://，移除可能的.git后缀)
+    let normalizedUrl = githubUrl
+      .replace(/^(http:\/\/)?(www\.)?github\.com/, 'https://github.com')
+      .replace(/\.git$/, '');
+    
+    // 生成任务ID
+    const taskId = uuidv4();
+    
+    // 从GitHub URL解析插件ID
+    const githubUrlParts = normalizedUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+    if (!githubUrlParts) {
+      ctx.status = 400;
+      ctx.body = {
+        success: false,
+        message: `无法从URL解析仓库信息: ${normalizedUrl}`
+      };
+      return;
+    }
+    
+    const repoName = githubUrlParts[2];
+    const pluginId = repoName;
+
+    // 初始化任务进度
+    taskProgressMap[taskId] = {
+      progress: 0,
+      completed: false,
+      pluginId,
+      type: 'install',
+      message: '准备安装...',
+      logs: [`[${new Date().toLocaleString()}] 开始从自定义URL安装插件: ${normalizedUrl} (分支: ${branch})`]
+    };
+    
+    // 添加到历史记录
+    this.addHistoryItem(taskId, pluginId, 'install');
+    
+    // 异步执行安装
+    (async () => {
+      try {
+        // 创建一个进度回调函数
+        const progressCallback = (progress: any): boolean => {
+          // 更新任务进度
+          if (taskProgressMap[taskId]) {
+            if (progress.progress !== undefined) {
+              taskProgressMap[taskId].progress = progress.progress;
+            }
+            if (progress.message) {
+              taskProgressMap[taskId].message = progress.message;
+            }
+            if (progress.status === 'completed') {
+              taskProgressMap[taskId].completed = true;
+            }
+          }
+          return true;
+        };
+        
+        // 调用现有方法执行安装
+        await this.installPluginFromGitHub(
+          normalizedUrl,
+          branch,
+          progressCallback,
+          taskId
+        );
+        
+        // 安装完成后，更新历史记录
+        this.updateHistoryItem(taskId, {
+          endTime: Date.now(),
+          status: 'success',
+          result: `从GitHub安装完成: ${normalizedUrl}`
+        });
+        
+        // 刷新插件缓存
+        await this.refreshPluginsCache();
+        
+      } catch (error) {
+        console.error(`[API] 自定义插件安装失败: ${error}`);
+        
+        // 更新历史记录
+        this.updateHistoryItem(taskId, {
+          endTime: Date.now(),
+          status: 'failed',
+          result: `安装失败: ${error instanceof Error ? error.message : '未知错误'}`
+        });
+      }
+    })();
+    
+    // 立即返回任务ID
+    ctx.body = {
+      success: true,
+      message: '开始安装自定义插件',
+      taskId,
+      pluginId
+    };
+  }
 } 

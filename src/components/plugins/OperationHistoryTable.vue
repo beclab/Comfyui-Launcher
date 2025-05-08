@@ -43,7 +43,7 @@
       <!-- 名称列 -->
       <template v-slot:body-cell-name="props">
         <q-td :props="props">
-          {{ props.row.pluginName || 'ComfyUI-Manager' }}
+          {{ props.row.pluginName || props.row.pluginId }}
         </q-td>
       </template>
 
@@ -229,7 +229,7 @@ const tableColumns = computed<QTableColumn[]>(() => [
     required: true,
     label: t('plugins.columns.name'),
     align: 'left',
-    field: row => row.pluginName || 'ComfyUI-Manager',
+    field: row => row.pluginName || row.pluginId,
     sortable: true
   },
   {
