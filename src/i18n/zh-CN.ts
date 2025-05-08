@@ -215,7 +215,8 @@ export default {
     title: '模型管理',
     modelLibrary: '模型库',
     operationHistory: '操作历史',
-    openModelDir: '打开模型目录'
+    openModelDir: '打开模型目录',
+    customDownload: '自定义下载'
   },
   packageInstall: {
     title: '资源包安装',
@@ -598,5 +599,27 @@ export default {
     resources: '{count} 个资源',
     author: '作者',
     view: '查看详情'
+  },
+  customModelDownload: {
+    title: '自定义模型下载',
+    subtitle: '从Hugging Face下载自定义模型',
+    modelUrlLabel: '模型URL',
+    modelUrlHint: '输入Hugging Face模型URL（例如：https://huggingface.co/model-name/blob/main/model.safetensors）',
+    urlRequired: '请输入模型URL',
+    modelDirLabel: '存放目录',
+    modelDirHint: '选择模型存放的目录',
+    dirRequired: '请选择存放目录',
+    downloadButton: '下载模型',
+    cancelButton: '取消',
+    downloadStatus: '下载进度',
+    speed: '下载速度',
+    errorOccurred: '下载出错',
+    downloadCompleted: '下载完成',
+    downloadStarted: '开始下载...',
+    customDir: '自定义目录',
+    customDirLabel: '目录名称',
+    customDirHint: '输入自定义目录名称',
+    customDirRequired: '请输入目录名称',
+    allFieldsRequired: '请填写所有必填字段'
   }
 };

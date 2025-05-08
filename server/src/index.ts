@@ -127,6 +127,9 @@ router.post('/api/resource-packs/install', (ctx) => resourcePacksController.inst
 router.get('/api/resource-packs/progress/:taskId', (ctx) => resourcePacksController.getInstallProgress(ctx));
 router.post('/api/resource-packs/cancel/:taskId', (ctx) => resourcePacksController.cancelInstallation(ctx));
 
+// 自定义模型下载路由 - 修正路径
+router.post('/api/models/download-custom', modelsController.downloadCustomModel.bind(modelsController));
+
 // 使用路由
 app.use(router.routes());
 app.use(router.allowedMethods());

@@ -9,6 +9,7 @@
           v-model="activeTab"
           :options="[
             {label: $t('modelsPage.modelLibrary'), value: 'models'},
+            {label: $t('modelsPage.customDownload'), value: 'custom'},
             {label: $t('modelsPage.operationHistory'), value: 'history'}
           ]"
         />
@@ -33,6 +34,10 @@
         <OptionalModelsCard />
       </div>
 
+      <div v-show="activeTab === 'custom'">
+        <CustomModelDownload />
+      </div>
+
       <div v-show="activeTab === 'history'">
         <DownloadHistoryCard :preferred-language="selectedLanguage" />
       </div>
@@ -45,6 +50,7 @@ import { defineComponent, ref, provide, onMounted } from 'vue';
 import OptionalModelsCard from '../components/models/OptionalModelsCard.vue';
 import InstalledModelsCard from '../components/models/InstalledModelsCard.vue';
 import DownloadHistoryCard from '../components/models/DownloadHistoryCard.vue';
+import CustomModelDownload from '../components/models/CustomModelDownload.vue';
 import TabToggle from 'src/components/common/TabToggle.vue';
 import api from '../api';
 
@@ -54,6 +60,7 @@ export default defineComponent({
     OptionalModelsCard,
     InstalledModelsCard,
     DownloadHistoryCard,
+    CustomModelDownload,
     TabToggle
   },
   setup() {

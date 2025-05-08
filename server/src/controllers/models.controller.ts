@@ -1092,4 +1092,229 @@ export class ModelsController extends DownloadController {
       default: return '未知';
     }
   }
+
+  // 添加自定义模型下载方法
+  async downloadCustomModel(ctx: Context): Promise<void> {
+    const { hfUrl, modelDir } = ctx.request.body as { hfUrl?: string; modelDir?: string };
+    
+    logger.info(`请求下载自定义模型: ${hfUrl} 到目录: ${modelDir}`);
+    
+    if (!hfUrl) {
+      ctx.status = 400;
+      ctx.body = { 
+        success: false,
+        message: 'Hugging Face URL不能为空' 
+      };
+      return;
+    }
+    
+    if (!modelDir) {
+      ctx.status = 400;
+      ctx.body = { 
+        success: false,
+        message: '模型存放目录不能为空' 
+      };
+      return;
+    }
+    
+    try {
+      // 解析URL获取必要信息
+      const url = new URL(hfUrl);
+      
+      // 确保是huggingface.co的URL
+      if (!url.hostname.includes('huggingface.co') && !url.hostname.includes('hf-mirror.com')) {
+        throw new Error('只支持Hugging Face网站的模型URL');
+      }
+      
+      // 从URL中提取路径部分
+      const pathParts = url.pathname.split('/');
+      
+      // 验证URL格式，确保有足够的组成部分
+      if (pathParts.length < 5) {
+        throw new Error('无效的Hugging Face模型URL格式');
+      }
+      
+      // 获取模型名称（文件名）
+      const fileName = pathParts[pathParts.length - 1];
+      
+      // 替换/blob/为/resolve/获取实际下载链接
+      let downloadUrl = hfUrl.replace('/blob/', '/resolve/');
+      
+      // 检查是否已经是resolve格式
+      if (downloadUrl === hfUrl) {
+        logger.info('URL已经是/resolve/格式或不包含/blob/，保持原样');
+      }
+      
+      // 创建任务ID
+      const taskId = this.createDownloadTask();
+      
+      // 检查HF_ENDPOINT配置，如果有则替换huggingface.co
+      const hfEndpoint = this.getHuggingFaceEndpoint();
+      if (hfEndpoint && downloadUrl.includes('huggingface.co')) {
+        logger.info(`使用配置的HF端点 ${hfEndpoint} 替换 huggingface.co`);
+        downloadUrl = downloadUrl.replace('huggingface.co/', hfEndpoint.replace(/^https?:\/\//, ''));
+      }
+      
+      // 确定保存路径
+      const saveDir = `models/${modelDir}`;
+      const outputPath = path.join(this.comfyuiPath, saveDir, fileName);
+      
+      // 确保目录存在
+      await fs.ensureDir(path.dirname(outputPath));
+      
+      logger.info(`即将从 ${downloadUrl} 下载模型到 ${outputPath}`);
+      
+      // 创建历史记录ID
+      const historyId = uuidv4();
+      
+      // 创建下载历史记录
+      const historyItem = {
+        id: historyId,
+        modelName: fileName,
+        status: 'downloading' as 'downloading',
+        startTime: Date.now(),
+        source: 'custom',
+        savePath: outputPath,
+        downloadUrl: downloadUrl,
+        taskId: taskId
+      };
+      
+      // 如果父类有添加历史记录的方法，使用它
+      if (typeof this.addDownloadHistory === 'function') {
+        this.addDownloadHistory(historyItem);
+      }
+      
+      // 使用 downloadFile 工具函数下载文件
+      const options = {
+        abortController: new AbortController(),
+        onProgress: () => {}  // 这是必需的参数
+      };
+      
+      // 获取进度对象
+      const progress = this.taskProgress.get(taskId);
+      if (progress) {
+        progress.abortController = options.abortController;
+      }
+      
+      // 启动异步下载过程
+      this.downloadModelAsync(downloadUrl, outputPath, taskId, fileName).catch(err => {
+        logger.error(`下载自定义模型失败: ${err instanceof Error ? err.message : String(err)}`);
+      });
+      
+      // 返回成功响应和任务ID
+      ctx.body = {
+        success: true,
+        taskId: taskId,
+        message: `开始下载模型 ${fileName} 到 ${saveDir}`
+      };
+    } catch (error) {
+      ctx.status = 500;
+      ctx.body = {
+        success: false,
+        message: `启动下载失败: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+
+  // 添加异步下载处理方法
+  private async downloadModelAsync(url: string, outputPath: string, taskId: string, modelName: string): Promise<void> {
+    try {
+      // 获取进度对象
+      const progress = this.taskProgress.get(taskId);
+      if (!progress) {
+        throw new Error(`找不到任务ID: ${taskId}`);
+      }
+      
+      // 设置初始状态
+      progress.status = 'downloading';
+      progress.currentModel = { name: modelName } as any;
+      
+      // 导入下载工具函数
+      const { downloadFile } = require('../utils/download.utils');
+      
+      // 使用工具函数执行下载
+      await downloadFile(
+        url,
+        outputPath,
+        (percent: number, downloaded: number, total: number) => {
+          // 更新进度信息
+          progress.currentModelProgress = percent / 100;
+          progress.overallProgress = percent / 100;
+          progress.downloadedBytes = downloaded;
+          progress.totalBytes = total;
+          
+          // 更新任务进度
+          this.updateTaskProgress(taskId, progress);
+          
+          // 允许继续下载
+          return true;
+        },
+        { 
+          abortController: progress.abortController || new AbortController(),
+          onProgress: () => {} // 必需属性
+        },
+        progress
+      );
+      
+      // 下载完成后更新状态
+      progress.completed = true;
+      progress.status = 'completed';
+      progress.overallProgress = 1;
+      progress.currentModelProgress = 1;
+      this.updateTaskProgress(taskId, progress);
+      
+      logger.info(`自定义模型下载完成: ${outputPath}`);
+      
+      // 更新历史记录(如果存在方法)
+      if (typeof this.updateDownloadHistory === 'function') {
+        // 查找相关的历史记录
+        const historyItem = this.downloadHistory?.find((item: any) => item.taskId === taskId);
+        if (historyItem) {
+          this.updateDownloadHistory(historyItem.id, {
+            status: 'success',
+            endTime: Date.now(),
+            fileSize: progress.totalBytes,
+            downloadedSize: progress.downloadedBytes,
+            speed: progress.speed
+          });
+        }
+      }
+    } catch (error) {
+      // 获取进度对象
+      const progress = this.taskProgress.get(taskId);
+      if (progress) {
+        // 如果是取消导致的错误
+        if (progress.canceled || (error instanceof Error && error.message.includes('取消'))) {
+          progress.status = 'error';
+          progress.error = '下载已取消';
+          logger.info(`自定义模型 ${modelName} 下载已取消`);
+        } else {
+          // 其他错误
+          progress.status = 'error';
+          progress.error = error instanceof Error ? error.message : String(error);
+          logger.error(`自定义模型 ${modelName} 下载失败: ${progress.error}`);
+        }
+        
+        this.updateTaskProgress(taskId, progress);
+        
+        // 更新历史记录(如果存在方法)
+        if (typeof this.updateDownloadHistory === 'function') {
+          // 查找相关的历史记录
+          const historyItem = this.downloadHistory?.find((item: any) => item.taskId === taskId);
+          if (historyItem) {
+            this.updateDownloadHistory(historyItem.id, {
+              status: progress.canceled ? 'canceled' : 'failed',
+              endTime: Date.now(),
+              error: progress.error,
+              downloadedSize: progress.downloadedBytes,
+              fileSize: progress.totalBytes,
+              speed: progress.speed
+            });
+          }
+        }
+      }
+      
+      throw error;
+    }
+  }
 } 

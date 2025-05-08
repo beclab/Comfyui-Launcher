@@ -364,6 +364,10 @@ const api = {
       );
     }
   },
+
+  // 在api对象中添加自定义模型下载方法
+  downloadCustomModel: (hfUrl: string, modelDir: string) => 
+    superagent.post(`${API_BASE_URL}/models/download-custom`).send({ hfUrl, modelDir }).use(debug),
 };
 
 export default api;  // 只有一个默认导出 

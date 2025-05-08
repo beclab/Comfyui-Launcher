@@ -214,7 +214,8 @@ export default {
     title: 'Model management',
     modelLibrary: 'Model library',
     operationHistory: 'Operation history',
-    openModelDir: 'Open model directory'
+    openModelDir: 'Open model directory',
+    customDownload: 'Custom Download'
   },
   packageInstall: {
     title: 'Package installation',
@@ -597,5 +598,27 @@ export default {
     resources: '{count} resources',
     author: 'Author',
     view: 'View details'
+  },
+  customModelDownload: {
+    title: 'Custom Model Download',
+    subtitle: 'Download custom models from Hugging Face',
+    modelUrlLabel: 'Model URL',
+    modelUrlHint: 'Enter Hugging Face model URL (e.g.: https://huggingface.co/model-name/blob/main/model.safetensors)',
+    urlRequired: 'Please enter model URL',
+    modelDirLabel: 'Destination folder',
+    modelDirHint: 'Select where to save the model',
+    dirRequired: 'Please select destination folder',
+    downloadButton: 'Download Model',
+    cancelButton: 'Cancel',
+    downloadStatus: 'Download Progress',
+    speed: 'Download Speed',
+    errorOccurred: 'Download Error',
+    downloadCompleted: 'Download Completed',
+    downloadStarted: 'Starting download...',
+    customDir: 'Custom Directory',
+    customDirLabel: 'Directory Name',
+    customDirHint: 'Enter a custom directory name',
+    customDirRequired: 'Please enter a directory name',
+    allFieldsRequired: 'Please fill in all required fields'
   }
 };
