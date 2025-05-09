@@ -226,7 +226,9 @@ export default {
     essentialModelsDesc: '包含 ComfyUI 运行所需的基础模型',
     download: '下载',
     controlNetPackage: 'ControlNet模型包',
-    controlNetModelsDesc: '包含 ControlNet 所需全部模型'
+    controlNetModelsDesc: '包含 ControlNet 所需全部模型',
+    framePackPackage: 'FramePack视频生成模型包',
+    framePackModelsDesc: '包含生成视频所需的核心模型和工作流'
   },
   installedModelsCard: {
     installedModels: '已安装模型',

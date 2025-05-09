@@ -56,6 +56,32 @@
             </q-btn>
           </div>
         </div>
+        
+        <!-- 分割线 -->
+        <div class="col-12 q-my-md">
+          <q-separator />
+        </div>
+        
+        <!-- FramePack视频生成模型包 -->
+        <div class="col-12 col-md-6 q-pr-md-md q-pb-sm">
+          <div class="row items-center no-wrap">
+            <q-avatar size="46px" class="q-mr-sm" color="blue-1">
+              <img src="~assets/icon-package-controlnet.png" />
+            </q-avatar>
+            
+            <div class="col">
+              <div class="row items-center">
+                <div class="text-weight-medium">{{ $t('packageInstall.framePackPackage') }}</div>
+                <q-chip dense size="xs" color="blue" text-color="white" class="q-ml-sm">{{ $t('packageInstall.popular') }}</q-chip>
+              </div>
+              <div class="text-caption text-grey-7">{{ $t('packageInstall.framePackModelsDesc') }}</div>
+            </div>
+            
+            <q-btn outline rounded class="download-btn q-ml-sm" @click="openFramePackResourcePack">
+              {{ $t('packageInstall.download') }}
+            </q-btn>
+          </div>
+        </div>
       </div>
     </q-card>
     
@@ -116,6 +142,12 @@ export default defineComponent({
         name: 'ControlNet模型包', 
         description: 'controllllnet-models', 
         hasMenu: false
+      },
+      { 
+        id: 'framepack-models-pack',
+        name: 'FramePack视频生成模型包', 
+        description: '包含FramePack视频生成所需的核心模型', 
+        hasMenu: false
       }
     ]);
     
@@ -131,6 +163,11 @@ export default defineComponent({
     
     const openEssentialModelsResourcePack = () => {
       selectedPackId.value = 'essential-models-pack';
+      showResourcePackDialog.value = true;
+    };
+    
+    const openFramePackResourcePack = () => {
+      selectedPackId.value = 'framepack-models-pack';
       showResourcePackDialog.value = true;
     };
     
@@ -179,6 +216,7 @@ export default defineComponent({
       selectedPackId,
       openControlNetResourcePack,
       openEssentialModelsResourcePack,
+      openFramePackResourcePack,
       handleResourcePackInstallComplete,
       resourcePackDialog,
       handleResourcePackDialogClose

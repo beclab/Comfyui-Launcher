@@ -225,7 +225,9 @@ export default {
     essentialModelsDesc: 'Contains the basic models required for ComfyUI to work',
     download: 'Download',
     controlNetPackage: 'ControlNet Model Package',
-    controlNetModelsDesc: 'Contains all models required for ControlNet'
+    controlNetModelsDesc: 'Contains all models required for ControlNet',
+    framePackPackage: 'FramePack Video Generation Package',
+    framePackModelsDesc: 'Contains core models and workflows for video generation'
   },
   installedModelsCard: {
     installedModels: 'Installed models',
