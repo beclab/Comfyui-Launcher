@@ -56,6 +56,7 @@ function getKey(option: TabOption, index: number): string | number {
 .custom-tabs-container {
   margin-bottom: 16px;
   min-width: 200px;
+  max-width: 800px;
 }
 
 .custom-tab-toggle {
@@ -78,6 +79,7 @@ function getKey(option: TabOption, index: number): string | number {
   display: flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap; /* 添加这行，防止文本换行 */
 }
 
 .tab-button:not(:last-child) {

@@ -4,8 +4,9 @@
     <q-separator class="q-mb-md" style="margin-bottom: 40px; margin-top: 30px;"/>
 
     <div class="row items-center justify-between q-mb-md">
-      <div>
+      <div style="min-width: 400px;">
         <TabToggle
+          class="tab-no-wrap"
           v-model="activeTab"
           :options="[
             {label: $t('modelsPage.modelLibrary'), value: 'models'},
@@ -145,5 +146,18 @@ export default defineComponent({
   font-size: 40px; /* 假设默认字号为 16px */
   font-weight: bold;
 }
-/* 删除所有重复的样式，因为我们现在使用共享的 tab-styles.css */
+
+/* 提高样式优先级 */
+.q-page .tab-no-wrap ::v-deep(.q-tab__label) {
+  white-space: nowrap !important;
+}
+
+.q-page .tab-no-wrap ::v-deep(.q-tab) {
+  min-width: auto !important;
+  padding: 0 16px !important;
+}
+
+.q-page .tab-no-wrap ::v-deep(.q-tabs) {
+  min-height: auto !important;
+}
 </style>
