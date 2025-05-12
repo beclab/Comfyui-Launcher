@@ -1,0 +1,93 @@
+{
+  "id": "framepack-models-pack",
+  "name": "FramePack视频生成模型包",
+  "description": "包含FramePack视频生成所需的所有核心模型和工作流",
+  "author": "CG迷",
+  "version": "1.0.0",
+  "tags": ["视频生成", "FramePack", "HY"],
+  "resources": [
+    {
+      "id": "framepack-i2v-hy",
+      "name": "FramePackI2V_HY 主模型",
+      "type": "model",
+      "description": "FramePack视频生成的核心模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/Kijai/HunyuanVideo_comfy/resolve/main/FramePackI2V_HY_fp8_e4m3fn.safetensors",
+        "hf": "https://huggingface.co/Kijai/HunyuanVideo_comfy/resolve/main/FramePackI2V_HY_fp8_e4m3fn.safetensors"
+      },
+      "dir": "framepack",
+      "out": "FramePackI2V_HY_fp8_e4m3fn.safetensors",
+      "optional": false
+    },
+    {
+      "id": "sigclip-vision-patch",
+      "name": "SigClip Vision模型",
+      "type": "model",
+      "description": "FramePack所需的视觉编码模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/Comfy-Org/sigclip_vision_384/resolve/main/sigclip_vision_patch14_384.safetensors",
+        "hf": "https://huggingface.co/Comfy-Org/sigclip_vision_384/resolve/main/sigclip_vision_patch14_384.safetensors"
+      },
+      "dir": "framepack/clip_vision",
+      "out": "sigclip_vision_patch14_384.safetensors",
+      "optional": false
+    },
+    {
+      "id": "clip-l",
+      "name": "CLIP-L文本编码器",
+      "type": "model",
+      "description": "FramePack使用的文本编码器模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/calcuis/hunyuan-gguf/resolve/main/clip_l.safetensors",
+        "hf": "https://huggingface.co/calcuis/hunyuan-gguf/resolve/main/clip_l.safetensors"
+      },
+      "dir": "text_encoders",
+      "out": "clip_l.safetensors",
+      "optional": false
+    },
+    {
+      "id": "llava-llama3",
+      "name": "Llava Llama3文本编码器",
+      "type": "model",
+      "description": "FramePack使用的高级文本理解模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/calcuis/hunyuan-gguf/resolve/main/llava_llama3_fp8_scaled.safetensors",
+        "hf": "https://huggingface.co/calcuis/hunyuan-gguf/resolve/main/llava_llama3_fp8_scaled.safetensors"
+      },
+      "dir": "text_encoders",
+      "out": "llava_llama3_fp8_scaled.safetensors",
+      "optional": false
+    },
+    {
+      "id": "hunyuan-video-vae",
+      "name": "HunYuan视频VAE模型",
+      "type": "model",
+      "description": "用于视频生成的专用VAE模型",
+      "url": {
+        "mirror": "https://hf-mirror.com/calcuis/hunyuan-gguf/resolve/main/hunyuan_video_vae_bf16.safetensors",
+        "hf": "https://huggingface.co/calcuis/hunyuan-gguf/resolve/main/hunyuan_video_vae_bf16.safetensors"
+      },
+      "dir": "vae",
+      "out": "hunyuan_video_vae_bf16.safetensors",
+      "optional": false
+    },
+    {
+      "id": "comfyui-framepack-wrapper",
+      "name": "ComfyUI-FramePackWrapper",
+      "type": "plugin",
+      "description": "提供FramePack模型支持的ComfyUI扩展插件",
+      "github": "https://github.com/kijai/ComfyUI-FramePackWrapper",
+      "branch": "main",
+      "optional": false
+    },
+    {
+      "id": "cg-framepack-workflow",
+      "name": "CG迷FramePack工作流",
+      "type": "workflow",
+      "description": "预设的FramePack视频生成工作流",
+      "url": "https://raw.githubusercontent.com/beclab/Comfyui-Launcher/blob/feat/ui_v010/resource/CG-mi-framepack-workflow.json",
+      "filename": "CG-mi-framepack-workflow.json",
+      "optional": false
+    }
+  ]
+} 
