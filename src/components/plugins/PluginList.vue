@@ -37,7 +37,7 @@
               dense
               :placeholder="$t('plugins.searchPlaceholder')" 
               class="q-mr-sm"
-              style="width: 200px"
+              style="width: 200px; border-radius: var(--border-radius-lg) !important;"
               @update:model-value="onSearch"
             >
               <template v-slot:prepend>
@@ -52,7 +52,7 @@
               dense
               :label="$t('plugins.columns.status')"
               class="q-mr-sm"
-              style="width: 120px"
+              style="width: 120px; border-radius: var(--border-radius-lg) !important;"
               @update:model-value="onFilter"
             />
             
@@ -76,7 +76,7 @@
             @click="onRefresh"
             :loading="loading"
             size="md"
-            style="border-radius: var(--border-radius-md);padding-top: 8px;padding-bottom: 8px;"
+            style="border-radius: var(--border-radius-lg) !important;;padding-top: 8px;padding-bottom: 8px;"
             >
               <q-tooltip>{{ $t('plugins.refreshTooltip') }}</q-tooltip>
             </q-btn>
@@ -341,6 +341,12 @@ const onRefresh = (): void => {
 
 /* 添加刷新按钮样式 */
 .refresh-btn {
-  border-radius: var(--border-radius-md);
+  border-radius: var(--border-radius-lg);
 }
+
+:deep(.q-field--outlined .q-field__control) {
+  border-radius: var(--border-radius-lg);
+}
+
+
 </style>

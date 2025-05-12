@@ -11,7 +11,7 @@
           outline 
           @click="confirmClearHistory" 
           class="custom-btn q-mr-sm"
-          style="border-radius: 8px"
+          style="border-radius: 8px; height: 40px; border-radius: var(--border-radius-lg) !important;"
         />
         <q-btn
           color="grey"
@@ -21,7 +21,7 @@
           @click="fetchHistory"
           :loading="loading"
           class="custom-btn"
-          style="border-radius: 8px"
+          style="border-radius: 8px; height: 40px; border-radius: var(--border-radius-lg) !important;"
         />
       </div>
     </div>

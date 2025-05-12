@@ -3,8 +3,8 @@
     <q-card-section class="row items-center justify-between">
       <div class="text-h6">{{ $t('downloadHistory.title') }}</div>
       <div>
-        <q-btn outline color="grey-7" icon="delete_sweep" :label="$t('downloadHistory.clearHistory')" @click="confirmClearHistory" class="q-mr-sm" />
-        <q-btn outline color="grey-7" icon="refresh" :label="$t('downloadHistory.refresh')" @click="refreshHistory" :loading="loading" />
+        <q-btn outline color="grey-7" icon="delete_sweep" :label="$t('downloadHistory.clearHistory')" @click="confirmClearHistory" class="q-mr-sm" style="height: 40px; border-radius: var(--border-radius-lg) !important;"/>
+        <q-btn outline color="grey-7" icon="refresh" :label="$t('downloadHistory.refresh')" @click="refreshHistory" :loading="loading" style="height: 40px; border-radius: var(--border-radius-lg) !important;"/>
       </div>
     </q-card-section>
 

@@ -31,8 +31,8 @@
             :options="databaseModeOptions"
             dense
             outlined
-            class="bg-white text-black q-mr-md"
-            style="width: 180px"
+            class="bg-white text-black q-mr-md custom-select-radius"
+            style="width: 180px;"
             :label="$t('optionalModels.databaseSource')"
             @update:model-value="onDatabaseModeChange"
           />
@@ -45,6 +45,7 @@
             @click="onRefresh"
             :loading="isLoading"
             size="md"
+            style="height: 40px; border-radius: var(--border-radius-lg) !important;"
           />
         </div>
       </div>
@@ -946,11 +947,11 @@ export default defineComponent({
   border-radius: 50%;
 }
 
-:deep(.q-input, .q-select) {
-  border-radius: 12px;
+:deep(.q-input) {
+  border-radius: 16px;
 }
 
-:deep(.q-input .q-field__control, .q-select .q-field__control) {
+:deep(.q-input .q-field__control) {
   border-radius: 12px;
 }
 
@@ -986,5 +987,14 @@ export default defineComponent({
 .dialog-btn {
   border-radius: 8px;
   min-width: 80px;
+}
+
+.custom-select-radius {
+  border-radius: var(--border-radius-lg);
+}
+
+/* 可能需要覆盖内部控件的圆角 */
+:deep(.custom-select-radius .q-field__control) {
+  border-radius: var(--border-radius-lg);
 }
 </style>

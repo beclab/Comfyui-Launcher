@@ -32,9 +32,9 @@
             </template>
           </q-input>
           
-          <q-btn color="grey-7" outline icon="search" :label="$t('installedModelsCard.scanModels')" 
+          <q-btn style="height: 40px; border-radius: var(--border-radius-lg) !important;" color="grey-7" outline icon="search" :label="$t('installedModelsCard.scanModels')" 
                  @click="onScanModels" :loading="isScanning" />
-          <q-btn color="grey-7" outline icon="refresh" :label="$t('installedModelsCard.refresh')" @click="onRefresh" />
+          <q-btn style="height: 40px; border-radius: var(--border-radius-lg) !important;" color="grey-7" outline icon="refresh" :label="$t('installedModelsCard.refresh')" @click="onRefresh" />
         </div>
       </div>
     </q-card-section>
