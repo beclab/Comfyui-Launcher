@@ -101,26 +101,26 @@
           >
             <q-menu >
               <q-list >
-                <q-item clickable v-close-popup @click="showLogView" style="color: var(--text-normal)!important; margin: 6px;">
-                  <q-item-section avatar style="width: 32px; height: 32px; padding-right: 0px; padding-left: 0px;">
-                    <q-icon name="visibility" style="width: 32px; height: 32px; padding-right: 0px; padding-left: 0px;"/>
+                <q-item clickable v-close-popup @click="showLogView" style="border-radius: var(--border-radius-md); min-height: 24px!important; color: var(--text-normal)!important; margin: 6px; padding-right: 6px; padding-left: 6px;">
+                  <q-item-section avatar style="width: 24px; height: 24px; margin-left: 6px; padding-right: 0px; padding-left: 0px;">
+                    <q-icon name="visibility" style="width: 24px; height: 24px; padding-right: 0px; padding-left: 0px;"/>
                   </q-item-section>
-                  <q-item-section style="margin-left: 8px;">{{ $t('comfyuiStatus.menu.viewLogs') }}</q-item-section>
+                  <q-item-section style="margin-left: 4px; margin-right: 6px;">{{ $t('comfyuiStatus.menu.viewLogs') }}</q-item-section>
                 </q-item>
                 
-                <q-item clickable v-close-popup @click="showResetLog" style="color: var(--text-normal)!important; margin: 6px;">
-                  <q-item-section avatar style="width: 32px!important; height: 32px; padding-right: 0px; padding-left: 0px !important;">
-                    <q-icon name="history" style="width: 32px; height: 32px; padding-right: 0px; padding-left: 0px !important;"/>
+                <q-item clickable v-close-popup @click="showResetLog" style="border-radius: var(--border-radius-md); min-height: 24px!important; color: var(--text-normal)!important; margin: 6px; padding-right: 6px; padding-left: 6px;">
+                  <q-item-section avatar style="width: 24px!important; height: 24px; margin-left: 6px; padding-right: 0px;">
+                    <q-icon name="history" style="width: 24px; height: 24px; padding-right: 0px; padding-left: 0px !important;"/>
                   </q-item-section>
-                  <q-item-section style="margin-left: 8px;">{{ $t('comfyuiStatus.menu.viewResetLogs') }}</q-item-section>
+                  <q-item-section style="margin-left: 4px; margin-right: 6px;">{{ $t('comfyuiStatus.menu.viewResetLogs') }}</q-item-section>
                 </q-item>
                 
-                <q-item clickable v-close-popup @click="resetComfyUI" style="color: var(--text-normal)!important; margin: 6px;">
+                <q-item clickable v-close-popup @click="resetComfyUI" style="border-radius: var(--border-radius-md); min-height: 24px!important; color: var(--text-normal)!important; margin: 6px; padding-right: 6px; padding-left: 6px;">
                   <div class="row">
-                    <q-item-section avatar style="width: 32px; height: 32px; padding-right: 0px; padding-left: 0px;">
-                      <q-icon name="refresh" style="width: 32px; height: 32px; padding-right: 0px; padding-left: 0px;"/>
+                    <q-item-section avatar style="width: 24px; height: 24px; margin-left: 6px; padding-right: 0px; padding-left: 0px;">
+                      <q-icon name="refresh" style="width: 24px; height: 24px; padding-right: 0px; padding-left: 0px;"/>
                     </q-item-section>
-                    <q-item-section style="margin-left: 8px;">{{ $t('comfyuiStatus.menu.reset') }}</q-item-section>
+                    <q-item-section style="margin-left: 4px; margin-right: 6px;">{{ $t('comfyuiStatus.menu.reset') }}</q-item-section>
                   </div>
 
                 </q-item>
