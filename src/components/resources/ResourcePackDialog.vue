@@ -7,21 +7,16 @@
     class="resource-pack-dialog-container"
   >
     <q-card class="resource-pack-dialog" style="width: 90vw; max-width: 1200px; max-height: 90vh; display: flex; flex-direction: column;">
-      <q-card-section class="bg-primary text-white">
-        <div class="row items-center">
-          <div class="col">
-            <div class="text-h6">
-              <q-icon name="inventory_2" class="q-mr-sm" />
-              {{ pack ? pack.name : $t('resourcePack.loading') }}
-            </div>
-            <div class="text-caption" v-if="pack">{{ pack.description }}</div>
-          </div>
-          <div class="col-auto">
-            <q-btn flat round icon="close" @click="closeDialog" />
-          </div>
+      <q-card-section class="bg-white text-dark q-pb-xs">
+        <div class="row items-center justify-between">
+          <div class="text-h6">Package Details</div>
+          <q-btn flat round icon="close" color="dark" @click="closeDialog" />
         </div>
       </q-card-section>
       
+      <q-separator />
+
+
       <!-- 加载状态 -->
       <div v-if="loading" class="text-center q-pa-lg">
         <q-spinner color="primary" size="3em" />
@@ -45,48 +40,22 @@
       <div v-else-if="pack" class="flex-grow" style="display: flex; flex-direction: column;">
         <!-- 基本信息区域 -->
         <q-card-section class="q-pb-none">
-          <div class="row q-mb-md">
-            <div class="col-md-8 col-sm-12">
-              <!-- 基本信息卡片 -->
-              <q-list bordered separator class="rounded-borders">
-                <q-item v-if="pack.id">
-                  <q-item-section>
-                    <q-item-label caption>{{ $t('resourcePack.id') }}</q-item-label>
-                    <q-item-label>{{ pack.id }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-                
-                <q-item v-if="pack.version">
-                  <q-item-section>
-                    <q-item-label caption>{{ $t('resourcePack.version') }}</q-item-label>
-                    <q-item-label>{{ pack.version }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-                
-                <q-item v-if="pack.author">
-                  <q-item-section>
-                    <q-item-label caption>{{ $t('resourcePack.author') }}</q-item-label>
-                    <q-item-label>{{ pack.author }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-                
-                <q-item v-if="pack.website">
-                  <q-item-section>
-                    <q-item-label caption>{{ $t('resourcePack.website') }}</q-item-label>
-                    <q-item-label>
-                      <a :href="pack.website" target="_blank">{{ pack.website }}</a>
-                    </q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
+          <div class="row items-center q-mb-md">
+            <div class="col-auto q-mr-md">
+              <q-icon name="model_training" size="3rem" color="primary" />
             </div>
-            
-            <!-- 安装按钮放在右侧 -->
-            <div class="col-md-4 col-sm-12 row items-center justify-end" v-if="!installing">
+            <div class="col">
+              <div class="text-subtitle1 text-weight-bold row items-center">
+              {{ pack.name }}
+              <div class="text-caption text-grey-7 q-ml-sm">当前版本 v{{ pack.version }}</div>
+              </div>
+              <div class="text-caption">{{ pack.description }}</div>
+              
+            </div>
+            <div class="col-auto">
               <q-btn 
                 color="primary" 
-                icon="download" 
-                :label="$t('resourcePack.install')" 
+                label="Get All Resources" 
                 @click="installResourcePack"
                 :disable="installing"
               />
@@ -97,84 +66,63 @@
           <div v-if="installing && installProgress" class="install-progress-panel q-mb-md">
             <div class="text-h6">{{ $t('resourcePack.installationProgress') }}</div>
             
-            <div class="row q-col-gutter-md q-mt-md">
-              <!-- 左侧：详细信息 -->
-              <div class="col-12 col-md-6">
-                <q-list bordered separator dense class="rounded-borders">
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label caption>{{ $t('resourcePack.startTime') }}</q-item-label>
-                      <q-item-label>{{ formatDate(installProgress.startTime) }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  
-                  <q-item v-if="installProgress.endTime">
-                    <q-item-section>
-                      <q-item-label caption>{{ $t('resourcePack.endTime') }}</q-item-label>
-                      <q-item-label>{{ formatDate(installProgress.endTime) }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label caption>{{ $t('resourcePack.elapsed') }}</q-item-label>
-                      <q-item-label>{{ formatDuration(installProgress.startTime, installProgress.endTime) }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label caption>{{ $t('resourcePack.completedResources') }}</q-item-label>
-                      <q-item-label>{{ getCompletedResourcesCount(installProgress) }} / {{ pack.resources.length }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </div>
-              
-              <!-- 右侧：总体进度和取消按钮 -->
-              <div class="col-12 col-md-6">
-                <!-- 总体进度 -->
-                <div class="text-subtitle2">{{ $t('resourcePack.overallProgress') }}</div>
-                <div class="progress-info q-mb-md">
-                  <q-linear-progress
-                    :value="installProgress.progress / 100"
-                    color="primary"
-                    class="q-mb-xs"
-                    size="15px"
-                  />
-                  <div class="text-caption row justify-between">
-                    <span>{{ formatProgressText(installProgress.progress) }}</span>
-                    <span>{{ getCompletedResourcesCount(installProgress) }} / {{ pack.resources.length }}</span>
-                  </div>
+            <!-- 上方：详细信息 -->
+            <div class="q-mt-md">
+              <div class="row q-col-gutter-md">
+                <div class="col-md-3 col-sm-6 col-xs-6">
+                  <div class="text-caption">{{ $t('resourcePack.startTime') }}</div>
+                  <div>{{ formatDate(installProgress.startTime) }}</div>
                 </div>
                 
-                <!-- 取消按钮 -->
-                <!-- <div class="row justify-center q-mt-md">
-                  <q-btn 
-                    color="negative" 
-                    outline 
-                    :label="$t('resourcePack.cancel')" 
-                    @click="cancelInstallation" 
-                    :disable="installProgress && installProgress.status === 'completed'"
-                  />
-                </div> -->
+                <div class="col-md-3 col-sm-6 col-xs-6" v-if="installProgress.endTime">
+                  <div class="text-caption">{{ $t('resourcePack.endTime') }}</div>
+                  <div>{{ formatDate(installProgress.endTime) }}</div>
+                </div>
+                
+                <div class="col-md-3 col-sm-6 col-xs-6">
+                  <div class="text-caption">{{ $t('resourcePack.elapsed') }}</div>
+                  <div>{{ formatDuration(installProgress.startTime, installProgress.endTime) }}</div>
+                </div>
+                
+                <div class="col-md-3 col-sm-6 col-xs-6">
+                  <div class="text-caption">{{ $t('resourcePack.completedResources') }}</div>
+                  <div>{{ getCompletedResourcesCount(installProgress) }} / {{ pack.resources.length }}</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 下方：总体进度 -->
+            <div class="q-mt-md">
+              <div class="text-subtitle2">{{ $t('resourcePack.overallProgress') }}</div>
+              <div class="progress-info">
+                <q-linear-progress
+                  :value="installProgress.progress / 100"
+                  color="primary"
+                  class="q-mb-xs"
+                  size="15px"
+                />
+                <div class="text-caption row justify-between">
+                  <span>{{ formatProgressText(installProgress.progress) }}</span>
+                  <span>{{ getCompletedResourcesCount(installProgress) }} / {{ pack.resources.length }}</span>
+                </div>
               </div>
             </div>
           </div>
         </q-card-section>
         
+        <!-- 使用新样式的分隔线 -->
+        <q-separator class="full-width-separator" />
+        
         <!-- 资源列表区域 - 紧贴底部 -->
-        <q-card-section class="q-pt-none flex-grow resource-list-section">
-          <div class="text-subtitle1 q-mb-sm">{{ $t('resourcePack.resourcesList') }}</div>
-          <div class="text-caption q-mb-sm">{{ $t('resourcePack.totalResources', { count: pack.resources.length }) }}</div>
+        <q-card-section class="q-pt-none flex-grow resource-list-section full-width-separator">
           
           <div class="resource-list-container">
             <q-table
               :rows="pack.resources"
               :columns="resourceColumns"
               row-key="id"
-              :pagination="{ rowsPerPage: 0 }"
-              class="resource-table"
+              :pagination="{ rowsPerPage: 10 }"
+              class="resource-table no-border"
               style="height: 40vh;"
               :virtual-scroll="false"
             >
@@ -355,14 +303,21 @@ export default defineComponent({
         field: 'type',
         sortable: true
       },
-      // {
-      //   name: 'size',
-      //   align: 'right',
-      //   label: '大小',
-      //   field: 'size',
-      //   sortable: true,
-      //   format: (val: string | number) => formatFileSize(typeof val === 'string' ? parseInt(val) : val)
-      // },
+      {
+        name: 'size',
+        align: 'right',
+        label: '大小',
+        field: 'size',
+        sortable: true
+      },
+
+      {
+        name: 'description',
+        align: 'left',
+        label: '描述',
+        field: 'description',
+        sortable: false
+      },
       {
         name: 'status',
         align: 'center',
@@ -806,14 +761,38 @@ export default defineComponent({
 }
 
 .resource-list-container {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
   background-color: white;
   height: 40vh;
+  border: none;
+  box-shadow: none;
 }
 
 .resource-table {
   height: 100%;
+  box-shadow: none;
+}
+
+.no-border .q-table__top,
+.no-border .q-table__bottom,
+.no-border thead tr:first-child th,
+.no-border .q-table__container {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* 移除表格行的边框和悬浮效果 */
+.resource-table tbody tr {
+  border: none !important;
+}
+
+.resource-table tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* 设置表格顶部背景色 */
+.q-table thead tr {
+  background-color: #f8f8f8;
+  border: none;
 }
 
 /* 关闭子像素渲染，使文本更清晰 */
@@ -874,5 +853,12 @@ export default defineComponent({
   justify-content: center;
   align-items: center;
   height: 24px;
+}
+
+/* 修改分隔线位置和样式 */
+.full-width-separator {
+  margin-left: -16px;
+  margin-right: -16px;
+  width: calc(100% + 32px);
 }
 </style> 

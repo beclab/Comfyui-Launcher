@@ -224,7 +224,7 @@ export default {
     popular: '热门',
     outOfPrint: '绝版',
     essentialModelsDesc: '包含 ComfyUI 运行所需的基础模型',
-    download: '下载',
+    download: '查看',
     controlNetPackage: 'ControlNet模型包',
     controlNetModelsDesc: '包含 ControlNet 所需全部模型',
     framePackPackage: 'FramePack视频生成模型包',

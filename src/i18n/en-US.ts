@@ -223,7 +223,7 @@ export default {
     popular: 'Popular',
     outOfPrint: 'Out of print',
     essentialModelsDesc: 'Contains the basic models required for ComfyUI to work',
-    download: 'Download',
+    download: 'View',
     controlNetPackage: 'ControlNet Model Package',
     controlNetModelsDesc: 'Contains all models required for ControlNet',
     framePackPackage: 'FramePack Video Generation Package',
