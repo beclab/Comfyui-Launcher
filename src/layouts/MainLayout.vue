@@ -1,5 +1,6 @@
 <template>
   <q-layout view="hHh lpR fFf">
+    <!--
     <q-header class="bg-white text-black" v-if="!isInIframe">
       <q-toolbar>
         <q-btn
@@ -19,6 +20,7 @@
       </q-toolbar>
       <q-separator />
     </q-header>
+    -->
 
     <q-drawer
       v-model="leftDrawerOpen"
@@ -40,7 +42,8 @@
 
         <q-item clickable to="/models">
           <q-item-section avatar>
-            <q-icon name="sym_o_database" />
+            
+            <q-icon name="sym_o_deployed_code" />
           </q-item-section>
           <q-item-section>{{ $t('menu.modelManagement') }}</q-item-section>
         </q-item>
@@ -54,7 +57,7 @@
 
         <q-item clickable to="/python-dependencies">
           <q-item-section avatar>
-            <q-icon name="sym_o_code" />
+            <q-icon name="sym_o_rule_settings" />
           </q-item-section>
           <q-item-section>{{ $t('menu.pythonDependencies') }}</q-item-section>
         </q-item>
@@ -67,14 +70,14 @@
           active-class="active-menu-link"
         >
           <q-item-section avatar>
-            <q-icon name="settings_ethernet" />
+            <q-icon name="sym_o_network_check" />
           </q-item-section>
           <q-item-section>{{ $t('menu.networkConfig') }}</q-item-section>
         </q-item>
 
         <q-item clickable to="/discovery">
           <q-item-section avatar>
-            <q-icon name="sym_o_explore" />
+            <q-icon name="sym_o_preview" />
           </q-item-section>
           <q-item-section>{{ $t('menu.discovery') }}</q-item-section>
         </q-item>
@@ -113,9 +116,9 @@ defineOptions({
 const leftDrawerOpen = ref(false)
 const isInIframe = ref(false)
 
-function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value
-}
+//function toggleLeftDrawer() {
+//  leftDrawerOpen.value = !leftDrawerOpen.value
+//}
 
 onMounted(() => {
   // 检测当前页面是否在iframe中
