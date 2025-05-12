@@ -241,45 +241,64 @@ export default defineComponent({
       // Set loading to true when starting to fetch data
       this.loading = true;
       
+      // 先获取一个网络检查ID
       const response = await api.get('system/network-status');
       if (response.data.code === 200) {
         const result = response.data.data;
-        this.networkStatuses = [
-          {
-            name: 'Github',
-            available: result.github.accessible,
-            statusText: result.github.accessible ? this.$t('network.github.accessible') : this.$t('network.github.inaccessible'),
-            statusColor: result.github.accessible ? 'green' : 'red',
-            textColorClass: result.github.accessible ? 'text-green' : 'text-red',
-            logo: githubLogo
-          },
-          {
-            name: 'PyPI',
-            available: result.pip.accessible,
-            statusText: result.pip.accessible ? this.$t('network.pypi.accessible') : this.$t('network.pypi.inaccessible'),
-            statusColor: result.pip.accessible ? 'green' : 'red',
-            textColorClass: result.pip.accessible ? 'text-green' : 'text-red',
-            logo: pypiLogo
-          },
-          {
-            name: 'HuggingFace',
-            available: result.huggingface.accessible,
-            statusText: result.huggingface.accessible ? this.$t('network.huggingface.accessible') : this.$t('network.huggingface.inaccessible'),
-            statusColor: result.huggingface.accessible ? 'green' : 'red',
-            textColorClass: result.huggingface.accessible ? 'text-green' : 'text-red',
-            logo: huggingfaceLogo
+        
+        // 获取检查ID并用它获取真正的网络状态
+        const checkId = result.checkId;
+        if (checkId) {
+          // 初始化日志状态
+          this.logDialog.checkId = checkId;
+          this.logDialog.logs = [];
+          this.logDialog.status = 'in_progress';
+          
+          // 获取网络检查日志和状态
+          const statusResponse = await api.getNetworkCheckLog(checkId);
+          if (statusResponse.body && statusResponse.body.code === 200) {
+            const data = statusResponse.body.data;
+            this.currentNetworkStatus = data.currentNetworkStatus;
+            
+            // 更新界面展示
+            if (this.currentNetworkStatus) {
+              this.networkStatuses = [
+                {
+                  name: 'Github',
+                  available: this.currentNetworkStatus.github.accessible,
+                  statusText: this.currentNetworkStatus.github.accessible ? this.$t('network.github.accessible') : this.$t('network.github.inaccessible'),
+                  statusColor: this.currentNetworkStatus.github.accessible ? 'green' : 'red',
+                  textColorClass: this.currentNetworkStatus.github.accessible ? 'text-green' : 'text-red',
+                  logo: githubLogo
+                },
+                {
+                  name: 'PyPI',
+                  available: this.currentNetworkStatus.pip.accessible,
+                  statusText: this.currentNetworkStatus.pip.accessible ? this.$t('network.pypi.accessible') : this.$t('network.pypi.inaccessible'),
+                  statusColor: this.currentNetworkStatus.pip.accessible ? 'green' : 'red',
+                  textColorClass: this.currentNetworkStatus.pip.accessible ? 'text-green' : 'text-red',
+                  logo: pypiLogo
+                },
+                {
+                  name: 'HuggingFace',
+                  available: this.currentNetworkStatus.huggingface.accessible,
+                  statusText: this.currentNetworkStatus.huggingface.accessible ? this.$t('network.huggingface.accessible') : this.$t('network.huggingface.inaccessible'),
+                  statusColor: this.currentNetworkStatus.huggingface.accessible ? 'green' : 'red',
+                  textColorClass: this.currentNetworkStatus.huggingface.accessible ? 'text-green' : 'text-red',
+                  logo: huggingfaceLogo
+                }
+              ];
+              this.allAccessible = this.networkStatuses.every(status => status.available);
+            }
           }
-        ];
-        this.allAccessible = this.networkStatuses.every(status => status.available);
-
-        this.loading = false;
+        }
       }
     } catch (error) {
       // Log error in English
       console.error('Failed to get network status:', error);
     } finally {
-      // Set loading to false after data is fetched, regardless of success or failure
-      
+      // 确保无论成功还是失败都设置 loading 为 false
+      this.loading = false;
     }
   },
   methods: {
@@ -350,10 +369,11 @@ export default defineComponent({
       if (!this.logDialog.checkId) return;
       
       try {
-        const response = await api.get(`system/network-check-log/${this.logDialog.checkId}`);
+        // 使用正确的 API 调用获取网络检查日志
+        const response = await api.getNetworkCheckLog(this.logDialog.checkId);
         console.log('log response:', response);
-        if (response.data.code === 200) {
-          const data = response.data.data;
+        if (response.body && response.body.code === 200) {  // 修复: 使用 response.body 而不是 response.data
+          const data = response.body.data;
           this.logDialog.logs = data.log.logs;
           this.logDialog.status = data.log.status;
           this.currentNetworkStatus = data.currentNetworkStatus;
@@ -365,7 +385,6 @@ export default defineComponent({
             // 更新页面上的网络状态
             this.refreshNetworkStatus();
           }
-          this.logDialog.loading = false;
         }
       } catch (error) {
         // Log error in English
@@ -373,7 +392,7 @@ export default defineComponent({
         // 如果获取日志失败，停止轮询
         this.stopPolling();
       } finally {
-        
+        this.logDialog.loading = false;  // 确保设置 loading 状态为 false
       }
     },
     
