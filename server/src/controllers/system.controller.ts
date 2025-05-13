@@ -43,9 +43,108 @@ interface NetworkCheckLog {
     time: number;
     service?: string;
     message: string;
-    type: 'info' | 'error' | 'success'
+    type: 'info' | 'error' | 'success';
+    lang?: string;  // 添加可选的语言属性
   }>;
   result?: any;
+}
+
+// 添加简单的多语言支持模块
+interface I18nMessages {
+  [key: string]: {
+    [key: string]: string
+  }
+}
+
+// 简单的日志消息翻译
+const logMessages: I18nMessages = {
+  'network.check.started': {
+    'en': 'Network check started',
+    'zh': '网络检查已启动'
+  },
+  'network.check.started.force': {
+    'en': 'Network check started (force mode, cache will be ignored)',
+    'zh': '开始执行网络检查（强制模式，将忽略缓存）'
+  },
+  'network.check.background': {
+    'en': 'Network check started, running in background',
+    'zh': '网络检查已启动，正在后台执行'
+  },
+  'network.check.background.force': {
+    'en': 'Network check started (force mode), running in background',
+    'zh': '网络检查已启动（强制模式），正在后台执行'
+  },
+  'network.proxy.detected': {
+    'en': 'Detected GitHub proxy link: {0}',
+    'zh': '检测到 GitHub 代理链接: {0}'
+  },
+  'network.proxy.check.part': {
+    'en': 'Will only check proxy server part: {0}',
+    'zh': '将只检查代理服务器部分: {0}'
+  },
+  'network.cache.used': {
+    'en': 'Using cached check result, time since last check: {0}s',
+    'zh': '使用缓存的检查结果，距上次检查：{0}秒'
+  },
+  'network.force.recheck': {
+    'en': 'Force recheck',
+    'zh': '强制重新检查'
+  },
+  'network.cache.expired': {
+    'en': 'Cache expired',
+    'zh': '缓存已过期'
+  },
+  'network.need.recheck': {
+    'en': '{0}, need to check again',
+    'zh': '{0}，需要重新检查'
+  },
+  'network.check.services': {
+    'en': 'Starting to check {0} services',
+    'zh': '开始检查 {0} 个服务'
+  },
+  'network.check.url': {
+    'en': 'Starting to check {0}',
+    'zh': '开始检查 {0}'
+  },
+  'network.accessibility.check': {
+    'en': 'Accessibility check: {0}, status code: {1}',
+    'zh': '可访问性检查: {0}, 状态码: {1}'
+  },
+  'network.check.failed': {
+    'en': 'Check failed: {0}',
+    'zh': '检查失败: {0}'
+  },
+  'network.all.checked': {
+    'en': 'All services checked',
+    'zh': '所有服务检查完成'
+  },
+  'network.all.cached': {
+    'en': 'All services use cached results, no need to recheck',
+    'zh': '所有服务使用缓存结果，无需重新检查'
+  },
+  'network.check.completed': {
+    'en': 'Network check completed',
+    'zh': '网络检查已完成'
+  },
+  'network.check.api.started': {
+    'en': 'Network check started, please use the returned checkId to query results',
+    'zh': '网络检查已启动，请使用返回的checkId查询结果'
+  }
+};
+
+// 多语言字符串格式化辅助函数
+function formatMessage(key: string, lang: string, ...args: any[]): string {
+  // 默认为英文
+  const defaultLang = 'en';
+  // 如果没有指定语言，使用默认语言
+  const targetLang = lang || defaultLang;
+  // 如果找不到对应语言，回退到默认语言
+  const message = logMessages[key]?.[targetLang] || logMessages[key]?.[defaultLang] || key;
+  
+  // 替换占位符 {0}, {1}, ...
+  return message.replace(/{(\d+)}/g, (match, index) => {
+    return typeof args[index] !== 'undefined' ? args[index] : match;
+  });
 }
 
 export class SystemController {
@@ -231,21 +330,24 @@ export class SystemController {
   }
   
   /**
-   * 添加日志条目
+   * 添加日志条目，支持多语言
    */
   private logNetworkCheck(
     id: string, 
     message: string, 
     type: 'info' | 'error' | 'success' = 'info', 
-    service?: string
+    service?: string,
+    lang?: string
   ): void {
     const log = this.networkCheckLogs.get(id);
     if (log) {
+      // 存储原始消息，不做语言处理，前端将根据当前语言显示
       log.logs.push({
         time: Date.now(),
         message,
         type,
-        service
+        service,
+        lang // 可选记录当前语言
       });
       console.log(`[Network Check ${id}] ${service ? `[${service}] ` : ''}${message}`);
     }
@@ -258,8 +360,9 @@ export class SystemController {
   public async checkNetworkStatus(ctx: Context): Promise<void> {
     const checkId = this.generateId();
     
-    // 获取强制检查参数
+    // 获取强制检查参数和语言参数
     const forceCheck = ctx.query.force === 'true' || (ctx.request.body as any)?.force === true;
+    const lang = ctx.query.lang as string || (ctx.request.body as any)?.lang || 'en';
     
     // 创建新的检查日志
     const checkLog: NetworkCheckLog = {
@@ -269,15 +372,24 @@ export class SystemController {
       logs: []
     };
     this.addNetworkCheckLog(checkLog);
-    this.logNetworkCheck(checkId, forceCheck 
-      ? "网络检查已启动（强制模式），正在后台执行" 
-      : "网络检查已启动，正在后台执行");
+    
+    // 使用多语言支持记录日志
+    this.logNetworkCheck(
+      checkId, 
+      formatMessage(
+        forceCheck ? 'network.check.background.force' : 'network.check.background', 
+        lang
+      ),
+      'info',
+      undefined,
+      lang
+    );
     
     // 立即返回checkId
     ctx.status = 200;
     ctx.body = {
       code: 200,
-      message: '网络检查已启动，请使用返回的checkId查询结果',
+      message: formatMessage('network.check.api.started', lang),
       data: {
         checkId: checkId,
         status: 'in_progress',
@@ -286,27 +398,46 @@ export class SystemController {
     };
     
     // 异步执行网络检查，不等待它完成
-    this.performNetworkCheck(checkId, forceCheck).catch(error => {
+    this.performNetworkCheck(checkId, forceCheck, lang).catch(error => {
       console.error('执行网络检查时发生错误:', error);
       const log = this.networkCheckLogs.get(checkId);
       if (log) {
         log.status = 'failed';
         log.endTime = Date.now();
-        this.logNetworkCheck(checkId, `网络检查失败: ${error.message}`, 'error');
+        this.logNetworkCheck(
+          checkId, 
+          `${formatMessage('network.check.failed', lang)}: ${error.message}`, 
+          'error',
+          undefined,
+          lang
+        );
       }
     });
   }
   
   /**
-   * 执行网络检查（内部方法）
+   * 执行网络检查（内部方法），支持多语言
    * @param checkId 检查ID
    * @param forceCheck 是否强制检查（忽略缓存）
+   * @param lang 语言
    */
-  private async performNetworkCheck(checkId: string, forceCheck: boolean = false): Promise<void> {
+  private async performNetworkCheck(
+    checkId: string, 
+    forceCheck: boolean = false,
+    lang: string = 'en'
+  ): Promise<void> {
     const now = Date.now();
-    this.logNetworkCheck(checkId, forceCheck 
-      ? "开始执行网络检查（强制模式，将忽略缓存）" 
-      : "开始执行网络检查");
+    
+    this.logNetworkCheck(
+      checkId, 
+      formatMessage(
+        forceCheck ? 'network.check.started.force' : 'network.check.started', 
+        lang
+      ),
+      'info',
+      undefined,
+      lang
+    );
     
     // 定义需要检查的网站，优先使用环境变量中配置的代理地址
     const sitesToCheck = [
@@ -331,9 +462,20 @@ export class SystemController {
     if (sitesToCheck[0].url && sitesToCheck[0].url.includes('gh-proxy.com')) {
       const proxyUrlMatch = sitesToCheck[0].url.match(/(https?:\/\/gh-proxy\.com)/);
       if (proxyUrlMatch && proxyUrlMatch[1]) {
-        // 如果是 gh-proxy.com 格式的链接，仅检查代理服务器部分
-        this.logNetworkCheck(checkId, `检测到 GitHub 代理链接: ${sitesToCheck[0].url}`, 'info', 'github');
-        this.logNetworkCheck(checkId, `将只检查代理服务器部分: ${proxyUrlMatch[1]}`, 'info', 'github');
+        this.logNetworkCheck(
+          checkId, 
+          formatMessage('network.proxy.detected', lang, sitesToCheck[0].url), 
+          'info', 
+          'github',
+          lang
+        );
+        this.logNetworkCheck(
+          checkId, 
+          formatMessage('network.proxy.check.part', lang, proxyUrlMatch[1]), 
+          'info', 
+          'github',
+          lang
+        );
         sitesToCheck[0].url = proxyUrlMatch[1];
       }
     }
@@ -346,15 +488,22 @@ export class SystemController {
       if (isCacheValid) {
         this.logNetworkCheck(
           checkId, 
-          `使用缓存的检查结果，距上次检查：${(now - cached.lastCheckTime) / 1000}秒`, 
+          formatMessage('network.cache.used', lang, (now - cached.lastCheckTime) / 1000), 
           'info', 
-          site.name
+          site.name,
+          lang
         );
         // 更新URL（可能配置已变更）
         cached.url = site.url;
       } else {
-        const reason = forceCheck ? "强制重新检查" : "缓存已过期";
-        this.logNetworkCheck(checkId, `${reason}，需要重新检查`, 'info', site.name);
+        const reason = forceCheck ? formatMessage('network.force.recheck', lang) : formatMessage('network.cache.expired', lang);
+        this.logNetworkCheck(
+          checkId, 
+          formatMessage('network.need.recheck', lang, site.name, reason), 
+          'info', 
+          site.name,
+          lang
+        );
       }
       
       return !isCacheValid;
@@ -362,12 +511,24 @@ export class SystemController {
     
     // 如果有网站需要检查，则进行检查
     if (sitesNeedCheck.length > 0) {
-      this.logNetworkCheck(checkId, `开始检查 ${sitesNeedCheck.length} 个服务`);
+      this.logNetworkCheck(
+        checkId, 
+        formatMessage('network.check.services', lang, sitesNeedCheck.length), 
+        'info', 
+        undefined,
+        lang
+      );
       
       // 并行检查所有需要检查的网站
       await Promise.all(sitesNeedCheck.map(async (site) => {
         try {
-          this.logNetworkCheck(checkId, `开始检查 ${site.url}`, 'info', site.name);
+          this.logNetworkCheck(
+            checkId, 
+            formatMessage('network.check.url', lang, site.url), 
+            'info', 
+            site.name,
+            lang
+          );
           const response = await superagent
             .get(site.url)
             .timeout({
@@ -380,12 +541,13 @@ export class SystemController {
           this.networkCheckCache[site.name].lastCheckTime = now;
           this.networkCheckCache[site.name].url = site.url;
           
-          const resultMessage = `可访问性检查: ${this.networkCheckCache[site.name].accessible}, 状态码: ${response.status}`;
+          const resultMessage = formatMessage('network.accessibility.check', lang, this.networkCheckCache[site.name].accessible, response.status);
           this.logNetworkCheck(
             checkId, 
             resultMessage, 
             this.networkCheckCache[site.name].accessible ? 'success' : 'error',
-            site.name
+            site.name,
+            lang
           );
         } catch (error) {
           this.networkCheckCache[site.name].accessible = false;
@@ -394,16 +556,29 @@ export class SystemController {
           
           this.logNetworkCheck(
             checkId, 
-            `检查失败: ${error instanceof Error ? error.message : String(error)}`, 
+            formatMessage('network.check.failed', lang, error instanceof Error ? error.message : String(error)), 
             'error', 
-            site.name
+            site.name,
+            lang
           );
         }
       }));
       
-      this.logNetworkCheck(checkId, "所有服务检查完成");
+      this.logNetworkCheck(
+        checkId, 
+        formatMessage('network.all.checked', lang), 
+        'success', 
+        undefined,
+        lang
+      );
     } else {
-      this.logNetworkCheck(checkId, "所有服务使用缓存结果，无需重新检查");
+      this.logNetworkCheck(
+        checkId, 
+        formatMessage('network.all.cached', lang), 
+        'info', 
+        undefined,
+        lang
+      );
     }
     
     // 构建响应结果
@@ -431,7 +606,13 @@ export class SystemController {
       log.status = 'completed';
       log.endTime = Date.now();
       log.result = checkResult;
-      this.logNetworkCheck(checkId, "网络检查已完成", 'success');
+      this.logNetworkCheck(
+        checkId, 
+        formatMessage('network.check.completed', lang), 
+        'success',
+        undefined,
+        lang
+      );
     }
   }
   
@@ -441,12 +622,14 @@ export class SystemController {
    */
   public async getNetworkCheckLog(ctx: Context): Promise<void> {
     const checkId = ctx.params.id || ctx.query.id as string;
+    // 获取语言参数
+    const lang = ctx.query.lang as string || 'en';
     
     if (!checkId) {
       ctx.status = 400;
       ctx.body = {
         code: 400,
-        message: '缺少检查ID参数',
+        message: lang === 'zh' ? '缺少检查ID参数' : 'Missing check ID parameter',
         data: null
       };
       return;

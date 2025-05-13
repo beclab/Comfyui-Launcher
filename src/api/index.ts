@@ -157,20 +157,37 @@ export const get = async <T>(url: string): Promise<ApiResponse<T> | Response> =>
   }
 };
 
+// 首先定义一个更安全的查询参数类型
+type QueryParamValue = string | number | boolean | null | undefined;
+
 // 统一API接口
 const api = {
   // 通用HTTP方法
-  get: (url: string) => {
+  get: (url: string, options?: { params?: Record<string, QueryParamValue> }) => {
     // 确保URL格式正确（不要包含前导斜杠），因为已经在 API_BASE_URL 中添加了
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
     console.log(`发送GET请求到: ${API_BASE_URL}/${cleanUrl}`);
-    return adaptResponse(superagent.get(`${API_BASE_URL}/${cleanUrl}`).use(debug));
+    
+    const req = superagent.get(`${API_BASE_URL}/${cleanUrl}`).use(debug);
+    
+    // 如果有查询参数，添加到请求中
+    if (options?.params) {
+      req.query(options.params);
+    }
+    
+    return adaptResponse(req);
   },
   
-  post: (url: string, data?: ApiData) => {
+  post: (url: string, data?: ApiData, options?: { params?: Record<string, QueryParamValue> }) => {
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
     console.log(`发送POST请求到: ${API_BASE_URL}/${cleanUrl}`);
     const req = superagent.post(`${API_BASE_URL}/${cleanUrl}`).use(debug);
+    
+    // 如果有查询参数，添加到请求中
+    if (options?.params) {
+      req.query(options.params);
+    }
+    
     if (data) {
       req.send(data);
     }
@@ -303,9 +320,14 @@ const api = {
   getNetworkStatus: () => 
     superagent.get(`${API_BASE_URL}/system/network-status`).use(debug),
   
-  // 添加获取网络检查日志的方法
-  getNetworkCheckLog: (checkId: string) => 
-    superagent.get(`${API_BASE_URL}/system/network-check-log/${checkId}`).use(debug),
+  // 获取网络检查日志
+  getNetworkCheckLog: (checkId: string, params = {}) => {
+    return superagent
+      .get(`${API_BASE_URL}/system/network-check-log/${checkId}`)
+      .query(params)
+      .set('Content-Type', 'application/json')
+      .set('Accept', 'application/json');
+  },
   
   setGithubProxy: (githubProxy: string) => 
     superagent.post(`${API_BASE_URL}/system/github-proxy`).send({ githubProxy }).use(debug),

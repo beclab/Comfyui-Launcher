@@ -170,7 +170,7 @@
                     </q-avatar>
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label>PIP 源</q-item-label>
+                    <q-item-label>{{ $t('network.pipSource') }}</q-item-label>
                     <q-item-label caption>
                       <q-chip 
                         dense 
@@ -283,6 +283,9 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import api from 'src/api';
+import { useI18n } from 'vue-i18n';
+
+const i18n = useI18n();
 
 // 输入框绑定的URL值
 const githubUrl = ref('');
@@ -377,7 +380,14 @@ const fetchNetworkCheckLog = async () => {
   if (!logDialog.value.checkId) return;
   
   try {
-    const response = (await api.getNetworkCheckLog(logDialog.value.checkId)).body;
+    // 获取当前语言
+    const currentLocale = i18n.locale.value;
+    
+    const response = (await api.getNetworkCheckLog(
+      logDialog.value.checkId, 
+      { lang: currentLocale }
+    )).body;
+    
     console.log('response:', response);
     if (response.code === 200) {
       const data = response.data;
@@ -440,16 +450,19 @@ const fetchNetworkConfig = async () => {
   }
 };
 
-// 检查网络状态 - 修改版本，支持日志查看
+// 检查网络状态 - 修改版本，支持日志查看，并传递语言信息
 const checkNetworkStatus = async () => {
   try {
-    const response = await api.get('system/network-status');
+    // 获取当前语言
+    const currentLocale = i18n.locale.value;
+    
+    const response = await api.get('system/network-status', {
+      params: { lang: currentLocale }
+    });
+    
     console.log('response:', response);
     if (response.data.code === 200) {
       const result = response.data.data;
-      // networkStatus.value.github = result.result.github.accessible;
-      // networkStatus.value.pip = result.result.pip.accessible;
-      // networkStatus.value.huggingface = result.result.huggingface.accessible;
       
       // 获取检查ID并开始轮询日志
       const checkId = result.checkId;
@@ -472,8 +485,15 @@ const checkNetworkStatus = async () => {
 async function forceCheckNetworkStatus() {
   const checkingNetwork = ref(true);
   try {
+    // 获取当前语言
+    const currentLocale = i18n.locale.value;
+    
     // 使用 POST 请求并传递 force=true 参数
-    const response = await api.post('system/network-status', { force: true });
+    const response = await api.post('system/network-status', { 
+      force: true,
+      lang: currentLocale
+    });
+    
     console.log('强制检测网络响应:', response);
     
     if (response.data.code === 200) {

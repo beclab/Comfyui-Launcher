@@ -92,7 +92,7 @@
                     </q-avatar>
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label>PIP 源</q-item-label>
+                    <q-item-label>{{ $t('network.pipSource') }}</q-item-label>
                     <q-item-label caption>
                       <q-chip 
                         dense 
@@ -305,7 +305,15 @@ export default defineComponent({
     // 检查网络状态
     async checkNetworkStatus() {
       try {
-        const response = await api.get('system/network-status');
+        // 获取当前语言并传递给后端
+        const currentLocale = this.$i18n.locale;
+        
+        const response = await api.get('system/network-status', {
+          params: { 
+            lang: currentLocale 
+          }
+        });
+        
         console.log('response:', response);
         if (response.data.code === 200) {
           const result = response.data.data;
@@ -331,8 +339,15 @@ export default defineComponent({
     async forceCheckNetworkStatus() {
       this.checkingNetwork = true;
       try {
+        // 获取当前语言并传递给后端
+        const currentLocale = this.$i18n.locale;
+        
         // 使用 POST 请求并传递 force=true 参数
-        const response = await api.post('system/network-status', { force: true });
+        const response = await api.post('system/network-status', { 
+          force: true,
+          lang: currentLocale 
+        });
+        
         console.log('Force check network response:', response);
         
         if (response.data.code === 200) {
@@ -369,10 +384,14 @@ export default defineComponent({
       if (!this.logDialog.checkId) return;
       
       try {
-        // 使用正确的 API 调用获取网络检查日志
-        const response = await api.getNetworkCheckLog(this.logDialog.checkId);
+        // 获取当前语言
+        const currentLocale = this.$i18n.locale;
+        
+        // 使用正确的 API 调用获取网络检查日志，并传递语言参数
+        const response = await api.getNetworkCheckLog(this.logDialog.checkId, { lang: currentLocale });
+        
         console.log('log response:', response);
-        if (response.body && response.body.code === 200) {  // 修复: 使用 response.body 而不是 response.data
+        if (response.body && response.body.code === 200) {
           const data = response.body.data;
           this.logDialog.logs = data.log.logs;
           this.logDialog.status = data.log.status;
@@ -392,7 +411,7 @@ export default defineComponent({
         // 如果获取日志失败，停止轮询
         this.stopPolling();
       } finally {
-        this.logDialog.loading = false;  // 确保设置 loading 状态为 false
+        this.logDialog.loading = false;
       }
     },
     

@@ -67,6 +67,7 @@ export default {
       selectUrl: '选择访问的 URL 地址'
     },
     environment: '网络环境',
+    pipSource: 'PIP 源',
     checkNetwork: '检测',
     loading: '加载配置中...',
     networkTest: '网络检测结果',

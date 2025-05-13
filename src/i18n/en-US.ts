@@ -69,6 +69,7 @@ export default {
       selectUrl: 'Select the URL to access'
     },
     environment: 'Network environment',
+    pipSource: 'PIP Source',
     pypi: {
       title: 'PyPI',
       accessible: 'Accessible',
