@@ -43,7 +43,7 @@
               <span class="version-text">{{ $t('comfyuiStatus.version.launcher') }} {{ versions.app }}</span>
             </q-chip>
             <q-chip dense size="sm" class="version-chip">
-              <span class="version-text">{{ $t('comfyuiStatus.version.gpu') }}: {{ gpuMode }}</span>
+              <span class="version-text">{{ $t('comfyuiStatus.version.gpu') }}: {{ $t(`comfyuiStatus.gpuMode.${gpuMode}`) }}</span>
             </q-chip>
           </div>
           

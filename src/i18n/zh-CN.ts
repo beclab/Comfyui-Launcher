@@ -194,6 +194,10 @@ export default {
       rememberChoice: '记住我的选择',
       confirmStart: '仍然启动',
       installModels: '安装模型'
+    },
+    gpuMode: {
+      independent: '独立模式',
+      shared: '共享模式'
     }
   },
   folderAccess: {

@@ -294,11 +294,11 @@ export class ComfyUIController {
     const nvshareMode = process.env.NVSHARE_MANAGED_MEMORY;
     
     if (nvshareMode === '0') {
-      return '独立模式';
+      return 'independent';
     } else if (nvshareMode === '1'){
-      return '共享模式';
+      return 'shared';
     } else {
-      return '共享模式';
+      return 'shared';
     }
   }
 

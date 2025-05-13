@@ -208,6 +208,10 @@ export default {
       rememberChoice: 'Remember my choice',
       confirmStart: 'Start anyway',
       installModels: 'Install models'
+    },
+    gpuMode: {
+      independent: 'Standalone Mode',
+      shared: 'Shared Mode'
     }
   },
   modelsPage: {
