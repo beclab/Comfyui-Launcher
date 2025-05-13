@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="hHh lpR fFf">
+  <q-layout view="hHh LpR fFf">
     <!--
     <q-header class="bg-white text-black" v-if="!isInIframe">
       <q-toolbar>
@@ -29,6 +29,7 @@
       behavior="desktop"
       :breakpoint="0"
       :offset="isInIframe ? 0 : undefined"
+      fixed
     >
       <q-list class="custom-menu">
         <q-item-label header>{{ $t('menu.navigation') }}</q-item-label>
