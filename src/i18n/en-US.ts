@@ -319,7 +319,12 @@ export default {
       facerestore: 'Face restore',
       detector: 'Detector',
       segmentation: 'Segmentation',
-      other: 'Other'
+      other: 'Other',
+      taesd: 'TAESD Decoder',
+      deepbump: 'Normal Map Gen',
+      zero123: '3D Recon Model',
+      diffusion_model: 'Diffusion Model',
+      clip: 'CLIP Model'
     },
     noModelsFound: 'No matching models found',
     loadingModels: 'Loading models...',

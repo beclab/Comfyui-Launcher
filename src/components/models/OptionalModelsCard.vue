@@ -792,29 +792,73 @@ export default defineComponent({
     
     // 获取模型类型标签
     const getTypeLabel = (type: string): string => {
-      // 使用 i18n 获取模型类型标签
-      return t(`optionalModels.modelTypes.${type}`) || type;
+      // 处理类型名称，转小写并规范化
+      const normalizedType = type.toLowerCase();
+      
+      // 类型映射表，处理特殊情况
+      const typeMapping: Record<string, string> = {
+        'vae': 'vae',
+        'vae_approx': 'vae_approx',
+        'taesd': 'taesd',
+        'upscale': 'upscaler',
+        'upscaler': 'upscaler',
+        'deepbump': 'deepbump',
+        'face_restore': 'facerestore',
+        'facerestore': 'facerestore',
+        'zero123': 'zero123',
+        'diffusion_model': 'diffusion_model',
+        'clip': 'clip',
+        'checkpoint': 'checkpoint',
+        'lora': 'lora',
+        'controlnet': 'controlnet',
+        'embedding': 'embedding',
+        'ipadapter': 'ipadapter',
+        'motion': 'motion',
+        'detector': 'detector',
+        'segmentation': 'segmentation'
+      };
+      
+      // 获取映射后的类型
+      const mappedType = typeMapping[normalizedType];
+      
+      // 如果是已知类型，使用 i18n 翻译，否则直接返回原始类型名
+      if (mappedType) {
+        return t(`optionalModels.modelTypes.${mappedType}`);
+      } else {
+        // 未知类型直接返回原始名称
+        return type;
+      }
     };
     
     // 获取模型类型颜色
     const getTypeColor = (type: string): string => {
+      // 转换为小写以匹配规范化的类型
+      const normalizedType = type.toLowerCase();
+      
       const typeColors: Record<string, string> = {
-        checkpoint: 'primary',
-        vae: 'deep-purple',
-        vae_approx: 'purple',
-        lora: 'teal',
-        controlnet: 'orange',
-        upscaler: 'green',
-        embedding: 'cyan',
-        ipadapter: 'red',
-        motion: 'blue',
-        facerestore: 'indigo',
-        detector: 'brown',
-        segmentation: 'light-green',
-        other: 'grey'
+        'checkpoint': 'primary',
+        'vae': 'deep-purple',
+        'vae_approx': 'purple',
+        'taesd': 'light-blue',
+        'lora': 'teal',
+        'controlnet': 'orange',
+        'upscaler': 'green',
+        'upscale': 'green',
+        'embedding': 'cyan',
+        'ipadapter': 'red',
+        'motion': 'blue',
+        'facerestore': 'indigo',
+        'face_restore': 'indigo',
+        'detector': 'brown',
+        'segmentation': 'light-green',
+        'deepbump': 'deep-orange',
+        'zero123': 'pink',
+        'diffusion_model': 'blue-grey',
+        'clip': 'amber'
       };
       
-      return typeColors[type] || 'grey';
+      // 对于已知类型返回对应颜色，否则返回灰色
+      return typeColors[normalizedType] || 'grey';
     };
     
     // 修改刷新函数，保持当前分页状态

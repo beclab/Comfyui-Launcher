@@ -319,7 +319,12 @@ export default {
       facerestore: '人脸修复',
       detector: '检测器',
       segmentation: '分割模型',
-      other: '其他'
+      other: '其他',
+      taesd: 'TAESD解码器',
+      deepbump: '法线贴图生成',
+      zero123: '3D重建模型',
+      diffusion_model: '扩散模型',
+      clip: 'CLIP模型'
     },
     noModelsFound: '没有找到匹配的模型',
     loadingModels: '加载模型中...',
