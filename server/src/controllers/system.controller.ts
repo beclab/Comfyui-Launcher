@@ -136,8 +136,13 @@ const logMessages: I18nMessages = {
 function formatMessage(key: string, lang: string, ...args: any[]): string {
   // 默认为英文
   const defaultLang = 'en';
-  // 如果没有指定语言，使用默认语言
-  const targetLang = lang || defaultLang;
+  
+  // 处理带有区域代码的语言标识，例如将 'zh-CN' 转换为 'zh'
+  let targetLang = lang || defaultLang;
+  if (targetLang.startsWith('zh')) {
+    targetLang = 'zh';
+  }
+  
   // 如果找不到对应语言，回退到默认语言
   const message = logMessages[key]?.[targetLang] || logMessages[key]?.[defaultLang] || key;
   
