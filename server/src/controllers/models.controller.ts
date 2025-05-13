@@ -567,7 +567,13 @@ export class ModelsController extends DownloadController {
 
   // 在路由处理中添加获取下载进度的端点
   async getModelProgress(ctx: Context): Promise<void> {
-    // 直接调用父类的 getProgress 方法
+    // 从查询参数获取语言设置
+    const locale = ctx.query.lang as string || this.getClientLocale(ctx) || 'zh';
+    
+    // 注入语言参数到ctx中
+    ctx.state.locale = locale;
+    
+    // 调用父类的 getProgress 方法
     await this.getProgress(ctx);
   }
 

@@ -300,16 +300,47 @@ const api = {
     superagent.get(`${API_BASE_URL}/comfyui/reset-logs`).query({ lang }).use(debug),
 
   // 获取下载历史记录
-  getDownloadHistory: (lang?: string) => 
-    superagent.get(`${API_BASE_URL}/models/download-history`).query({ lang }).use(debug),
+  getDownloadHistory: (options?: { params?: { lang?: string } } | string) => {
+    // 如果参数是字符串，则直接作为lang参数
+    if (typeof options === 'string') {
+      return superagent.get(`${API_BASE_URL}/models/download-history`).query({ lang: options }).use(debug);
+    }
+    // 如果参数是对象且包含params属性，则使用params中的lang
+    else if (options && 'params' in options && options.params) {
+      return superagent.get(`${API_BASE_URL}/models/download-history`).query(options.params).use(debug);
+    }
+    // 没有参数的情况
+    return superagent.get(`${API_BASE_URL}/models/download-history`).use(debug);
+  },
 
   // 清空下载历史记录
-  clearDownloadHistory: (lang?: string) => 
-    superagent.post(`${API_BASE_URL}/models/download-history/clear`).query({ lang }).use(debug),
+  clearDownloadHistory: (options?: { params?: { lang?: string } } | string) => {
+    // 如果参数是字符串，则直接作为lang参数
+    if (typeof options === 'string') {
+      return superagent.post(`${API_BASE_URL}/models/download-history/clear`).query({ lang: options }).use(debug);
+    }
+    // 如果参数是对象且包含params属性，则使用params中的lang
+    else if (options && 'params' in options && options.params) {
+      return superagent.post(`${API_BASE_URL}/models/download-history/clear`).query(options.params).use(debug);
+    }
+    // 没有参数的情况
+    return superagent.post(`${API_BASE_URL}/models/download-history/clear`).use(debug);
+  },
 
   // 删除单条下载历史记录
-  deleteDownloadHistoryItem: (id: string, lang?: string) => 
-    superagent.post(`${API_BASE_URL}/models/download-history/delete`).send({ id, lang }).use(debug),
+  deleteDownloadHistoryItem: (id: string, options?: { params?: { lang?: string } } | string) => {
+    // 如果第二个参数是字符串，则直接作为lang参数
+    if (typeof options === 'string') {
+      return superagent.post(`${API_BASE_URL}/models/download-history/delete`).send({ id, lang: options }).use(debug);
+    }
+    // 如果第二个参数是对象且包含params属性，则使用params中的lang
+    else if (options && 'params' in options && options.params) {
+      const lang = options.params.lang;
+      return superagent.post(`${API_BASE_URL}/models/download-history/delete`).send({ id, lang }).use(debug);
+    }
+    // 只有id参数的情况
+    return superagent.post(`${API_BASE_URL}/models/download-history/delete`).send({ id }).use(debug);
+  },
 
   // 添加打开路径的API方法
   openPath: (path: string) => 

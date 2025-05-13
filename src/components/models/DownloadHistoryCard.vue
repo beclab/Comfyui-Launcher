@@ -140,10 +140,12 @@ export default defineComponent({
   
   setup(props) {
     const $q = useQuasar();
-    const { t } = useI18n();
+    const { t, locale } = useI18n();
     const history = ref<DownloadHistoryItem[]>([]);
     const loading = ref(false);
-    const selectedLanguage = ref(props.preferredLanguage);
+    
+    // 使用计算属性获取当前的语言设置，优先使用props中传入的值
+    const selectedLanguage = computed(() => locale.value || 'zh');
     
     // Pagination settings
     const pagination = ref({
@@ -224,16 +226,24 @@ export default defineComponent({
     const fetchHistory = async () => {
       loading.value = true;
       try {
-        // Add language parameter to API request
-        const response = await api.getDownloadHistory(selectedLanguage.value);
+        // 获取当前语言并简化处理（如将"zh-CN"转换为"zh"）
+        let currentLocale = selectedLanguage.value;
+        // 简化语言代码，只保留主要语言部分（如从"zh-CN"提取"zh"）
+        currentLocale = currentLocale.split('-')[0];
+        
+        const response = await api.getDownloadHistory({ 
+          params: { lang: currentLocale } 
+        });
+        
+        // 处理响应
         history.value = response.body.history || [];
-        // Sort by time in descending order
+        // 按时间降序排序
         history.value.sort((a, b) => b.startTime - a.startTime);
       } catch (error) {
         console.error('Failed to fetch download history:', error);
         $q.notify({
           color: 'negative',
-          message: '获取下载历史记录失败',
+          message: t('downloadHistory.error.fetchFailed'),
           icon: 'error'
         });
       } finally {
@@ -255,14 +265,23 @@ export default defineComponent({
         persistent: true
       }).onOk(async () => {
         try {
-          // Add language parameter to API request
-          await api.clearDownloadHistory(selectedLanguage.value);
-          history.value = [];
-          $q.notify({
-            color: 'positive',
-            message: t('downloadHistory.dialog.success.cleared'),
-            icon: 'check_circle'
-          });
+          // 使用正确的API调用方式并检查响应
+          // const currentLocale = selectedLanguage.value;
+          const response = await api.clearDownloadHistory();
+          
+          // 检查响应状态
+          if (response.body.success) {
+            // 成功清除后更新UI
+            history.value = [];
+            $q.notify({
+              color: 'positive',
+              message: t('downloadHistory.dialog.success.cleared'),
+              icon: 'check_circle'
+            });
+          } else {
+            // 响应不成功但没有抛出异常的情况
+            throw new Error(response.body.message || '清除历史记录失败');
+          }
         } catch (error) {
           console.error('Failed to clear history:', error);
           $q.notify({
@@ -283,15 +302,23 @@ export default defineComponent({
         persistent: true
       }).onOk(async () => {
         try {
-          // Add language parameter to API request
-          await api.deleteDownloadHistoryItem(item.id, selectedLanguage.value);
-          // Remove from list
-          history.value = history.value.filter(record => record.id !== item.id);
-          $q.notify({
-            color: 'positive',
-            message: t('downloadHistory.dialog.success.deleted'),
-            icon: 'check_circle'
-          });
+          // 使用正确的API调用方式并检查响应
+          // const currentLocale = selectedLanguage.value;
+          const response = await api.deleteDownloadHistoryItem(item.id);
+          
+          // 检查响应状态
+          if (response.body.success) {
+            // 成功删除后从列表中移除
+            history.value = history.value.filter(record => record.id !== item.id);
+            $q.notify({
+              color: 'positive',
+              message: t('downloadHistory.dialog.success.deleted'),
+              icon: 'check_circle'
+            });
+          } else {
+            // 响应不成功但没有抛出异常的情况
+            throw new Error(response.body.message || '删除记录失败');
+          }
         } catch (error) {
           console.error('Failed to delete record:', error);
           $q.notify({
@@ -363,13 +390,13 @@ export default defineComponent({
       return t('downloadHistory.time.hours', { hours, minutes: remainingMinutes });
     };
     
-    // Watch for preferredLanguage property changes
-    watch(() => props.preferredLanguage, (newLang) => {
-      selectedLanguage.value = newLang;
+    // 监听语言变化（包括i18n和props变化）
+    watch([() => props.preferredLanguage, locale], () => {
+      // 当语言变化时刷新数据
       fetchHistory();
     });
     
-    // Fetch history on component mount
+    // 组件挂载时获取历史记录
     onMounted(() => {
       fetchHistory();
     });

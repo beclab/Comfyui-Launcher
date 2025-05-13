@@ -160,7 +160,7 @@ export class DownloadController {
         history: localizedHistory
       };
     } catch (error) {
-      logger.error(`Failed to get download history: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`获取下载历史记录失败: ${error instanceof Error ? error.message : String(error)}`);
       ctx.status = 500;
       ctx.body = {
         success: false,
@@ -172,7 +172,7 @@ export class DownloadController {
   // 清除下载历史记录
   public async clearDownloadHistory(ctx: Koa.Context): Promise<void> {
     try {
-      // 正确进行类型断言
+      // 正确进行类型断言以获取语言参数
       const body = ctx.request.body as { lang?: string };
       const locale = body.lang || this.getClientLocale(ctx) || i18nLogger.getLocale();
       
@@ -184,7 +184,7 @@ export class DownloadController {
         message: i18nLogger.translate('download.history.cleared', { lng: locale })
       };
     } catch (error) {
-      logger.error(`Failed to clear download history: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`清除下载历史记录失败: ${error instanceof Error ? error.message : String(error)}`);
       ctx.status = 500;
       ctx.body = {
         success: false,
@@ -195,7 +195,7 @@ export class DownloadController {
   
   // 删除特定的下载历史记录项
   public async deleteDownloadHistoryItem(ctx: Koa.Context): Promise<void> {
-    // 获取请求中的ID，正确进行类型断言
+    // 获取请求中的ID和语言参数
     const body = ctx.request.body as { id?: string, lang?: string };
     const { id, lang } = body;
     const locale = lang || this.getClientLocale(ctx) || i18nLogger.getLocale();
@@ -235,7 +235,7 @@ export class DownloadController {
         };
       }
     } catch (error) {
-      logger.error(`Failed to delete download history item: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`删除下载历史记录项失败: ${error instanceof Error ? error.message : String(error)}`);
       ctx.status = 500;
       ctx.body = {
         success: false,
@@ -244,8 +244,8 @@ export class DownloadController {
     }
   }
   
-  // 获取客户端首选语言
-  private getClientLocale(ctx: Koa.Context): string | undefined {
+  // 获取客户端首选语言 - 从private改为protected，使子类可以继承使用
+  protected getClientLocale(ctx: Koa.Context): string | undefined {
     // 从查询参数获取
     if (ctx.query.lang && typeof ctx.query.lang === 'string') {
       return ctx.query.lang;
