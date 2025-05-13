@@ -66,7 +66,8 @@ export default {
       title: 'GitHub',
       accessible: 'Accessible',
       inaccessible: 'Inaccessible',
-      selectUrl: 'Select the URL to access'
+      selectUrl: 'Select the URL to access',
+      urlRequired: 'GitHub proxy URL cannot be empty'
     },
     environment: 'Network environment',
     pipSource: 'PIP Source',
@@ -74,13 +75,15 @@ export default {
       title: 'PyPI',
       accessible: 'Accessible',
       inaccessible: 'Inaccessible',
-      selectUrl: 'Select the URL to access'
+      selectUrl: 'Select the URL to access',
+      urlRequired: 'PIP source URL cannot be empty'
     },
     huggingface: {
       title: 'HuggingFace',
       accessible: 'Accessible',
       inaccessible: 'Inaccessible',
-      selectUrl: 'Select the URL to access'
+      selectUrl: 'Select the URL to access',
+      urlRequired: 'Hugging Face endpoint URL cannot be empty'
     },
     checkNetwork: 'Check',
     loading: 'Loading configuration...',
@@ -96,7 +99,12 @@ export default {
     checkLogs: 'Check Logs',
     loadingLogs: 'Loading logs...',
     noLogs: 'No logs available',
-    forceCheck: 'Force Re-check'
+    forceCheck: 'Force Re-check',
+    error: 'Error',
+    warning: 'Warning',
+    success: 'Success',
+    fetchConfigError: 'Failed to fetch network configuration',
+    checkNetworkError: 'Failed to check network status'
   },
   python: {
     dependencies: 'Python dependencies',

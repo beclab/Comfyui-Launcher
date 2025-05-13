@@ -52,19 +52,22 @@ export default {
       title: 'GitHub',
       accessible: '可访问',
       inaccessible: '访问超时',
-      selectUrl: '选择访问的 URL 地址'
+      selectUrl: '选择访问的 URL 地址',
+      urlRequired: 'GitHub代理URL不能为空'
     },
     pypi: {
       title: 'PyPI',
       accessible: '可访问',
       inaccessible: '访问超时',
-      selectUrl: '选择访问的 URL 地址'
+      selectUrl: '选择访问的 URL 地址',
+      urlRequired: 'PIP源URL不能为空'
     },
     huggingface: {
       title: 'HuggingFace',
       accessible: '可访问',
       inaccessible: '检测中',
-      selectUrl: '选择访问的 URL 地址'
+      selectUrl: '选择访问的 URL 地址',
+      urlRequired: 'Hugging Face端点URL不能为空'
     },
     environment: '网络环境',
     pipSource: 'PIP 源',
@@ -82,7 +85,12 @@ export default {
     checkLogs: '检测日志',
     loadingLogs: '加载日志中...',
     noLogs: '暂无日志记录',
-    forceCheck: '强制重新检测'
+    forceCheck: '强制重新检测',
+    error: '错误',
+    warning: '警告',
+    success: '成功',
+    fetchConfigError: '获取网络配置失败',
+    checkNetworkError: '检查网络状态失败'
   },
   python: {
     dependencies: 'Python 依赖',

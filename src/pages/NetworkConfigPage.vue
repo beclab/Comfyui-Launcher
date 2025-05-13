@@ -444,7 +444,7 @@ const fetchNetworkConfig = async () => {
     }
   } catch (error) {
     console.error('Failed to fetch network config:', error);
-    showNotify('错误', '获取网络配置失败', 'negative');
+    showNotify($t('network.error'), $t('network.fetchConfigError'), 'negative');
   } finally {
     loading.value = false;
   }
@@ -477,7 +477,7 @@ const checkNetworkStatus = async () => {
     }
   } catch (error) {
     console.error('Failed to check network status:', error);
-    showNotify('错误', '检查网络状态失败', 'negative');
+    showNotify($t('network.error'), $t('network.checkNetworkError'), 'negative');
   }
 };
 
@@ -529,7 +529,7 @@ async function forceCheckNetworkStatus() {
 // 保存GitHub配置
 const saveGithubConfig = async () => {
   if (!githubUrl.value.trim()) {
-    showNotify('警告', 'GitHub代理URL不能为空', 'warning');
+    showNotify($t('network.warning'), $t('network.github.urlRequired'), 'warning');
     return;
   }
   
@@ -540,13 +540,13 @@ const saveGithubConfig = async () => {
     });
     
     if (response.data.code === 200) {
-      showNotify('成功', $t('network.saveSuccess'), 'positive');
+      showNotify($t('network.success'), $t('network.saveSuccess'), 'positive');
       // 更新网络状态
       checkNetworkStatus();
     }
   } catch (error) {
     console.error('Failed to save GitHub proxy config:', error);
-    showNotify('错误', $t('network.saveError'), 'negative');
+    showNotify($t('network.error'), $t('network.saveError'), 'negative');
   } finally {
     isSaving.value.github = false;
   }
@@ -555,7 +555,7 @@ const saveGithubConfig = async () => {
 // 保存PIP配置
 const savePipConfig = async () => {
   if (!pypiUrl.value.trim()) {
-    showNotify('警告', 'PIP源URL不能为空', 'warning');
+    showNotify($t('network.warning'), $t('network.pypi.urlRequired'), 'warning');
     return;
   }
   
@@ -566,13 +566,13 @@ const savePipConfig = async () => {
     });
     
     if (response.data.code === 200) {
-      showNotify('成功', $t('network.saveSuccess'), 'positive');
+      showNotify($t('network.success'), $t('network.saveSuccess'), 'positive');
       // 更新网络状态
       checkNetworkStatus();
     }
   } catch (error) {
     console.error('Failed to save PIP source config:', error);
-    showNotify('错误', $t('network.saveError'), 'negative');
+    showNotify($t('network.error'), $t('network.saveError'), 'negative');
   } finally {
     isSaving.value.pip = false;
   }
@@ -581,7 +581,7 @@ const savePipConfig = async () => {
 // 保存HuggingFace配置
 const saveHuggingFaceConfig = async () => {
   if (!huggingfaceUrl.value.trim()) {
-    showNotify('警告', 'Hugging Face端点URL不能为空', 'warning');
+    showNotify($t('network.warning'), $t('network.huggingface.urlRequired'), 'warning');
     return;
   }
   
@@ -592,13 +592,13 @@ const saveHuggingFaceConfig = async () => {
     });
     
     if (response.data.code === 200) {
-      showNotify('成功', $t('network.saveSuccess'), 'positive');
+      showNotify($t('network.success'), $t('network.saveSuccess'), 'positive');
       // 更新网络状态
       checkNetworkStatus();
     }
   } catch (error) {
     console.error('Failed to save Hugging Face endpoint config:', error);
-    showNotify('错误', $t('network.saveError'), 'negative');
+    showNotify($t('network.error'), $t('network.saveError'), 'negative');
   } finally {
     isSaving.value.huggingface = false;
   }
