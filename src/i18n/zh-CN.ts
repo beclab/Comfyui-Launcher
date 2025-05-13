@@ -267,7 +267,16 @@ export default {
     modelType: '类型',
     modelSize: '大小',
     installedDate: '安装日期',
-    path: '路径'
+    path: '路径',
+    columns: {
+      name: '名称',
+      type: '类型',
+      size: '大小',
+      mode: '底层',
+      source: '来源',
+      description: '描述',
+      actions: '操作'
+    }
   },
   optionalModels: {
     title: '可用模型',

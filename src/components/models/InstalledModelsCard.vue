@@ -83,7 +83,7 @@
         
         <template v-slot:body-cell-description="props">
           <q-td :props="props">
-            {{ props.row.description || 'AnimateDiff Adapter LORA(SD1.5)' }}
+            <span>{{ translatedDescriptions[props.row.description] || props.row.description || 'AnimateDiff Adapter LORA(SD1.5)' }}</span>
           </q-td>
         </template>
         
@@ -220,10 +220,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted } from 'vue';
+import { defineComponent, ref, computed, onMounted, reactive, watch } from 'vue';
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 import api from '../../api';
 import dataCenter from '../../api/DataCenter';
+import { translator } from '../../utils/modelTranslation';
 
 interface ApiResponse {
   data?: unknown;
@@ -280,6 +282,7 @@ export default defineComponent({
   name: 'InstalledModelsCard',
   setup() {
     const $q = useQuasar();
+    const { t, locale } = useI18n();
     
     const installedModels = ref<Model[]>([]);
     const installedModelsCount = ref(0);
@@ -292,6 +295,9 @@ export default defineComponent({
     const searchQuery = ref('');
     const sortBy = ref('installedDate');
     const sortDesc = ref(true);
+    
+    // 存储翻译后的描述
+    const translatedDescriptions = reactive<Record<string, string>>({});
     
     const filteredModels = computed(() => {
       if (!searchQuery.value.trim()) {
@@ -307,13 +313,13 @@ export default defineComponent({
     });
     
     const modelColumns = ref<TableColumn[]>([
-      { name: 'name', label: '名称', field: 'name', sortable: true, align: 'left' },
-      { name: 'type', label: '类型', field: 'type', sortable: true, align: 'center' },
-      { name: 'size', label: '大小', field: 'size', sortable: true, align: 'center' },
-      { name: 'mode', label: '底层', field: 'mode', align: 'center' },
-      { name: 'source', label: '来源', field: 'source', align: 'center' },
-      { name: 'description', label: '描述', field: 'description', align: 'left' },
-      { name: 'actions', label: '操作', field: 'actions', align: 'center' }
+      { name: 'name', label: t('installedModelsCard.columns.name'), field: 'name', sortable: true, align: 'left' },
+      { name: 'type', label: t('installedModelsCard.columns.type'), field: 'type', sortable: true, align: 'center' },
+      { name: 'size', label: t('installedModelsCard.columns.size'), field: 'size', sortable: true, align: 'center' },
+      { name: 'mode', label: t('installedModelsCard.columns.mode'), field: 'mode', align: 'center' },
+      { name: 'source', label: t('installedModelsCard.columns.source'), field: 'source', align: 'center' },
+      { name: 'description', label: t('installedModelsCard.columns.description'), field: 'description', align: 'left' },
+      { name: 'actions', label: t('installedModelsCard.columns.actions'), field: 'actions', align: 'center' }
     ]);
     
     const fetchInstalledModels = async (force: boolean) => {
@@ -530,6 +536,13 @@ export default defineComponent({
     
     onMounted(() => {
       fetchInstalledModels(false);
+      if (locale.value === 'zh-CN') {
+        installedModels.value.forEach(model => {
+          if (model.description) {
+            getTranslatedDescription(model.description);
+          }
+        });
+      }
     });
     
     const confirmDelete = () => {
@@ -623,6 +636,45 @@ export default defineComponent({
       return typeColors[type] || 'grey';
     };
     
+    // 翻译模型描述 - 同步版本用于初始渲染
+    const getTranslatedDescription = (description: string): string => {
+      if (!description || locale.value !== 'zh-CN') {
+        return description;
+      }
+      
+      // 已经有缓存翻译的情况
+      if (translatedDescriptions[description]) {
+        return translatedDescriptions[description];
+      }
+      
+      // 使用同步翻译方法获取初始翻译
+      const initialTranslation = translator.translate(description);
+      translatedDescriptions[description] = initialTranslation;
+      
+      // 如果初始翻译与原文相同，可能需要在线翻译
+      if (initialTranslation === description) {
+        // 尝试异步翻译，完成后更新界面
+        translator.translateAsync(description).then(translation => {
+          if (translation !== description) {
+            translatedDescriptions[description] = translation;
+          }
+        }).catch(console.error);
+      }
+      
+      return initialTranslation;
+    };
+    
+    // 监听模型列表变化，处理新添加的模型
+    watch(() => installedModels.value, (newModels) => {
+      if (locale.value === 'zh-CN') {
+        newModels.forEach(model => {
+          if (model.description && !translatedDescriptions[model.description]) {
+            getTranslatedDescription(model.description);
+          }
+        });
+      }
+    });
+    
     return {
       installedModels,
       installedModelsCount,
@@ -651,7 +703,9 @@ export default defineComponent({
       getStatusLabel,
       getSizeComparisonClass,
       parseSizeString,
-      getTypeColor
+      getTypeColor,
+      translatedDescriptions,
+      getTranslatedDescription,
     };
   }
 });

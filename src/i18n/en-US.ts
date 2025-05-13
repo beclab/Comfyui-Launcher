@@ -267,7 +267,16 @@ export default {
     modelType: 'Type',
     modelSize: 'Size',
     installedDate: 'Installation date',
-    path: 'Path'
+    path: 'Path',
+    columns: {
+      name: 'Name',
+      type: 'Type',
+      size: 'Size',
+      mode: 'Base',
+      source: 'Source',
+      description: 'Description',
+      actions: 'Actions'
+    }
   },
   optionalModels: {
     title: 'Available models',

@@ -1024,7 +1024,7 @@ export class ModelsController extends DownloadController {
             type: fileInfo.type || this.inferModelTypeFromPath(fileInfo.path),
             base_url: '',
             save_path: fileInfo.path,
-            description: '本地发现的模型，未在官方列表中',
+            description: 'Locally discovered model, not in official list',
             filename: filename,
             installed: true,
             fileStatus: 'unknown', // 特殊状态表示"未知模型,无法确认完整性"
