@@ -90,7 +90,7 @@
             row-key="name"
             flat
             separator="horizontal"
-            :pagination="{ rowsPerPage: 10 }"
+            :pagination="getPaginationForTab(tabName)"
             class="model-table"
           >
             <!-- 自定义表头 -->
@@ -192,6 +192,7 @@
                     :boundary-links="true"
                     :direction-links="true"
                     size="sm"
+                    @update:model-value="updatePaginationState(tabName, scope.pagination)"
                   />
                 </div>
                 <div class="text-caption text-grey-8">
@@ -429,6 +430,12 @@ interface TableColumn {
   headerClasses?: string;
 }
 
+// 添加分页状态类型
+interface PaginationState {
+  page: number;
+  rowsPerPage: number;
+}
+
 export default defineComponent({
   name: 'OptionalModelsCard',
   setup() {
@@ -478,6 +485,16 @@ export default defineComponent({
       { name: 'description', label: t('optionalModels.columns.description'), field: 'description', align: 'left' },
       { name: 'actions', label: t('optionalModels.columns.actions'), field: 'actions', align: 'center' }
     ]);
+    
+    // 为每个标签页保存分页状态
+    const paginationStates = ref<Record<string, PaginationState>>({
+      all: { page: 1, rowsPerPage: 10 },
+      sd: { page: 1, rowsPerPage: 10 },
+      lora: { page: 1, rowsPerPage: 10 },
+      controlnet: { page: 1, rowsPerPage: 10 },
+      vae: { page: 1, rowsPerPage: 10 },
+      upscaler: { page: 1, rowsPerPage: 10 }
+    });
     
     // 获取模型列表
     const fetchModels = async () => {
@@ -591,70 +608,67 @@ export default defineComponent({
         }
         
         try {
-          // 修复：使用正确的API路径获取下载进度
+          // 使用正确的API路径获取下载进度
           const response = await api.get(`models/progress/${downloadTaskId.value}`);
           const progressData = await extractResponseData<ProgressData>(response);
           
           if (progressData) {
-            // 修改：不再依赖modelName字段
-            if (progressData.status) {
-              // 如果正在下载的模型存在
-              if (installing.value) {
-                // 更新指定模型的下载进度
-                downloadProgress.value[installing.value] = {
-                  downloadedBytes: progressData.downloadedBytes || 0,
-                  totalBytes: progressData.totalBytes || 0,
-                  speed: progressData.speed || 0,
-                  status: progressData.status,
-                  currentModelProgress: progressData.currentModelProgress || 0,
-                  currentModel: progressData.currentModel,
-                  currentModelIndex: progressData.currentModelIndex || 0,
-                  error: progressData.error || null
-                };
+            // 如果正在下载的模型存在
+            if (installing.value) {
+              // 更新指定模型的下载进度
+              downloadProgress.value[installing.value] = {
+                downloadedBytes: progressData.downloadedBytes || 0,
+                totalBytes: progressData.totalBytes || 0,
+                speed: progressData.speed || 0,
+                status: progressData.status,
+                currentModelProgress: progressData.currentModelProgress || 0,
+                currentModel: progressData.currentModel,
+                currentModelIndex: progressData.currentModelIndex || 0,
+                error: progressData.error || null
+              };
+              
+              // 检查是否完成
+              if (progressData.status === 'completed' || isCompletedProgress(progressData) && progressData.completed) {
+                // 显示通知
+                $q.notify({
+                  type: 'positive',
+                  message: `模型 ${installing.value} 安装完成`
+                });
                 
-                // 检查是否完成
-                if (progressData.status === 'completed' || isCompletedProgress(progressData) && progressData.completed) {
-                  // 显示通知
-                  $q.notify({
-                    type: 'positive',
-                    message: `模型 ${installing.value} 安装完成`
-                  });
-                  
-                  // 刷新模型列表
-                  fetchModels();
-                  
-                  // 停止轮询并重置状态
-                  if (downloadPollingInterval.value) {
-                    clearInterval(downloadPollingInterval.value);
-                    downloadPollingInterval.value = null;
-                  }
-                  
-                  isDownloading.value = false;
-                  downloadTaskId.value = null;
-                  // 清除下载进度
-                  delete downloadProgress.value[installing.value];
-                  installing.value = '';
+                // 部分刷新模型列表，而不是完全重新加载
+                updateModelStatus(installing.value, true);
+                
+                // 停止轮询并重置状态
+                if (downloadPollingInterval.value) {
+                  clearInterval(downloadPollingInterval.value);
+                  downloadPollingInterval.value = null;
                 }
                 
-                // 检查是否出错
-                if (progressData.status === 'error' || progressData.error) {
-                  $q.notify({
-                    type: 'negative',
-                    message: `模型下载失败: ${progressData.error || '未知错误'}`
-                  });
-                  
-                  // 停止轮询
-                  if (downloadPollingInterval.value) {
-                    clearInterval(downloadPollingInterval.value);
-                    downloadPollingInterval.value = null;
-                  }
-                  
-                  isDownloading.value = false;
-                  downloadTaskId.value = null;
-                  // 清除下载进度
-                  delete downloadProgress.value[installing.value];
-                  installing.value = '';
+                isDownloading.value = false;
+                downloadTaskId.value = null;
+                // 清除下载进度
+                delete downloadProgress.value[installing.value];
+                installing.value = '';
+              }
+              
+              // 检查是否出错
+              if (progressData.status === 'error' || progressData.error) {
+                $q.notify({
+                  type: 'negative',
+                  message: `模型下载失败: ${progressData.error || '未知错误'}`
+                });
+                
+                // 停止轮询
+                if (downloadPollingInterval.value) {
+                  clearInterval(downloadPollingInterval.value);
+                  downloadPollingInterval.value = null;
                 }
+                
+                isDownloading.value = false;
+                downloadTaskId.value = null;
+                // 清除下载进度
+                delete downloadProgress.value[installing.value];
+                installing.value = '';
               }
             }
           }
@@ -720,6 +734,13 @@ export default defineComponent({
             type: 'info',
             message: t('optionalModels.download.startInstall', { model: modelName })
           });
+          
+          // 更新已安装模型的状态，而不是全部刷新
+          const modelIndex = models.value.findIndex(m => m.name === modelName);
+          if (modelIndex >= 0) {
+            // 仅更新下载状态，不重置整个列表
+            models.value[modelIndex] = { ...models.value[modelIndex], downloading: true };
+          }
         } else {
           throw new Error('服务器未返回有效任务ID');
         }
@@ -796,12 +817,21 @@ export default defineComponent({
       return typeColors[type] || 'grey';
     };
     
-    // 添加刷新函数
+    // 修改刷新函数，保持当前分页状态
     const onRefresh = () => {
+      // 保存当前标签的分页状态
+      const currentTab = activeTab.value;
+      const currentPagination = { ...paginationStates.value[currentTab] };
+      
       // 清空搜索以确保显示所有结果
       searchQuery.value = '';
       // 重新获取模型
-      fetchModels();
+      fetchModels().then(() => {
+        // 刷新完成后恢复分页状态
+        if (currentPagination) {
+          paginationStates.value[currentTab] = currentPagination;
+        }
+      });
       
       $q.notify({
         type: 'info',
@@ -851,6 +881,35 @@ export default defineComponent({
       return models.filter(model => model.type === filterType);
     };
     
+    // 添加分页状态管理
+    const updatePaginationState = (tabName: string, pagination: PaginationState) => {
+      if (tabName && pagination) {
+        paginationStates.value[tabName] = { ...pagination };
+      }
+    };
+    
+    // 获取当前标签页的分页设置
+    const getPaginationForTab = (tabName: string) => {
+      return paginationStates.value[tabName] || { page: 1, rowsPerPage: 10 };
+    };
+    
+    // 添加一个针对性更新模型状态的方法，避免全部刷新
+    const updateModelStatus = async (modelName: string, installed: boolean) => {
+      // 查找模型
+      const index = models.value.findIndex(m => m.name === modelName);
+      if (index >= 0) {
+        // 更新模型状态
+        models.value[index] = { 
+          ...models.value[index], 
+          installed: installed,
+          downloading: false
+        };
+        
+        // 应用过滤以更新显示
+        filterModels(searchQuery.value);
+      }
+    };
+    
     return {
       // 状态
       models,
@@ -897,6 +956,11 @@ export default defineComponent({
       // 添加新的表格列配置
       columns,
       viewModelDetails,
+      
+      // 添加分页状态管理
+      paginationStates,
+      updatePaginationState,
+      getPaginationForTab,
     };
   }
 });
