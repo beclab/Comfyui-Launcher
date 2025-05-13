@@ -583,6 +583,24 @@ export default {
     logs: {
       title: 'Logs for last reset',
       noLogs: 'No reset logs found'
+    },
+    hardReset: {
+      link: 'Normal restore not working? Try hard reset',
+      title: 'Hard Reset ComfyUI',
+      message: 'Hard reset will completely reset ComfyUI to its initial state',
+      warning: 'Warning: This operation will clear the following content:',
+      effects: {
+        settings: 'All user settings',
+        plugins: 'All custom nodes and plugins',
+        workflows: 'All workflows',
+        files: 'All files except models'
+      },
+      preserved: 'Only files in the models, output, and input directories will be preserved',
+      cancel: 'Cancel',
+      confirm: 'Hard Reset',
+      progressTitle: 'Hard Reset Progress',
+      completeTitle: 'Hard Reset Completed',
+      completeMessage: 'ComfyUI has been completely reset'
     }
   },
   resourcePack: {

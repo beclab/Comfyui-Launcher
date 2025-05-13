@@ -15,7 +15,7 @@
           <li>{{ t('reset.dialog1.effects.plugins') }}</li>
           <li>{{ t('reset.dialog1.effects.workflows') }}</li>
           <li>{{ t('reset.dialog1.effects.models') }}</li>
-          <li class="hard-reset-link" @click="openHardResetDialog">普通还原无效? 试试强力还原</li>
+          <li class="hard-reset-link" @click="openHardResetDialog">{{ t('reset.hardReset.link') }}</li>
         </ul>
       </q-card-section>
       
@@ -30,26 +30,26 @@
   <q-dialog v-model="showHardResetDialog" persistent>
     <q-card>
       <q-card-section class="row items-center">
-        <div class="text-h6">强力还原 ComfyUI</div>
+        <div class="text-h6">{{ t('reset.hardReset.title') }}</div>
         <q-space />
         <q-btn icon="close" flat round dense v-close-popup />
       </q-card-section>
       
       <q-card-section>
-        <p>强力还原将会彻底重置 ComfyUI 到初始状态</p>
-        <p class="text-negative font-weight-bold">警告：此操作会同时清除以下内容：</p>
+        <p>{{ t('reset.hardReset.message') }}</p>
+        <p class="text-negative font-weight-bold">{{ t('reset.hardReset.warning') }}</p>
         <ul>
-          <li>所有用户设置</li>
-          <li>所有自定义节点和插件</li>
-          <li>所有工作流</li>
-          <li>除模型外的所有文件</li>
+          <li>{{ t('reset.hardReset.effects.settings') }}</li>
+          <li>{{ t('reset.hardReset.effects.plugins') }}</li>
+          <li>{{ t('reset.hardReset.effects.workflows') }}</li>
+          <li>{{ t('reset.hardReset.effects.files') }}</li>
         </ul>
-        <p class="text-negative">仅保留 models、output 和 input 目录中的文件</p>
+        <p class="text-negative">{{ t('reset.hardReset.preserved') }}</p>
       </q-card-section>
       
       <q-card-actions align="right" style="margin-bottom: 8px;margin-right: 8px;">
-        <q-btn outline="" label="取消" color="grey-7" v-close-popup style="padding-top: 8px; padding-bottom: 8px;"/>
-        <q-btn label="强力还原" color="deep-orange" @click="showResetConfirmDialog('hard')" style="padding-top: 8px; padding-bottom: 8px;"/>
+        <q-btn outline="" :label="t('reset.hardReset.cancel')" color="grey-7" v-close-popup style="padding-top: 8px; padding-bottom: 8px;"/>
+        <q-btn :label="t('reset.hardReset.confirm')" color="deep-orange" @click="showResetConfirmDialog('hard')" style="padding-top: 8px; padding-bottom: 8px;"/>
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -92,7 +92,7 @@
   <q-dialog v-model="showResetProgress" persistent>
     <q-card style="min-width: 550px; max-width: 80vw;">
       <q-card-section>
-        <div class="text-h6">{{ resetMode === 'hard' ? '强力还原进度' : t('reset.progress.title') }}</div>
+        <div class="text-h6">{{ resetMode === 'hard' ? t('reset.hardReset.progressTitle') : t('reset.progress.title') }}</div>
       </q-card-section>
       
       <q-card-section class="q-pt-none">
@@ -113,11 +113,11 @@
     <q-card>
       <q-card-section class="row items-center">
         <q-avatar icon="check_circle" color="positive" text-color="white" />
-        <span class="q-ml-sm">{{ resetMode === 'hard' ? '强力还原完成' : t('reset.complete.title') }}</span>
+        <span class="q-ml-sm">{{ resetMode === 'hard' ? t('reset.hardReset.completeTitle') : t('reset.complete.title') }}</span>
       </q-card-section>
       
       <q-card-section>
-        <p>{{ resetMode === 'hard' ? 'ComfyUI 已完成强力还原' : t('reset.complete.message') }}</p>
+        <p>{{ resetMode === 'hard' ? t('reset.hardReset.completeMessage') : t('reset.complete.message') }}</p>
         <p>{{ t('reset.complete.restartTip') }}</p>
       </q-card-section>
       

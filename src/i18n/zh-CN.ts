@@ -584,6 +584,24 @@ export default {
     logs: {
       title: '上次重置操作日志',
       noLogs: '没有找到重置日志记录'
+    },
+    hardReset: {
+      link: '普通还原无效? 试试强力还原',
+      title: '强力还原 ComfyUI',
+      message: '强力还原将会彻底重置 ComfyUI 到初始状态',
+      warning: '警告：此操作会同时清除以下内容：',
+      effects: {
+        settings: '所有用户设置',
+        plugins: '所有自定义节点和插件',
+        workflows: '所有工作流',
+        files: '除模型外的所有文件'
+      },
+      preserved: '仅保留 models、output 和 input 目录中的文件',
+      cancel: '取消',
+      confirm: '强力还原',
+      progressTitle: '强力还原进度', 
+      completeTitle: '强力还原完成',
+      completeMessage: 'ComfyUI 已完成强力还原'
     }
   },
   resourcePack: {
