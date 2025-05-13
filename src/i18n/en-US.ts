@@ -209,7 +209,15 @@ export default {
       title: 'ComfyUI logs',
       loading: 'Loading logs...',
       refresh: 'Refresh logs',
-      download: 'Download logs'
+      download: 'Download logs',
+      request_start: 'Received request to start ComfyUI',
+      already_running: 'ComfyUI is already running',
+      attempting_start: 'Attempting to start ComfyUI process...',
+      executing_command: 'Executing command: bash /runner-scripts/entrypoint.sh',
+      captured_pid: 'Captured real ComfyUI PID: {pid}',
+      process_exited: 'Startup script process exited, exit code: {code}, signal: {signal}',
+      process_error: 'Startup script process error: {message}',
+      waiting_startup: 'Waiting for ComfyUI to start, attempt {retry}/{maxRetries}'
     },
     dialog: {
       missingModelsTitle: 'Missing essential models',

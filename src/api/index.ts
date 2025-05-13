@@ -259,8 +259,10 @@ const api = {
     superagent.post(`${API_BASE_URL}/models/install/${modelName}`).use(debug),
 
   // 添加获取日志的方法
-  getLogs: () => 
-    superagent.get(`${API_BASE_URL}/comfyui/logs`).use(debug),
+  getLogs: (lang?: string) => {
+    const params = lang ? `?lang=${lang}` : '';
+    return superagent.get(`${API_BASE_URL}/comfyui/logs${params}`).use(debug);
+  },
 
   // 添加模型扫描API方法
   scanModels: () => 

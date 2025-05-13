@@ -344,10 +344,22 @@ export default defineComponent({
       }
     };
     
-    // 获取ComfyUI日志
+    // 修改获取ComfyUI日志的方法，添加语言参数
     const fetchLogs = async () => {
       try {
-        const response = await api.getLogs();
+        // 修正：确保获取简短的语言代码
+        let currentLang = $q.lang.getLocale();
+        // 如果语言代码包含短横线，只取第一部分
+        if (currentLang && currentLang.includes('-')) {
+          currentLang = currentLang.split('-')[0];
+        }
+        // 如果没有获取到语言，回退到浏览器语言或默认语言
+        currentLang = currentLang || (navigator.language ? navigator.language.split('-')[0] : 'en');
+        
+        console.log(`Using language for logs: ${currentLang}`);
+        
+        // 将语言参数传递给后端
+        const response = await api.getLogs(currentLang);
         if (response && response.body && response.body.logs) {
           logs.value = response.body.logs;
         } else {

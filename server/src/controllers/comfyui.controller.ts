@@ -35,7 +35,35 @@ export class ComfyUIController {
     frontend?: string;
     timestamp?: number;
   } = {};
-
+  // 存储日志消息对应的参数
+  private logParams: Record<string, Record<string, any>> = {};
+  
+  // 内部翻译数据
+  private translations: {
+    [key: string]: { [key: string]: string };
+  } = {
+    en: {
+      'comfyui.logs.request_start': 'Received request to start ComfyUI',
+      'comfyui.logs.already_running': 'ComfyUI is already running',
+      'comfyui.logs.attempting_start': 'Attempting to start ComfyUI process...',
+      'comfyui.logs.executing_command': 'Executing command: bash /runner-scripts/entrypoint.sh',
+      'comfyui.logs.captured_pid': 'Captured real ComfyUI PID: {pid}',
+      'comfyui.logs.process_exited': 'Startup script process exited, exit code: {code}, signal: {signal}',
+      'comfyui.logs.process_error': 'Startup script process error: {message}',
+      'comfyui.logs.waiting_startup': 'Waiting for ComfyUI to start, attempt {retry}/{maxRetries}'
+    },
+    zh: {
+      'comfyui.logs.request_start': '收到启动ComfyUI请求',
+      'comfyui.logs.already_running': 'ComfyUI已经在运行中',
+      'comfyui.logs.attempting_start': '尝试启动ComfyUI进程...',
+      'comfyui.logs.executing_command': '执行命令: bash /runner-scripts/entrypoint.sh',
+      'comfyui.logs.captured_pid': '捕获到ComfyUI真实PID: {pid}',
+      'comfyui.logs.process_exited': '启动脚本进程已退出，退出码: {code}, 信号: {signal}',
+      'comfyui.logs.process_error': '启动脚本进程错误: {message}',
+      'comfyui.logs.waiting_startup': '等待ComfyUI启动，尝试 {retry}/{maxRetries}'
+    }
+  };
+  
   constructor() {
     // 绑定方法到实例
     this.getStatus = this.getStatus.bind(this);
@@ -302,18 +330,165 @@ export class ComfyUIController {
     }
   }
 
+  // 添加本地翻译方法，增强并添加调试
+  private translateMessage(key: string, lang: string, params?: Record<string, any> | null): string {
+    // 获取翻译文本
+    const langData = this.translations[lang] || this.translations.en; // 默认回退到英文
+    let text = langData[key] || key; // 找不到翻译时返回原始键
+    
+    console.log(`[翻译] 键: ${key}, 语言: ${lang}, 原文: ${text}`);
+    console.log(`[翻译] 参数:`, params);
+    
+    // 如果有参数，替换参数
+    if (params && Object.keys(params).length > 0) {
+      // 先将所有参数转为字符串
+      const stringParams = Object.entries(params).reduce((acc, [k, v]) => {
+        acc[k] = String(v);
+        return acc;
+      }, {} as Record<string, string>);
+      
+      // 替换 {param} 格式的占位符
+      text = text.replace(/\{(\w+)\}/g, (match, paramKey) => {
+        console.log(`[翻译] 替换占位符 ${match}, 参数键: ${paramKey}, 参数值: ${stringParams[paramKey]}`);
+        return stringParams[paramKey] !== undefined ? stringParams[paramKey] : match;
+      });
+      
+      console.log(`[翻译] 替换后: ${text}`);
+    }
+    
+    return text;
+  }
+
   // 添加新方法: 获取ComfyUI日志
   async getLogs(ctx: Context): Promise<void> {
-    logger.info('[API] 收到获取ComfyUI日志请求');
+    const lang = (ctx.query.lang as string) || this.getClientLocale(ctx) || 'zh';
+    const simpleLang = lang.split('-')[0]; // 处理如 'en-US' 格式，转换为 'en'
+    
+    logger.info(`[API] Received get ComfyUI logs request (language: ${lang})`);
+    
+    // 本地化日志条目
+    const localizedLogs = this.recentLogs.map(logEntry => {
+      // 处理包含标准前缀的日志条目
+      const matches = logEntry.match(/^\[(.*?)\]\s*(ERROR:\s*)?(.*)$/);
+      if (matches) {
+        const timestamp = matches[1];
+        const isError = !!matches[2];
+        let message = matches[3];
+        
+        console.log(`[日志本地化] 原始消息: ${message}`);
+        
+        // 检查消息是否是翻译键
+        if (message.match(/^comfyui\.logs\.[a-z_]+$/)) {
+          const key = message; // 保存原始键名
+          console.log(`[日志本地化] 找到翻译键: ${key}`);
+          
+          // 查找存储的参数
+          const params = this.logParams[key];
+          console.log(`[日志本地化] 从 logParams 获取的参数:`, params);
+          
+          if (params) {
+            message = this.translateMessage(key, simpleLang, params);
+          } else {
+            // 尝试直接翻译，如果有未替换的占位符再尝试提取参数
+            message = this.translateMessage(key, simpleLang, undefined);
+            
+            // 如果翻译后还有未替换的占位符，尝试从原始日志条目中提取参数
+            if (message.match(/\{(\w+)\}/)) {
+              console.log(`[日志本地化] 翻译后仍有占位符，尝试从完整日志条目中提取参数`);
+              const extractedParams = this.findLogParams(logEntry);
+              if (extractedParams) {
+                console.log(`[日志本地化] 成功提取参数:`, extractedParams);
+                message = this.translateMessage(key, simpleLang, extractedParams);
+              } else {
+                console.log(`[日志本地化] 无法提取参数，保留占位符`);
+              }
+            }
+          }
+        }
+        
+        // 重新构建日志条目
+        return `[${timestamp}] ${isError ? 'ERROR: ' : ''}${message}`;
+      }
+      return logEntry;
+    });
+    
     ctx.body = {
-      logs: this.recentLogs
+      logs: localizedLogs
     };
   }
 
-  // 记录日志的辅助方法
-  private addLog(message: string, isError: boolean = false): void {
+  // 修改 findLogParams 方法以支持多语言格式
+  private findLogParams(logEntry: string): Record<string, any> | null {
+    console.log(`[findLogParams] 尝试从日志中提取参数: ${logEntry}`);
+    
+    // 首先尝试从日志条目中提取实际消息部分（去除时间戳和错误标记）
+    const messageMatch = logEntry.match(/^\[(.*?)\]\s*(ERROR:\s*)?(.*)$/);
+    const actualMessage = messageMatch ? messageMatch[3] : logEntry;
+    
+    console.log(`[findLogParams] 提取的实际消息: ${actualMessage}`);
+    
+    // 然后使用与之前相同的逻辑提取参数
+    // process_exited - 匹配中英文两种格式
+    const exitMatchZh = actualMessage.match(/退出码:\s*(\S+),\s*信号:\s*(\S+)/);
+    const exitMatchEn = actualMessage.match(/exit code:\s*(\S+),\s*signal:\s*(\S+)/i);
+    if (exitMatchZh || exitMatchEn) {
+      const match = exitMatchZh || exitMatchEn;
+      return { 
+        code: match![1], 
+        signal: match![2] 
+      };
+    }
+    
+    // waiting_startup - 匹配中英文两种格式
+    const waitingMatchZh = actualMessage.match(/尝试\s+(\d+)\/(\d+)/);
+    const waitingMatchEn = actualMessage.match(/attempt\s+(\d+)\/(\d+)/i);
+    if (waitingMatchZh || waitingMatchEn) {
+      const match = waitingMatchZh || waitingMatchEn;
+      return { 
+        retry: match![1], 
+        maxRetries: match![2] 
+      };
+    }
+    
+    // captured_pid - 匹配中英文两种格式
+    const pidMatchZh = actualMessage.match(/PID:\s*(\d+)/i);
+    const pidMatchEn = actualMessage.match(/PID:\s*(\d+)/i); // 相同格式
+    if (pidMatchZh || pidMatchEn) {
+      const match = pidMatchZh || pidMatchEn;
+      return { pid: match![1] };
+    }
+    
+    // process_error - 匹配中英文两种格式
+    const errorMatchZh = actualMessage.match(/进程错误:\s*(.*?)$/);
+    const errorMatchEn = actualMessage.match(/process error:\s*(.*?)$/i);
+    if (errorMatchZh || errorMatchEn) {
+      const match = errorMatchZh || errorMatchEn;
+      return { message: match![1] };
+    }
+    
+    console.log(`[findLogParams] 无法从日志中提取参数: ${actualMessage}`);
+    return null;
+  }
+
+  // 修改记录日志的辅助方法
+  private addLog(message: string, isError: boolean = false, translationKey?: string, params?: Record<string, any>): void {
     const timestamp = new Date().toISOString();
-    const logEntry = `[${timestamp}] ${isError ? 'ERROR: ' : ''}${message}`;
+    
+    // 如果提供了翻译键和参数，构建一个特殊格式，便于后续解析
+    let logMessage = message;
+    if (translationKey) {
+      logMessage = translationKey;
+      // 如果有参数，存储到 logParams
+      if (params && Object.keys(params).length > 0) {
+        console.log(`[addLog] 存储参数, 键: ${translationKey}, 参数:`, params);
+        
+        // 将参数存储为内部属性
+        this.logParams = this.logParams || {};
+        this.logParams[translationKey] = params;
+      }
+    }
+    
+    const logEntry = `[${timestamp}] ${isError ? 'ERROR: ' : ''}${logMessage}`;
     
     // 添加到日志数组并保持大小限制
     this.recentLogs.push(logEntry);
@@ -375,12 +550,12 @@ export class ComfyUIController {
   async startComfyUI(ctx: Context): Promise<void> {
     logger.info('[API] 收到启动ComfyUI请求');
     this.recentLogs = []; // 清除之前的日志
-    this.addLog('收到启动ComfyUI请求');
+    this.addLog('收到启动ComfyUI请求', false, 'comfyui.logs.request_start');
     
     // 首先检查是否已经在运行
     const running = await isComfyUIRunning();
     if (running) {
-      this.addLog('ComfyUI已经在运行中');
+      this.addLog('ComfyUI已经在运行中', false, 'comfyui.logs.already_running');
       ctx.body = {
         success: false,
         message: 'ComfyUI已经在运行中',
@@ -391,8 +566,8 @@ export class ComfyUIController {
     
     try {
       // 启动ComfyUI进程
-      this.addLog('尝试启动ComfyUI进程...');
-      this.addLog(`执行命令: bash ${path.resolve('/runner-scripts/entrypoint.sh')}`);
+      this.addLog('尝试启动ComfyUI进程...', false, 'comfyui.logs.attempting_start');
+      this.addLog(`执行命令: bash ${path.resolve('/runner-scripts/entrypoint.sh')}`, false, 'comfyui.logs.executing_command');
       
       this.comfyProcess = spawn('bash', ['/runner-scripts/entrypoint.sh'], {
         detached: false, // 进程不分离，随主进程退出而退出
@@ -411,7 +586,9 @@ export class ComfyUIController {
           const match = output.match(/ComfyUI.*启动.*pid[:\s]+(\d+)/i);
           if (match && match[1]) {
             this.comfyPid = parseInt(match[1], 10);
-            this.addLog(`捕获到ComfyUI真实PID: ${this.comfyPid}`);
+            this.addLog(`捕获到ComfyUI真实PID: ${this.comfyPid}`, false, 'comfyui.logs.captured_pid', { 
+              pid: this.comfyPid 
+            });
           }
         });
       }
@@ -425,7 +602,10 @@ export class ComfyUIController {
       
       // 监听进程退出
       this.comfyProcess.on('exit', (code, signal) => {
-        this.addLog(`启动脚本进程已退出，退出码: ${code}, 信号: ${signal}`);
+        this.addLog(`启动脚本进程已退出，退出码: ${code}, 信号: ${signal}`, false, 'comfyui.logs.process_exited', {
+          code: code,
+          signal: signal
+        });
         this.comfyProcess = null;
         
         // 检查ComfyUI是否仍在运行
@@ -440,7 +620,9 @@ export class ComfyUIController {
       
       // 监听错误
       this.comfyProcess.on('error', (err) => {
-        this.addLog(`启动脚本进程错误: ${err.message}`, true);
+        this.addLog(`启动脚本进程错误: ${err.message}`, true, 'comfyui.logs.process_error', {
+          message: err.message
+        });
         this.comfyProcess = null;
       });
       
@@ -467,7 +649,10 @@ export class ComfyUIController {
         }
         
         retries++;
-        this.addLog(`等待ComfyUI启动，尝试 ${retries}/${maxRetries}`);
+        this.addLog(`等待ComfyUI启动，尝试 ${retries}/${maxRetries}`, false, 'comfyui.logs.waiting_startup', { 
+          retry: retries, 
+          maxRetries: maxRetries 
+        });
       }
       
       if (comfyStarted) {

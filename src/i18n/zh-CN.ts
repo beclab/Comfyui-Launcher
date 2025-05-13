@@ -194,8 +194,16 @@ export default {
     logs: {
       title: 'ComfyUI 日志',
       loading: '正在加载日志...',
-    refresh: '刷新日志',
-    download: '下载日志'
+      refresh: '刷新日志',
+      download: '下载日志',
+      request_start: '收到启动ComfyUI请求',
+      already_running: 'ComfyUI已经在运行中',
+      attempting_start: '尝试启动ComfyUI进程...',
+      executing_command: '执行命令: bash /runner-scripts/entrypoint.sh',
+      captured_pid: '捕获到ComfyUI真实PID: {pid}',
+      process_exited: '启动脚本进程已退出，退出码: {code}, 信号: {signal}',
+      process_error: '启动脚本进程错误: {message}',
+      waiting_startup: '等待ComfyUI启动，尝试 {retry}/{maxRetries}'
     },
     dialog: {
       missingModelsTitle: '缺少基础模型',
@@ -216,7 +224,6 @@ export default {
     modelDir: '模型目录',
     outputDir: '输出目录',
     inputDir: '输入目录',
-// 下面是将 'rootDirHint' 的值从英文翻译为中文后的代码
     rootDirHint: 'ComfyUI的根目录',
     outputDirHint: 'ComfyUI的输出目录',
     inputDirHint: 'ComfyUI的输入目录',
