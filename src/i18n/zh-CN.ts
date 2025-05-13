@@ -434,7 +434,8 @@ export default {
       clearFilters: '清除筛选',
       loadMore: '加载更多',
       search: '搜索',
-      retryInstall: '重试安装'
+      retryInstall: '重试安装',
+      visitGithub: '访问GitHub'
     },
     loadingPlugins: '加载插件列表...',
     noPluginsFound: '未找到匹配的插件',

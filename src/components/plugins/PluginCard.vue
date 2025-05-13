@@ -25,7 +25,7 @@
             :text-color="plugin.installed ? 'white' : 'black'"
             size="sm"
           >
-            {{ plugin.installed ? (plugin.disabled ? '已禁用' : '已安装') : '未安装' }}
+            {{ plugin.installed ? (plugin.disabled ? $t('plugins.status.disabled') : $t('plugins.status.installed')) : $t('plugins.status.notInstalled') }}
           </q-chip>
         </div>
         
@@ -52,7 +52,7 @@
             :loading="!!stateChanging"
             @click="onToggleState"
           >
-            <q-tooltip>{{ plugin.disabled ? '启用' : '禁用' }}</q-tooltip>
+            <q-tooltip>{{ plugin.disabled ? $t('plugins.actions.enable') : $t('plugins.actions.disable') }}</q-tooltip>
           </q-btn>
           
           <!-- 查看详情按钮 -->
@@ -65,7 +65,7 @@
             @click="onShowInfo"
             class="q-mr-xs"
           >
-            <q-tooltip>查看详情</q-tooltip>
+            <q-tooltip>{{ $t('plugins.actions.showInfo') }}</q-tooltip>
           </q-btn>
           
           <!-- GitHub跳转按钮 -->
@@ -79,7 +79,7 @@
             @click="openGithub"
           >
             <img src="../../assets/icon-github.png" alt="GitHub Icon" style="width: 18px; height: 18px;">
-            <q-tooltip>访问GitHub</q-tooltip>
+            <q-tooltip>{{ $t('plugins.actions.visitGithub') }}</q-tooltip>
           </q-btn>
           
           <!-- 安装/卸载按钮 -->
@@ -99,7 +99,7 @@
             }"
             class="q-mr-xs"
           >
-            <!-- <q-tooltip>{{ plugin.installed ? '卸载' : '安装' }}</q-tooltip> -->
+            <q-tooltip>{{ plugin.installed ? $t('plugins.actions.uninstall') : $t('plugins.actions.install') }}</q-tooltip>
           </q-btn>
           
 

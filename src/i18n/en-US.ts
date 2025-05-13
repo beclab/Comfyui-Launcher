@@ -434,7 +434,8 @@ export default {
       clearFilters: 'Clear filters',
       loadMore: 'Load More',
       search: 'Search',
-      retryInstall: 'Retry installation'
+      retryInstall: 'Retry installation',
+      visitGithub: 'Visit GitHub'
     },
     loadingPlugins: 'Loading plugins list...',
     noPluginsFound: 'No matching plugins found',

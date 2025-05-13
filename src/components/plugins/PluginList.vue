@@ -23,8 +23,8 @@
         <div class="row items-center justify-between q-mb-sm">
           <!-- 左侧标题 -->
           <div class="row items-center">
-            <div class="text-h6">{{ $t('plugins.availablePlugins') }}</div>
-            <div class="text-caption q-ml-sm text-grey">
+            <div class="text-h6 col-12 ">{{ $t('plugins.availablePlugins') }}</div>
+            <div class="text-caption  text-grey">
               {{ $t('plugins.registeredPlugins') }}
             </div>
           </div>
