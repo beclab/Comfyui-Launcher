@@ -107,7 +107,9 @@
               <q-tr :props="props">
                 <!-- 名称列 -->
                 <q-td key="name" :props="props" class="text-weight-medium">
-                  {{ props.row.name }}
+                  <div class="model-name-cell" :title="props.row.name">
+                    {{ props.row.name }}
+                  </div>
                 </q-td>
                 
                 <!-- 类型列 -->
@@ -477,7 +479,14 @@ export default defineComponent({
     
     // 修改列定义为使用i18n并添加明确的类型声明
     const columns = computed<TableColumn[]>(() => [
-      { name: 'name', label: t('optionalModels.columns.name'), field: 'name', align: 'left', sortable: true },
+      { 
+        name: 'name', 
+        label: t('optionalModels.columns.name'), 
+        field: 'name', 
+        align: 'left', 
+        sortable: true,
+        style: 'max-width: 300px; width: 300px;' 
+      },
       { name: 'type', label: t('optionalModels.columns.type'), field: 'type', align: 'center' },
       { name: 'size', label: t('optionalModels.columns.size'), field: 'size', align: 'center', sortable: true },
       { name: 'baseModel', label: t('optionalModels.columns.baseModel'), field: 'baseModel', align: 'center' },
@@ -1032,8 +1041,22 @@ export default defineComponent({
   text-overflow: ellipsis;
 }
 
+/* 添加模型名称单元格样式 */
+.model-name-cell {
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .download-progress {
   width: 150px;
+}
+
+/* 表格列宽度控制 */
+:deep(.q-table td.name-column) {
+  max-width: 300px;
+  width: 300px;
 }
 
 /* 表格行高度调整 */
