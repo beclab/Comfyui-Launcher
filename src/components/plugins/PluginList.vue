@@ -287,10 +287,25 @@ const onShowInfo = (plugin: Plugin): void => {
 };
 
 const onClearFilters = (): void => {
+  // 首先重置本地状态变量
   searchQuery.value = '';
   statusFilter.value = { label: '全部', value: 'all' };
   tagFilter.value = [];
+  
+  // 立即发出搜索事件（不使用防抖）
+  emit('search', '');
+  
+  // 发出过滤事件重置所有过滤条件
+  emit('filter', {
+    statusFilter: { label: '全部', value: 'all' },
+    tagFilter: []
+  });
+  
+  // 发出清除过滤器事件 - 这可能会触发父组件中的特定处理逻辑
   emit('clear-filters');
+  
+  // 刷新插件列表以确保显示所有可用插件
+  emit('refresh');
 };
 
 const onLoadMore = (): void => {

@@ -307,6 +307,11 @@ const clearFilters = () => {
   searchQuery.value = '';
   statusFilter.value = { label: t('plugins.status.all'), value: 'all' };
   tagFilter.value = [];
+  
+  // 重要：强制重置为初始加载状态，确保能显示插件
+  isInitialLoad.value = true;
+  
+  // 然后调用过滤函数
   filterPlugins();
 };
 
