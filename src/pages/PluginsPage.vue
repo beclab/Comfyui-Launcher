@@ -134,7 +134,7 @@ const components = {
 };
 
 const $q = useQuasar();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 // 插件类型定义
 interface Plugin {
@@ -207,8 +207,10 @@ const initialLoadCount = 50;
 const loadMoreCount = 50;
 const visiblePlugins = ref<Plugin[]>([]);
 
-// 历史语言设置
-const historyLanguage = ref('zh');
+// 历史语言设置 - 从i18n获取当前语言
+const historyLanguage = computed(() => {
+  return locale.value || 'zh'; // 使用当前i18n语言，默认为zh
+});
 
 // 历史记录表格列定义
 const historyColumns: QTableColumn[] = [
@@ -735,6 +737,14 @@ const loadMorePlugins = () => {
 // 监听标签页切换，加载历史记录
 watch(activeTab, (newValue) => {
   if (newValue === 'history' && operationHistory.value.length === 0) {
+    fetchHistory();
+  }
+});
+
+// 监听语言变化
+watch(locale, () => {
+  if (activeTab.value === 'history') {
+    // 如果当前在历史标签页，则重新获取数据
     fetchHistory();
   }
 });
