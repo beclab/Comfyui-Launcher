@@ -277,7 +277,7 @@
               <q-item-label class="text-weight-medium">{{ $t('models.modelDetails.baseModel') }}</q-item-label>
             </q-item-section>
             <q-item-section>
-              <q-item-label class="text-left">{{ selectedModel.baseModel || 'FLUX.1' }}</q-item-label>
+              <q-item-label class="text-left">{{ selectedModel.base || '' }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item>
@@ -322,6 +322,7 @@ interface Model {
   installedDate?: string;
   essential?: boolean;
   baseModel?: string;
+  base?: string;
   source?: string;
 }
 

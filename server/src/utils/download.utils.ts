@@ -401,6 +401,17 @@ export async function downloadFile(
             }
             
             logger.logger.info(`下载完成: ${url}, 总大小: ${downloadedBytes} 字节`);
+            
+            // 添加此处：重命名临时文件为最终文件
+            if (fs.existsSync(tempPath)) {
+              try {
+                fs.renameSync(tempPath, destPath);
+                logger.logger.info(`已将文件 ${tempPath} 重命名为 ${destPath}`);
+              } catch (err) {
+                logger.logger.error(`重命名文件失败: ${err instanceof Error ? err.message : String(err)}`);
+              }
+            }
+            
             cleanup();
             resolve(true);
           });
