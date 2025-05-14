@@ -165,6 +165,7 @@ interface PluginOperation {
   status: 'running' | 'success' | 'failed';
   logs: string[];
   result?: string;
+  resultLocalized?: string;
   githubProxy?: string;
   typeText?: string;
   statusText?: string;

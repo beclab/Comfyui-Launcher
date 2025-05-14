@@ -107,7 +107,7 @@
         <!-- Result -->
         <div v-if="operation?.result" class="result-container q-mt-md q-pa-md">
           <div class="text-subtitle2 q-mb-xs">{{ $t('plugins.dialog.operationLogsDialog.operationResult') }}</div>
-          <p class="result-text">{{ operation.result }}</p>
+          <p class="result-text">{{ operation.resultLocalized }}</p>
         </div>
       </q-card-section>
     </q-card>
@@ -132,6 +132,7 @@ interface PluginOperation {
   status: 'running' | 'success' | 'failed';
   logs?: string[];
   result?: string;
+  resultLocalized?: string;
 }
 
 // Props
@@ -245,11 +246,11 @@ const downloadLogs = (): void => {
     content += `${t('plugins.dialog.operationLogsDialog.endTime')}: ${formatTime(props.operation?.endTime)}\n`;
   }
   
-  content += '\n=== Detailed Logs ===\n\n';
+  content += `\n=== ${t('plugins.dialog.operationLogsDialog.detailedLogs')} ===\n\n`;
   content += props.logs.join('\n');
   
   if (props.operation?.result) {
-    content += `\n\n=== Operation Result ===\n\n${props.operation.result}\n`;
+    content += `\n\n=== ${t('plugins.dialog.operationLogsDialog.operationResult')} ===\n\n${props.operation.result}\n`;
   }
   
   // Create Blob and download
