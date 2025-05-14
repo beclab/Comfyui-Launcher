@@ -519,6 +519,19 @@ export default {
         installedOn: 'Installation date',
         status: 'Status',
         tags: 'Tags'
+      },
+      operationLogsDialog: {
+        title: 'Operation Log Details',
+        plugin: 'Plugin',
+        operationType: 'Operation Type',
+        status: 'Status',
+        startTime: 'Start Time',
+        endTime: 'End Time',
+        detailedLogs: 'Detailed Logs',
+        downloadLogs: 'Download Logs',
+        noLogs: 'No log information',
+        operationResult: 'Operation Result',
+        unknown: 'Unknown'
       }
     },
     progress: {

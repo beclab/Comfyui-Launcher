@@ -1,11 +1,11 @@
 <template>
   <q-dialog v-model="dialogVisible" persistent @hide="onDialogHide">
     <q-card style="min-width: 650px; max-width: 80vw; max-height: 85vh; display: flex; flex-direction: column;">
-      <!-- 固定的标题栏 -->
+      <!-- Fixed title bar -->
       <q-card-section class="row items-center q-pb-xs">
         <div class="text-h6">
           <q-icon name="article" class="q-mr-sm" />
-          操作日志详情
+          {{ $t('plugins.dialog.operationLogsDialog.title') }}
         </div>
         <q-space />
         <q-btn icon="close" flat round dense v-close-popup />
@@ -13,14 +13,14 @@
 
       <q-separator />
 
-      <!-- 可滚动的内容区域 -->
+      <!-- Scrollable content area -->
       <q-card-section class="scroll" style="flex: 1; overflow: auto;">
         <div class="row q-col-gutter-sm q-mb-sm">
-          <!-- Operation details - 使用更紧凑的布局 -->
+          <!-- Operation details - using more compact layout -->
           <div class="col-6 col-md-3">
             <q-item dense class="q-pa-none">
               <q-item-section>
-                <q-item-label caption>插件</q-item-label>
+                <q-item-label caption>{{ $t('plugins.dialog.operationLogsDialog.plugin') }}</q-item-label>
                 <q-item-label class="ellipsis">{{ operation?.pluginName || operation?.pluginId }}</q-item-label>
               </q-item-section>
             </q-item>
@@ -29,7 +29,7 @@
           <div class="col-6 col-md-3">
             <q-item dense class="q-pa-none">
               <q-item-section>
-                <q-item-label caption>操作类型</q-item-label>
+                <q-item-label caption>{{ $t('plugins.dialog.operationLogsDialog.operationType') }}</q-item-label>
                 <q-item-label>{{ getOperationName(operation?.type) }}</q-item-label>
               </q-item-section>
             </q-item>
@@ -38,7 +38,7 @@
           <div class="col-6 col-md-2">
             <q-item dense class="q-pa-none">
               <q-item-section>
-                <q-item-label caption>状态</q-item-label>
+                <q-item-label caption>{{ $t('plugins.dialog.operationLogsDialog.status') }}</q-item-label>
                 <q-item-label>
                   <q-chip
                     dense
@@ -56,7 +56,7 @@
           <div class="col-6 col-md-2">
             <q-item dense class="q-pa-none">
               <q-item-section>
-                <q-item-label caption>开始时间</q-item-label>
+                <q-item-label caption>{{ $t('plugins.dialog.operationLogsDialog.startTime') }}</q-item-label>
                 <q-item-label>{{ operation ? formatTime(operation.startTime) : '' }}</q-item-label>
               </q-item-section>
             </q-item>
@@ -65,7 +65,7 @@
           <div class="col-6 col-md-2" v-if="operation?.endTime">
             <q-item dense class="q-pa-none">
               <q-item-section>
-                <q-item-label caption>结束时间</q-item-label>
+                <q-item-label caption>{{ $t('plugins.dialog.operationLogsDialog.endTime') }}</q-item-label>
                 <q-item-label>{{ formatTime(operation.endTime) }}</q-item-label>
               </q-item-section>
             </q-item>
@@ -76,7 +76,7 @@
         
         <!-- Logs -->
         <div class="row items-center q-mb-xs">
-          <div class="text-subtitle2">详细日志</div>
+          <div class="text-subtitle2">{{ $t('plugins.dialog.operationLogsDialog.detailedLogs') }}</div>
           <q-space />
           <q-btn
             v-if="logs && logs.length > 0"
@@ -90,7 +90,7 @@
             :disable="!logs || logs.length === 0"
             class="q-ml-xs"
           >
-            <q-tooltip>下载日志</q-tooltip>
+            <q-tooltip>{{ $t('plugins.dialog.operationLogsDialog.downloadLogs') }}</q-tooltip>
           </q-btn>
         </div>
         <div class="log-container" v-if="logs && logs.length > 0">
@@ -101,12 +101,12 @@
         </div>
         <div v-else class="text-center text-grey q-py-md">
           <q-icon name="info" size="2rem" />
-          <p>暂无日志信息</p>
+          <p>{{ $t('plugins.dialog.operationLogsDialog.noLogs') }}</p>
         </div>
         
         <!-- Result -->
         <div v-if="operation?.result" class="result-container q-mt-md q-pa-md">
-          <div class="text-subtitle2 q-mb-xs">操作结果</div>
+          <div class="text-subtitle2 q-mb-xs">{{ $t('plugins.dialog.operationLogsDialog.operationResult') }}</div>
           <p class="result-text">{{ operation.result }}</p>
         </div>
       </q-card-section>
@@ -116,8 +116,12 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
 
-// 操作类型定义
+// Get i18n instance
+const { t } = useI18n();
+
+// Operation type definition
 interface PluginOperation {
   id: string;
   pluginId: string;
@@ -181,12 +185,12 @@ watch(() => props.logs, () => {
 
 // Utility methods
 const getOperationName = (type?: string): string => {
-  if (!type) return '未知';
+  if (!type) return t('plugins.dialog.operationLogsDialog.unknown');
   switch (type) {
-    case 'install': return '安装';
-    case 'uninstall': return '卸载';
-    case 'disable': return '禁用';
-    case 'enable': return '启用';
+    case 'install': return t('plugins.operations.install');
+    case 'uninstall': return t('plugins.operations.uninstall');
+    case 'disable': return t('plugins.operations.disable');
+    case 'enable': return t('plugins.operations.enable');
     default: return type;
   }
 };
@@ -202,11 +206,11 @@ const getStatusColor = (status?: string): string => {
 };
 
 const getStatusName = (status?: string): string => {
-  if (!status) return '未知';
+  if (!status) return t('plugins.dialog.operationLogsDialog.unknown');
   switch (status) {
-    case 'running': return '进行中';
-    case 'success': return '成功';
-    case 'failed': return '失败';
+    case 'running': return t('plugins.history.running');
+    case 'success': return t('plugins.history.success');
+    case 'failed': return t('plugins.history.failed');
     default: return status;
   }
 };
@@ -221,34 +225,34 @@ const onDialogHide = (): void => {
   emit('update:visible', false);
 };
 
-// 下载日志函数
+// Download logs function
 const downloadLogs = (): void => {
   if (!props.logs || props.logs.length === 0) return;
   
-  // 创建日志文件内容
-  const pluginInfo = props.operation?.pluginName || props.operation?.pluginId || '未知插件';
+  // Create log file content
+  const pluginInfo = props.operation?.pluginName || props.operation?.pluginId || t('plugins.dialog.operationLogsDialog.unknown');
   const operationType = getOperationName(props.operation?.type);
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const fileName = `${pluginInfo}-${operationType}-logs-${timestamp}.txt`;
   
-  // 构建日志内容，添加操作信息
-  let content = `插件: ${pluginInfo}\n`;
-  content += `操作: ${operationType}\n`;
-  content += `状态: ${getStatusName(props.operation?.status)}\n`;
-  content += `开始时间: ${formatTime(props.operation?.startTime)}\n`;
+  // Build log content, add operation info
+  let content = `${t('plugins.dialog.operationLogsDialog.plugin')}: ${pluginInfo}\n`;
+  content += `${t('plugins.dialog.operationLogsDialog.operationType')}: ${operationType}\n`;
+  content += `${t('plugins.dialog.operationLogsDialog.status')}: ${getStatusName(props.operation?.status)}\n`;
+  content += `${t('plugins.dialog.operationLogsDialog.startTime')}: ${formatTime(props.operation?.startTime)}\n`;
   
   if (props.operation?.endTime) {
-    content += `结束时间: ${formatTime(props.operation?.endTime)}\n`;
+    content += `${t('plugins.dialog.operationLogsDialog.endTime')}: ${formatTime(props.operation?.endTime)}\n`;
   }
   
-  content += '\n=== 详细日志 ===\n\n';
+  content += '\n=== Detailed Logs ===\n\n';
   content += props.logs.join('\n');
   
   if (props.operation?.result) {
-    content += `\n\n=== 操作结果 ===\n\n${props.operation.result}\n`;
+    content += `\n\n=== Operation Result ===\n\n${props.operation.result}\n`;
   }
   
-  // 创建 Blob 并下载
+  // Create Blob and download
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -256,7 +260,7 @@ const downloadLogs = (): void => {
   link.download = fileName;
   link.click();
   
-  // 清理
+  // Cleanup
   URL.revokeObjectURL(url);
 };
 

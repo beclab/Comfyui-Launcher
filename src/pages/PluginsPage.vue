@@ -207,9 +207,10 @@ const initialLoadCount = 50;
 const loadMoreCount = 50;
 const visiblePlugins = ref<Plugin[]>([]);
 
-// 历史语言设置 - 从i18n获取当前语言
+// 历史语言设置 - 从i18n获取当前语言，并确保只使用语言部分而不包含区域
 const historyLanguage = computed(() => {
-  return locale.value || 'zh'; // 使用当前i18n语言，默认为zh
+  // 从当前locale提取语言部分，例如从'en-US'中提取'en'
+  return locale.value ? locale.value.split('-')[0] : 'zh';
 });
 
 // 历史记录表格列定义

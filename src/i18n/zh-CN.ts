@@ -519,6 +519,19 @@ export default {
         installedOn: '安装时间',
         status: '状态',
         tags: '标签'
+      },
+      operationLogsDialog: {
+        title: '操作日志详情',
+        plugin: '插件',
+        operationType: '操作类型',
+        status: '状态',
+        startTime: '开始时间',
+        endTime: '结束时间',
+        detailedLogs: '详细日志',
+        downloadLogs: '下载日志',
+        noLogs: '暂无日志信息',
+        operationResult: '操作结果',
+        unknown: '未知'
       }
     },
     progress: {
