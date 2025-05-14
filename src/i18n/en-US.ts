@@ -356,6 +356,12 @@ export default {
     pagination: {
       rowsPerPage: 'Rows per page',
       of: '{from}-{to} of {total}'
+    },
+    notifications: {
+      fetchFailed: 'Failed to fetch model list',
+      noTaskId: 'Server did not return a valid task ID',
+      unknownError: 'Unknown error',
+      downloadFailed: 'Download failed: {error}'
     }
   },
   downloadHistory: {

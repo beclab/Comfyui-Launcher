@@ -513,21 +513,21 @@ export default defineComponent({
         const data = await DataCenter.getOptionalModels();
         if (data && Array.isArray(data)) {
           models.value = data;
-          console.log('获取到可选模型列表:', models.value.length);
+          console.log('Getting optional models list:', models.value.length);
           // 初始过滤
           filterModels(searchQuery.value);
         } else {
-          console.error('获取模型列表失败: 响应格式不正确', data);
+          console.error('Failed to get model list: incorrect response format', data);
           $q.notify({
             type: 'negative',
-            message: '获取模型列表失败'
+            message: t('optionalModels.notifications.fetchFailed')
           });
         }
       } catch (error) {
-        console.error('获取模型列表失败:', error);
+        console.error('Failed to get model list:', error);
         $q.notify({
           type: 'negative',
-          message: '获取模型列表失败'
+          message: t('optionalModels.notifications.fetchFailed')
         });
       } finally {
         isLoading.value = false;
@@ -641,7 +641,7 @@ export default defineComponent({
                 // 显示通知
                 $q.notify({
                   type: 'positive',
-                  message: `模型 ${installing.value} 安装完成`
+                  message: t('optionalModels.download.installComplete', { model: installing.value })
                 });
                 
                 // 部分刷新模型列表，而不是完全重新加载
@@ -664,7 +664,7 @@ export default defineComponent({
               if (progressData.status === 'error' || progressData.error) {
                 $q.notify({
                   type: 'negative',
-                  message: `模型下载失败: ${progressData.error || '未知错误'}`
+                  message: t('optionalModels.download.installFailed', { error: progressData.error || t('optionalModels.notifications.unknownError') })
                 });
                 
                 // 停止轮询
@@ -751,7 +751,7 @@ export default defineComponent({
             models.value[modelIndex] = { ...models.value[modelIndex], downloading: true };
           }
         } else {
-          throw new Error('服务器未返回有效任务ID');
+          throw new Error(t('optionalModels.notifications.noTaskId'));
         }
       } catch (error) {
         console.error('Installing model failed:', error);

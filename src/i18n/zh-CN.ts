@@ -356,6 +356,12 @@ export default {
     pagination: {
       rowsPerPage: '每页记录数',
       of: '第 {from}-{to} 条，共 {total} 条'
+    },
+    notifications: {
+      fetchFailed: '获取模型列表失败',
+      noTaskId: '服务器未返回有效任务ID',
+      unknownError: '未知错误',
+      downloadFailed: '下载失败: {error}'
     }
   },
   downloadHistory: {
