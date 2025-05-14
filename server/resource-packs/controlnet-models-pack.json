@@ -1,7 +1,7 @@
 {
     "id": "controlnet-models",
-    "name": "Controlnet模型包",
-    "description": "包含Controlnet全部模型",
+    "name": "Controlnet Models Pack",
+    "description": "Contains all Controlnet models",
     "author": "Community",
     "version": "1.0.0",
     "tags": ["controlnet", "base"],

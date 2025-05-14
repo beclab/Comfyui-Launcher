@@ -9,7 +9,7 @@
     <q-card class="resource-pack-dialog" style="width: 90vw; max-width: 1200px; max-height: 90vh; display: flex; flex-direction: column;">
       <q-card-section class="bg-white text-dark q-pb-xs">
         <div class="row items-center justify-between">
-          <div class="text-h6">Package Details</div>
+          <div class="text-h6">{{ $t('resourcePack.packageDetails') }}</div>
           <q-btn flat round icon="close" color="dark" @click="closeDialog" />
         </div>
       </q-card-section>
@@ -47,7 +47,7 @@
             <div class="col">
               <div class="text-subtitle1 text-weight-bold row items-center">
               {{ pack.name }}
-              <div class="text-caption text-grey-7 q-ml-sm">当前版本 v{{ pack.version }}</div>
+              <div class="text-caption text-grey-7 q-ml-sm">{{ $t('resourcePack.currentVersion', { version: pack.version }) }}</div>
               </div>
               <div class="text-caption">{{ pack.description }}</div>
               
@@ -55,7 +55,7 @@
             <div class="col-auto">
               <q-btn 
                 color="primary" 
-                label="Get All Resources" 
+                :label="$t('resourcePack.getAllResources')" 
                 @click="installResourcePack"
                 :disable="installing"
               />
@@ -190,6 +190,7 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 import api from '../../api';
 
 // 定义资源包类型
@@ -266,6 +267,7 @@ export default defineComponent({
   
   setup(props, { emit }) {
     const $q = useQuasar();
+    const { t } = useI18n();
     
     // 控制对话框显示状态
     const isOpen = ref(false);
@@ -620,16 +622,7 @@ export default defineComponent({
     // 获取资源状态标签
     const getResourceStatusLabel = (resourceId: string, progress: InstallProgress): string => {
       const status = getResourceStatus(resourceId, progress);
-      switch (status) {
-        case 'pending': return '等待中';
-        case 'downloading': return '下载中';
-        case 'installing': return '安装中';
-        case 'completed': return '已完成';
-        case 'error': return '错误';
-        case 'skipped': return '已跳过';
-        case 'canceled': return '已取消';
-        default: return '未知';
-      }
+      return t(`resourcePack.status.${status}`);
     };
     
     // 格式化进度文本
@@ -690,8 +683,32 @@ export default defineComponent({
       return resourceStatus?.error;
     };
     
+    // 在组件创建时，使用国际化文本设置列标题
+    const setColumnLabels = () => {
+      resourceColumns.value.forEach(column => {
+        switch(column.name) {
+          case 'name':
+            column.label = t('resourcePack.columns.name');
+            break;
+          case 'type':
+            column.label = t('resourcePack.columns.type');
+            break;
+          case 'size':
+            column.label = t('resourcePack.columns.size');
+            break;
+          case 'description':
+            column.label = t('resourcePack.columns.description');
+            break;
+          case 'status':
+            column.label = t('resourcePack.columns.status');
+            break;
+        }
+      });
+    };
+    
     // 组件挂载时
     onMounted(() => {
+      setColumnLabels(); // Set i18n labels for columns
       if (props.visible && props.packId) {
         loadResourcePack();
       }
@@ -731,7 +748,8 @@ export default defineComponent({
       getResourceStatus,
       getResourceProgress,
       getResourceError,
-      getTypeColor
+      getTypeColor,
+      setColumnLabels
     };
   }
 });

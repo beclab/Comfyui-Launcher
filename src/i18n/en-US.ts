@@ -677,7 +677,28 @@ export default {
     resourcesStatus: 'Resource status',
     resourcesList: 'Resource list',
     type: 'Type',
-    size: 'Size'
+    size: 'Size',
+    packageDetails: 'Package Details',
+    currentVersion: 'Current version v{version}',
+    getAllResources: 'Get All Resources',
+    columns: {
+      name: 'Name',
+      type: 'Type',
+      size: 'Size',
+      description: 'Description',
+      status: 'Status'
+    },
+    status: {
+      pending: 'Pending',
+      downloading: 'Downloading',
+      installing: 'Installing',
+      completed: 'Completed',
+      error: 'Error',
+      skipped: 'Skipped',
+      canceled: 'Canceled',
+      unknown: 'Unknown'
+    },
+    unknownError: 'Unknown error'
   },
   resourcePacks: {
     title: 'Resource packages',

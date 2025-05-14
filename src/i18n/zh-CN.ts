@@ -677,7 +677,28 @@ export default {
     resourcesStatus: '资源状态',
     resourcesList: '资源列表',
     type: '类型',
-    size: '大小'
+    size: '大小',
+    packageDetails: '资源包详情',
+    currentVersion: '当前版本 v{version}',
+    getAllResources: '获取所有资源',
+    columns: {
+      name: '名称',
+      type: '类型',
+      size: '大小',
+      description: '描述',
+      status: '状态'
+    },
+    status: {
+      pending: '等待中',
+      downloading: '下载中',
+      installing: '安装中',
+      completed: '已完成',
+      error: '错误',
+      skipped: '已跳过',
+      canceled: '已取消',
+      unknown: '未知'
+    },
+    unknownError: '未知错误'
   },
   resourcePacks: {
     title: '资源包',
