@@ -849,9 +849,9 @@ export class PluginsController {
         const requirementsPath = path.join(targetDir, 'requirements.txt');
         if (fs.existsSync(requirementsPath)) {
           taskProgressMap[taskId].message = '安装依赖...';
-          this.logOperation(taskId, `发现requirements.txt，执行: pip install -r "${requirementsPath}"`);
+          this.logOperation(taskId, `发现requirements.txt，执行: pip install --user -r "${requirementsPath}"`);
           try {
-            const { stdout, stderr } = await execPromise(`pip install -r "${requirementsPath}"`);
+            const { stdout, stderr } = await execPromise(`pip install --user -r "${requirementsPath}"`);
             if (stdout) this.logOperation(taskId, `依赖安装输出: ${stdout}`);
             if (stderr) this.logOperation(taskId, `依赖安装警告: ${stderr}`);
           } catch (pipError) {
@@ -2116,9 +2116,9 @@ export class PluginsController {
         const requirementsPath = path.join(targetDir, 'requirements.txt');
         if (fs.existsSync(requirementsPath)) {
           taskProgressMap[operationId].message = '安装依赖...';
-          this.logOperation(operationId, `发现requirements.txt，执行: pip install -r "${requirementsPath}"`);
+          this.logOperation(operationId, `发现requirements.txt，执行: pip install --user -r "${requirementsPath}"`);
           try {
-            const { stdout, stderr } = await execPromise(`pip install -r "${requirementsPath}"`);
+            const { stdout, stderr } = await execPromise(`pip install --user -r "${requirementsPath}"`);
             if (stdout) this.logOperation(operationId, `依赖安装输出: ${stdout}`);
             if (stderr) this.logOperation(operationId, `依赖安装警告: ${stderr}`);
           } catch (pipError) {
