@@ -14,16 +14,16 @@
               <div class="comfyui-title">{{ $t('comfyuiStatus.title') }}</div>
 
               <!-- 添加状态指示器 -->
-              <q-chip 
-                size="sm" 
+              <q-chip
+                size="sm"
                 :class="[
-                  'status-chip', 
+                  'status-chip',
                   isConnected ? 'status-running' : 'status-stopped'
                 ]"
               >
-                <q-icon 
-                  :name="isConnected ? 'play_circle' : 'stop_circle'" 
-                  size="xs" 
+                <q-icon
+                  :name="isConnected ? 'play_circle' : 'stop_circle'"
+                  size="xs"
                   class="q-mr-xs status-icon"
                   :class="isConnected ? 'running-icon' : 'stopped-icon'"
                 />
@@ -31,7 +31,7 @@
               </q-chip>
             </div>
           </div>
-          
+
           <div class="version-row">
             <q-chip dense size="sm" class="version-chip">
               <span class="version-text">{{ $t('comfyuiStatus.version.comfyui') }} {{ versions.comfyui }}</span>
@@ -46,15 +46,15 @@
               <span class="version-text">{{ $t('comfyuiStatus.version.gpu') }}: {{ $t(`comfyuiStatus.gpuMode.${gpuMode}`) }}</span>
             </q-chip>
           </div>
-          
+
 
         </div>
-          
+
         <div class="action-row">
           <!-- 根据状态显示不同的按钮 -->
           <template v-if="isConnected">
             <!-- ComfyUI运行中 - 显示打开和停止按钮 -->
-            <q-btn 
+            <q-btn
               flat
               rounded
               icon="open_in_new"
@@ -63,8 +63,8 @@
             >
               <span class="btn-text">{{ $t('comfyuiStatus.buttons.open') }}</span>
             </q-btn>
-            
-            <q-btn 
+
+            <q-btn
               flat
               rounded
               icon="stop_circle"
@@ -75,10 +75,10 @@
               <span class="btn-text">{{ $t('comfyuiStatus.buttons.stop') }}</span>
             </q-btn>
           </template>
-          
+
           <template v-else>
             <!-- ComfyUI已停止 - 只显示启动按钮 -->
-            <q-btn 
+            <q-btn
               flat
               rounded
               icon="play_circle_outline"
@@ -89,8 +89,8 @@
               <span class="start-btn-text">{{ $t('comfyuiStatus.buttons.start') }}</span>
             </q-btn>
           </template>
-          
-          <q-btn 
+
+          <q-btn
             round
             flat
             color="grey-7"
@@ -107,14 +107,14 @@
                   </q-item-section>
                   <q-item-section style="margin-left: 4px; margin-right: 6px;">{{ $t('comfyuiStatus.menu.viewLogs') }}</q-item-section>
                 </q-item>
-                
+
                 <q-item clickable v-close-popup @click="showResetLog" style="border-radius: var(--border-radius-md); min-height: 24px!important; color: var(--text-normal)!important; margin: 6px; padding-right: 6px; padding-left: 6px;">
                   <q-item-section avatar style="width: 24px!important; height: 24px; margin-left: 6px; padding-right: 0px;">
                     <q-icon name="history" style="width: 24px; height: 24px; padding-right: 0px; padding-left: 0px !important;"/>
                   </q-item-section>
                   <q-item-section style="margin-left: 4px; margin-right: 6px;">{{ $t('comfyuiStatus.menu.viewResetLogs') }}</q-item-section>
                 </q-item>
-                
+
                 <q-item clickable v-close-popup @click="resetComfyUI" style="border-radius: var(--border-radius-md); min-height: 24px!important; color: var(--text-normal)!important; margin: 6px; padding-right: 6px; padding-left: 6px;">
                   <div class="row">
                     <q-item-section avatar style="width: 24px; height: 24px; margin-left: 6px; padding-right: 0px; padding-left: 0px;">
@@ -166,7 +166,7 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
-    
+
     <q-dialog v-model="showConfirmDialog" persistent>
       <q-card>
         <!-- 删除左上角图标 -->
@@ -187,8 +187,8 @@
           <!-- 下方按钮 去安装模型 和 仍然启动 对调位置 -->
           <q-btn flat :label="$t('comfyuiStatus.dialog.confirmStart')" style="color: var(--text-normal); border: 1px solid var(--text-normal); border-radius: var(--border-radius-md);" @click="confirmStartComfyUI" />
           <q-btn :label="$t('comfyuiStatus.dialog.installModels')" color="primary" @click="goToModels" style="box-shadow: none; border-radius: var(--border-radius-md);" />
-          
-          
+
+
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -265,7 +265,7 @@ export default defineComponent({
     ResetLogDialog,
     ResourcePackDialog
   },
-  
+
   setup() {
     const $q = useQuasar();
     const { t } = useI18n();
@@ -290,7 +290,7 @@ export default defineComponent({
     watch(() => rememberChoice.value, () => {
       console.log('rememberChoice 变化:', rememberChoice.value);
     });
-    
+
     // 添加版本信息和GPU模式
     const versions = ref<VersionInfo>({
       comfyui: 'unknown',
@@ -298,44 +298,44 @@ export default defineComponent({
       app: 'unknown'
     });
     const gpuMode = ref('未知');
-    
+
     // 添加对话框控制变量
     const showConfirmDialog = ref(false);
-    
+
     // 添加日志相关变量
     const showLogs = ref(false);
     const logsExpanded = ref(true);
     const logs = ref<string[]>([]);
-    
+
     // 添加对重置弹窗组件的引用，并指定类型
     const resetDialogs = ref<ResetDialogsInstance | null>(null);
-    
+
     // 添加对重置日志对话框组件的引用
     const resetLogDialog = ref<ResetLogDialogInstance | null>(null);
-    
+
     // 添加资源包对话框相关变量
     const showResourcePackDialog = ref(false);
     const selectedPackId = ref('');
-    
+
     // 在setup函数内部添加对话框组件的引用
     const resourcePackDialog = ref<InstanceType<typeof ResourcePackDialog> | null>(null);
-    
+
     const checkConnection = async () => {
       try {
         // 检查 ComfyUI 连接状态
         const response = await api.getStatus();
         isConnected.value = response.status === 200 && response.body.running;
         // isConnected.value = true
-        
+
         // 更新版本信息和GPU模式
         if (response.body.versions) {
           versions.value = response.body.versions;
         }
-        
+
         if (response.body.gpuMode) {
           gpuMode.value = response.body.gpuMode;
         }
-        
+
         if (isConnected.value) {
           // 如果连接正常，获取模型列表
           models.value = await modelsApi.getModels('local');
@@ -345,7 +345,7 @@ export default defineComponent({
         console.error('连接 ComfyUI 失败:', error);
       }
     };
-    
+
     // 修改获取ComfyUI日志的方法，添加语言参数
     const fetchLogs = async () => {
       try {
@@ -357,9 +357,9 @@ export default defineComponent({
         }
         // 如果没有获取到语言，回退到浏览器语言或默认语言
         currentLang = currentLang || (navigator.language ? navigator.language.split('-')[0] : 'en');
-        
+
         console.log(`Using language for logs: ${currentLang}`);
-        
+
         // 将语言参数传递给后端
         const response = await api.getLogs(currentLang);
         if (response && response.body && response.body.logs) {
@@ -372,7 +372,7 @@ export default defineComponent({
         logs.value = [t('comfyuiStatus.messages.logsFailed')];
       }
     };
-    
+
     // 检查基础模型是否已安装
     const checkEssentialModels = async () => {
       try {
@@ -381,17 +381,17 @@ export default defineComponent({
         if (essentialResponse && essentialResponse.body) {
           essentialModels.value = Array.isArray(essentialResponse.body) ? essentialResponse.body : [];
         }
-        
+
         // 获取已安装模型列表
         const installedResponse = await api.getModels();
         if (installedResponse && installedResponse.body) {
-          installedModels.value = Array.isArray(installedResponse.body) 
-            ? installedResponse.body.filter((model: InstalledModel) => model.installed) 
+          installedModels.value = Array.isArray(installedResponse.body)
+            ? installedResponse.body.filter((model: InstalledModel) => model.installed)
             : [];
         }
-        
+
         // 检查是否所有基础模型都已安装
-        return essentialModels.value.every(essModel => 
+        return essentialModels.value.every(essModel =>
           installedModels.value.some(insModel => insModel.name === essModel.name)
         );
       } catch (error) {
@@ -399,11 +399,11 @@ export default defineComponent({
         return false;
       }
     };
-    
+
     // 修改检查基础模型并启动ComfyUI的方法
     const checkAndStartComfyUI = async () => {
       const allEssentialModelsInstalled = await checkEssentialModels();
-      
+
       if (!allEssentialModelsInstalled) {
 
         if (rememberChoice.value) {
@@ -422,20 +422,20 @@ export default defineComponent({
         startComfyUI();
       }
     };
-    
+
     // 确认启动ComfyUI
     const confirmStartComfyUI = () => {
       showConfirmDialog.value = false;
       startComfyUI();
     };
-    
+
     // 修改前往模型页面方法，改为打开基础资源包安装弹窗
     const goToModels = () => {
       showConfirmDialog.value = false;
       selectedPackId.value = 'essential-models-pack';
       showResourcePackDialog.value = true;
     };
-    
+
     // 添加处理资源包安装完成的方法
     const handleResourcePackInstallComplete = (result: { success: boolean, error?: string, packId?: string }) => {
       if (result.success) {
@@ -454,32 +454,32 @@ export default defineComponent({
         });
       }
     };
-    
+
     // 启动 ComfyUI
     const startComfyUI = async () => {
       localStorage.setItem('rememberComfyUIStartChoice', String(rememberChoice.value));
       try {
         isStarting.value = true;
         showLogs.value = false; // 重置日志显示状态
-        
+
         // Get current language for API call
         let currentLang = $q.lang.getLocale();
         if (currentLang && currentLang.includes('-')) {
           currentLang = currentLang.split('-')[0];
         }
         currentLang = currentLang || (navigator.language ? navigator.language.split('-')[0] : 'en');
-        
+
         const response = await api.startComfyUI(currentLang);
-        
+
         // 检查服务器返回的响应状态和结构
         console.log('ComfyUI启动响应:', response);
-        
+
         if (response && response.body && response.body.success) {
           $q.notify({
             type: 'positive',
             message: t('comfyuiStatus.messages.starting')
           });
-          
+
           // 等待启动完成
           setTimeout(async () => {
             await checkConnection();
@@ -487,13 +487,13 @@ export default defineComponent({
           }, 5000);
         } else {
           isStarting.value = false;
-          
+
           // 启动失败时显示错误通知
           $q.notify({
             type: 'negative',
             message: response?.body?.message || t('comfyuiStatus.messages.startFailed')
           });
-          
+
           // 确保无论如何都能显示日志区域
           if (response?.body?.logs && response.body.logs.length > 0) {
             console.log('收到日志数据，长度:', response.body.logs.length);
@@ -514,26 +514,26 @@ export default defineComponent({
           message: t('comfyuiStatus.messages.startFailed')
         });
         console.error('启动 ComfyUI 失败:', error);
-        
+
         // 启动异常时尝试获取日志
         await fetchLogs();
         showLogs.value = true;
         logsExpanded.value = true; // 确保日志区域展开
       }
     };
-    
+
     // 停止 ComfyUI
     const stopComfyUI = async () => {
       try {
         isStopping.value = true;
-        
+
         // Get current language for API call
         let currentLang = $q.lang.getLocale();
         if (currentLang && currentLang.includes('-')) {
           currentLang = currentLang.split('-')[0];
         }
         currentLang = currentLang || (navigator.language ? navigator.language.split('-')[0] : 'en');
-        
+
         await api.stopComfyUI(currentLang);
         $q.notify({
           type: 'info',
@@ -550,37 +550,37 @@ export default defineComponent({
         console.error('停止 ComfyUI 失败:', error);
       }
     };
-    
+
     // 计算已安装模型数量
     const installedModelsCount = computed(() => {
       return models.value.filter(model => model.installed).length;
     });
-    
+
     // 计算可用模型总数
     const availableModelsCount = computed(() => {
       return models.value.length;
     });
-    
+
     // 定期检查连接状态
     let intervalId: number | null = null;
     onMounted(() => {
       checkConnection();
       intervalId = window.setInterval(checkConnection, 30000); // 每30秒检查一次
     });
-    
+
     onUnmounted(() => {
       if (intervalId !== null) {
         window.clearInterval(intervalId);
       }
     });
-    
+
     // 添加新的方法
     const showLogView = async () => {
       await fetchLogs();
       showLogs.value = true;
       logsExpanded.value = true;
     };
-    
+
     // 修改重置ComfyUI方法，改为打开重置弹窗
     const resetComfyUI = () => {
       // 调用重置弹窗组件的方法
@@ -588,7 +588,7 @@ export default defineComponent({
         resetDialogs.value.openResetDialog('zh');
       }
     };
-    
+
     // 添加下载日志方法
     const downloadLogs = () => {
       if (logs.value.length === 0) {
@@ -598,7 +598,7 @@ export default defineComponent({
         });
         return;
       }
-      
+
       const logText = logs.value.join('\n');
       const blob = new Blob([logText], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
@@ -608,31 +608,31 @@ export default defineComponent({
       a.download = `comfyui-log-${timestamp}.txt`;
       document.body.appendChild(a);
       a.click();
-      
+
       // 清理
       setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }, 100);
     };
-    
+
     // 打开ComfyUI界面
     const openComfyUI = () => {
       const url = new URL(window.location.href);
       const domainParts = url.hostname.split('.');
-      domainParts[0] = '7415736f0';
+      domainParts[0] = '806ba3e40';
       url.hostname = domainParts.join('.');
       url.pathname = '/';
       window.open(url.toString(), '_blank');
     };
-    
+
     // 添加打开重置日志对话框的方法
     const showResetLog = () => {
       if (resetLogDialog.value) {
         resetLogDialog.value.openDialog('zh');
       }
     };
-    
+
     // 在处理ResourcePackDialog关闭的地方添加重置状态
     const handleResourcePackDialogClose = () => {
       showResourcePackDialog.value = false;
@@ -641,7 +641,7 @@ export default defineComponent({
         resourcePackDialog.value.resetState();
       }
     };
-    
+
     return {
       isConnected,
       installedModelsCount,
@@ -717,7 +717,7 @@ export default defineComponent({
   justify-content: center;
 
   border-radius: 8px;
-  
+
 }
 
 .app-logo {
@@ -934,7 +934,7 @@ export default defineComponent({
 }
 
 .q-item__section--avatar {
-  width: 32px!important; 
+  width: 32px!important;
   min-width: 32px!important;
 }
 </style>
